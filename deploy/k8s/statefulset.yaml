@@ -1,0 +1,88 @@
+# SPDX-License-Identifier: Apache-2.0
+# Loupe is a single-writer SQLite service: keep replicas at 1 (the data file is flock-ed).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: loupe
+  labels:
+    app.kubernetes.io/name: loupe
+spec:
+  replicas: 1
+  serviceName: loupe
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: loupe
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: loupe
+    spec:
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: loupe
+          image: ghcr.io/thnhdatle/loupe:v0.1.0
+          args: ["serve"]
+          ports:
+            - { name: grpc, containerPort: 4317 }
+            - { name: http, containerPort: 4318 }
+            - { name: ui, containerPort: 3000 }
+            - { name: admin, containerPort: 9092 }
+          env:
+            - { name: LOUPE_STORAGE_PATH, value: /data/loupe.db }
+            - { name: LOUPE_RECEIVER_GRPC_LISTEN, value: "0.0.0.0:4317" }
+            - { name: LOUPE_RECEIVER_HTTP_LISTEN, value: "0.0.0.0:4318" }
+            - { name: LOUPE_UI_LISTEN, value: "0.0.0.0:3000" }
+            - { name: LOUPE_ADMIN_LISTEN, value: "0.0.0.0:9092" }
+            - { name: LOUPE_RECEIVER_ALLOW_UNAUTHENTICATED, value: "true" }
+            - { name: LOUPE_API_TOKEN_FILE, value: /data/api_token }
+            - { name: LOUPE_API_GENERATE_TOKEN, value: "true" }
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 768Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          startupProbe:
+            exec:
+              command: ["/usr/local/bin/loupe", "healthcheck"]
+            periodSeconds: 2
+            timeoutSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: ["/usr/local/bin/loupe", "healthcheck"]
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command: ["/usr/local/bin/loupe", "healthcheck"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+          volumeMounts:
+            - { name: data, mountPath: /data }
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi

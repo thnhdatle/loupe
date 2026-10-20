@@ -1,0 +1,12 @@
+bin/
+dist/
+acceptance/logs/
+*.local.yaml
+node_modules/
+*.db
+*.db-wal
+*.db-shm
+coverage.out
+.DS_Store
+.venv/
+out/

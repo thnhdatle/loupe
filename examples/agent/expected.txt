@@ -1,0 +1,11 @@
+answer: lumen juniper ember bravo meadow flint
+traces: 1
+spans: 4
+models: gpt-4o-mini
+tokens: input=14 output=13
+cost_nanos: 9900
+errors: false
+invoke_agent weather-agent [agent]
+  chat gpt-4o-mini [llm] model=gpt-4o-mini in=6 out=7 cost_nanos=5100
+  execute_tool lookup_weather [tool]
+  chat gpt-4o-mini [llm] model=gpt-4o-mini in=8 out=6 cost_nanos=4800

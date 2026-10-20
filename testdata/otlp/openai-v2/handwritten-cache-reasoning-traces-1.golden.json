@@ -1,0 +1,41 @@
+{
+  "spans": [
+    {
+      "name": "chat o3-mini",
+      "trace_id": "0af7651916cd43dd8448eb211c80319c",
+      "span_id": "b7ad6b7169203331",
+      "parent_span_id": "",
+      "kind": "llm",
+      "status": "ok",
+      "service": "handwritten-openai-v2",
+      "model": "o3-mini-2025-01-31",
+      "provider": "openai",
+      "usage": {
+        "input": 1200,
+        "output": 540,
+        "cache_read": 800,
+        "cache_write": 100,
+        "reasoning": 320
+      },
+      "has_usage": true,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "o3-mini",
+        "gen_ai.response.finish_reasons": [
+          "stop"
+        ],
+        "gen_ai.response.model": "o3-mini-2025-01-31",
+        "gen_ai.usage.cache_creation.input_tokens": 100,
+        "gen_ai.usage.cache_read.input_tokens": 800,
+        "gen_ai.usage.input_tokens": 1200,
+        "gen_ai.usage.output_tokens": 540,
+        "gen_ai.usage.reasoning.output_tokens": 320
+      },
+      "content": []
+    }
+  ]
+}

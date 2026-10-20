@@ -1,0 +1,47 @@
+a: iris prairie juniper nectar lumen kestrel
+b1: onyx lumen kestrel onyx iris prairie
+b2 words: 44
+c dims: 1024
+traces: 4
+== trace 1
+spans: 4
+models: fake-small
+tokens: input=2 output=6
+cost_nanos: 0
+errors: false
+chat triage-auto [llm] model=fake-small in=2 out=6
+  POST [other]
+    route request [llm] model=fake-small in=2 out=6 duplicate
+      chat fake-small [llm] model=fake-small in=2 out=6 duplicate
+== trace 2
+spans: 5
+models: fake-small,fake-strong
+tokens: input=4 output=6
+cost_nanos: 0
+errors: true
+chat triage-auto [llm] model=fake-strong in=4 out=6
+  POST [other]
+    route request [llm] model=fake-strong in=4 out=6 duplicate
+      chat fake-small [llm] model=fake-small duplicate
+      chat fake-strong [llm] model=fake-strong in=4 out=6 duplicate
+== trace 3
+spans: 5
+models: fake-small,fake-strong
+tokens: input=30 output=40
+cost_nanos: 0
+errors: true
+chat triage-auto [llm] model=fake-small in=30 out=40
+  POST [other]
+    route request [llm] model=fake-small in=30 out=40 duplicate
+      chat fake-small [llm] model=fake-small duplicate
+      chat fake-strong [llm] model=fake-strong in=30 out=40 duplicate
+== trace 4
+spans: 4
+models: fake-embed
+tokens: input=4 output=0
+cost_nanos: 0
+errors: false
+embeddings triage-embed [embedding] model=fake-embed in=4 out=0
+  POST [other]
+    route request [embedding] model=fake-embed in=4 out=0 duplicate
+      embeddings fake-embed [embedding] model=fake-embed in=4 out=0 duplicate

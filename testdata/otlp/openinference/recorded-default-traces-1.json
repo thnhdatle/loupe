@@ -1,0 +1,178 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.45.1"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "b34e9581-a0fb-496e-837a-849b6c848d55"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "example-python-openinference-1792418268-47745"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "openinference.instrumentation.openai",
+            "version": "0.1.65"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "llm.system",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "input.value",
+                  "value": {
+                    "stringValue": "{\"model\": \"gpt-4o-mini\", \"messages\": [{\"role\": \"user\", \"content\": \"say hello to loupe\"}]}"
+                  }
+                },
+                {
+                  "key": "input.mime_type",
+                  "value": {
+                    "stringValue": "application/json"
+                  }
+                },
+                {
+                  "key": "output.value",
+                  "value": {
+                    "stringValue": "{\"id\":\"chatcmpl-c26e19b05de3bfa5\",\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"prairie bravo lumen prairie prairie cedar\",\"role\":\"assistant\"}}],\"created\":1792418268,\"model\":\"gpt-4o-mini\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":6,\"prompt_tokens\":4,\"total_tokens\":10}}"
+                  }
+                },
+                {
+                  "key": "output.mime_type",
+                  "value": {
+                    "stringValue": "application/json"
+                  }
+                },
+                {
+                  "key": "llm.invocation_parameters",
+                  "value": {
+                    "stringValue": "{\"model\": \"gpt-4o-mini\"}"
+                  }
+                },
+                {
+                  "key": "llm.input_messages.0.message.role",
+                  "value": {
+                    "stringValue": "user"
+                  }
+                },
+                {
+                  "key": "llm.input_messages.0.message.content",
+                  "value": {
+                    "stringValue": "say hello to loupe"
+                  }
+                },
+                {
+                  "key": "llm.model_name",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "llm.token_count.total",
+                  "value": {
+                    "intValue": "10"
+                  }
+                },
+                {
+                  "key": "llm.token_count.prompt",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "llm.token_count.completion",
+                  "value": {
+                    "intValue": "6"
+                  }
+                },
+                {
+                  "key": "llm.output_messages.0.message.role",
+                  "value": {
+                    "stringValue": "assistant"
+                  }
+                },
+                {
+                  "key": "llm.output_messages.0.message.content",
+                  "value": {
+                    "stringValue": "prairie bravo lumen prairie prairie cedar"
+                  }
+                },
+                {
+                  "key": "llm.finish_reason",
+                  "value": {
+                    "stringValue": "stop"
+                  }
+                },
+                {
+                  "key": "openinference.span.kind",
+                  "value": {
+                    "stringValue": "LLM"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418268970047000",
+              "flags": 256,
+              "kind": "SPAN_KIND_INTERNAL",
+              "name": "ChatCompletion",
+              "parentSpanId": "e4a4bde1fd98be87",
+              "spanId": "5c6b2b861eebf7ec",
+              "startTimeUnixNano": "1792418268955688000",
+              "status": {
+                "code": "STATUS_CODE_OK"
+              },
+              "traceId": "4be017fc609922eb0c1436b548dd7417"
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "example"
+          },
+          "spans": [
+            {
+              "endTimeUnixNano": "1792418268970142000",
+              "flags": 256,
+              "kind": "SPAN_KIND_INTERNAL",
+              "name": "python-openinference-example",
+              "spanId": "e4a4bde1fd98be87",
+              "startTimeUnixNano": "1792418268942786000",
+              "status": {},
+              "traceId": "4be017fc609922eb0c1436b548dd7417"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{{define "content"}}
+<h1>Overview</h1>
+<p class="sub">LLM spans from {{ts .Range.From.UnixNano}} to {{ts .Range.To.UnixNano}} UTC.</p>
+{{template "rangepicker" .Range}}
+{{with .Banner}}
+<div class="banner" role="alert">
+  <strong>Spans were not stored:</strong> {{num .Rejected}} spans rejected and {{num .Dropped}} dropped between
+  {{ts .From.UnixNano}} and {{ts .To.UnixNano}} UTC ({{join .Reasons}}). See <code>/v1/ingest/stats</code>.
+</div>
+{{end}}
+<section class="tiles" aria-label="Summary">
+  <div class="tile"><span class="tile-label">Requests</span><span class="tile-value">{{num .Total.Requests}}</span></div>
+  <div class="tile"><span class="tile-label">Error rate</span><span class="tile-value">{{pct .Total.Errors .Total.Requests}}</span></div>
+  <div class="tile"><span class="tile-label">Tokens</span><span class="tile-value">{{num (tokens .Total.Usage)}}</span></div>
+  <div class="tile"><span class="tile-label">Cost</span><span class="tile-value">{{money .Total.CostNanos}}</span>{{if .Total.Unpriced}}<span class="tile-note">{{num .Total.Unpriced}} unpriced</span>{{end}}</div>
+  <div class="tile"><span class="tile-label">p95 latency</span><span class="tile-value">{{dur .Total.P95Ns}}</span></div>
+</section>
+{{if not .Total.Requests}}<p class="notice">No LLM spans in this range.</p>{{end}}
+<section class="charts" aria-label="Charts by model">
+  <figure><figcaption>Cost (USD) by model</figcaption><div class="chart" data-chart="cost" role="img" aria-label="Cost over time by model"></div></figure>
+  <figure><figcaption>Tokens by model</figcaption><div class="chart" data-chart="tokens" role="img" aria-label="Tokens over time by model"></div></figure>
+  <figure><figcaption>p95 latency (ms) by model</figcaption><div class="chart" data-chart="p95" role="img" aria-label="p95 latency over time by model"></div></figure>
+</section>
+<script type="application/json" id="chart-data" nonce="{{.Nonce}}">{{.Chart}}</script>
+{{end}}

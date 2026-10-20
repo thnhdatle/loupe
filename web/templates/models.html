@@ -1,0 +1,30 @@
+{{define "content"}}
+<h1>Models</h1>
+<p class="sub">LLM spans, duplicates excluded, from {{ts .Range.From.UnixNano}} to {{ts .Range.To.UnixNano}} UTC.</p>
+{{template "rangepicker" .Range}}
+{{if .Groups}}
+<table class="data">
+  <thead><tr>
+    <th scope="col">Model</th><th scope="col" class="num">Calls</th><th scope="col" class="num">Input tokens</th>
+    <th scope="col" class="num">Output tokens</th><th scope="col" class="num">Cost</th>
+    <th scope="col" class="num">p50</th><th scope="col" class="num">p95</th><th scope="col" class="num">p99</th>
+    <th scope="col" class="num">Error rate</th>
+  </tr></thead>
+  <tbody>
+  {{range .Groups}}
+  <tr>
+    <th scope="row">{{if .Key}}{{.Key}}{{else}}(unknown){{end}}</th>
+    <td class="num">{{num .Stats.Requests}}</td>
+    <td class="num">{{num .Stats.Usage.Input}}</td>
+    <td class="num">{{num .Stats.Usage.Output}}</td>
+    <td class="num">{{money .Stats.CostNanos}}{{if .Stats.Unpriced}} <span class="muted">({{num .Stats.Unpriced}} unpriced)</span>{{end}}</td>
+    <td class="num">{{dur .Stats.P50Ns}}</td>
+    <td class="num">{{dur .Stats.P95Ns}}</td>
+    <td class="num">{{dur .Stats.P99Ns}}</td>
+    <td class="num">{{pct .Stats.Errors .Stats.Requests}}</td>
+  </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}<p class="notice">No LLM spans in this range.</p>{{end}}
+{{end}}

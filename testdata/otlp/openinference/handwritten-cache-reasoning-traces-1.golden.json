@@ -1,0 +1,38 @@
+{
+  "spans": [
+    {
+      "name": "ChatCompletion",
+      "trace_id": "1bf7651916cd43dd8448eb211c80319d",
+      "span_id": "c8ad6b7169203332",
+      "parent_span_id": "",
+      "kind": "llm",
+      "status": "ok",
+      "service": "handwritten-openinference",
+      "model": "o3-mini-2025-01-31",
+      "provider": "openai",
+      "usage": {
+        "input": 1200,
+        "output": 540,
+        "cache_read": 800,
+        "cache_write": 100,
+        "reasoning": 320
+      },
+      "has_usage": true,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "llm.model_name": "o3-mini-2025-01-31",
+        "llm.system": "openai",
+        "llm.token_count.completion": 540,
+        "llm.token_count.completion_details.reasoning": 320,
+        "llm.token_count.prompt": 1200,
+        "llm.token_count.prompt_details.cache_read": 800,
+        "llm.token_count.prompt_details.cache_write": 100,
+        "llm.token_count.total": 1740,
+        "openinference.span.kind": "LLM"
+      },
+      "content": []
+    }
+  ]
+}

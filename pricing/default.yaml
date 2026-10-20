@@ -1,0 +1,164 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Default price table, embedded in the binary. USD per million tokens as
+# decimal text (at most 9 fractional digits); every entry carries source and as_of.
+# Prices are a hand-maintained snapshot: verify against the source before relying on them.
+# A user file (pricing.file) is merged on top; see docs/guides/pricing.md.
+prices:
+  - match: exact
+    provider: openai
+    model: gpt-4o
+    input_per_mtok: 5.00
+    output_per_mtok: 15.00
+    effective_from: 2024-05-13T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: exact
+    provider: openai
+    model: gpt-4o
+    input_per_mtok: 2.50
+    output_per_mtok: 10.00
+    cache_read_per_mtok: 1.25
+    effective_from: 2024-10-01T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: exact
+    provider: openai
+    model: gpt-4o-mini
+    input_per_mtok: 0.15
+    output_per_mtok: 0.60
+    cache_read_per_mtok: 0.075
+    effective_from: 2024-07-18T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: glob
+    model: "gpt-4o*"
+    input_per_mtok: 2.50
+    output_per_mtok: 10.00
+    cache_read_per_mtok: 1.25
+    effective_from: 2024-05-13T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: glob
+    model: "gpt-4o-mini*"
+    input_per_mtok: 0.15
+    output_per_mtok: 0.60
+    effective_from: 2024-07-18T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: exact
+    provider: openai
+    model: o3-mini
+    input_per_mtok: 1.10
+    output_per_mtok: 4.40
+    cache_read_per_mtok: 0.55
+    effective_from: 2025-01-31T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: exact
+    provider: openai
+    model: gpt-4.1
+    input_per_mtok: 2.00
+    output_per_mtok: 8.00
+    cache_read_per_mtok: 0.50
+    effective_from: 2025-04-14T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: glob
+    provider: openai
+    model: "gpt-4*"
+    input_per_mtok: 30
+    output_per_mtok: 60
+    effective_from: 2023-03-14T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: exact
+    provider: anthropic
+    model: claude-sonnet-4
+    input_per_mtok: 3
+    output_per_mtok: 15
+    cache_read_per_mtok: 0.30
+    cache_write_per_mtok: 3.75
+    effective_from: 2025-05-22T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://www.anthropic.com/pricing"
+  - match: glob
+    provider: anthropic
+    model: "claude-*"
+    input_per_mtok: 3
+    output_per_mtok: 15
+    cache_read_per_mtok: 0.30
+    cache_write_per_mtok: 3.75
+    effective_from: 2024-03-01T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://www.anthropic.com/pricing"
+  - match: glob
+    provider: anthropic
+    model: "claude-3-5-haiku*"
+    input_per_mtok: 0.80
+    output_per_mtok: 4.00
+    cache_read_per_mtok: 0.08
+    cache_write_per_mtok: 1.00
+    effective_from: 2024-11-04T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://www.anthropic.com/pricing"
+  - match: exact
+    provider: google
+    model: gemini-2.5-flash
+    input_per_mtok: 0.15
+    output_per_mtok: 0.60
+    cache_read_per_mtok: 0.0375
+    reasoning_per_mtok: 3.50
+    effective_from: 2025-04-17T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://ai.google.dev/pricing"
+  - match: exact
+    provider: google
+    model: gemini-2.5-flash
+    input_per_mtok: 0.30
+    output_per_mtok: 2.50
+    cache_read_per_mtok: 0.075
+    effective_from: 2025-06-17T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://ai.google.dev/pricing"
+  - match: exact
+    provider: openai
+    model: text-embedding-3-small
+    input_per_mtok: 0.02
+    output_per_mtok: 0
+    effective_from: 2024-01-25T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: exact
+    provider: openai
+    model: text-embedding-3-large
+    input_per_mtok: 0.13
+    output_per_mtok: 0
+    effective_from: 2024-01-25T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://openai.com/api/pricing"
+  - match: exact
+    provider: groq
+    model: llama-3.1-8b-instant
+    input_per_mtok: 0.06
+    output_per_mtok: 0.09
+    effective_from: 2024-07-23T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://groq.com/pricing"
+  - match: glob
+    provider: mistral
+    model: "mistral-large-*"
+    input_per_mtok: 2
+    output_per_mtok: 6
+    effective_from: 2024-11-18T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://mistral.ai/pricing"
+  - match: exact
+    provider: deepseek
+    model: deepseek-reasoner
+    input_per_mtok: 0.55
+    output_per_mtok: 2.19
+    cache_read_per_mtok: 0.14
+    effective_from: 2025-01-20T00:00:00Z
+    as_of: 2026-10-01T00:00:00Z
+    source: "https://api-docs.deepseek.com/quick_start/pricing"

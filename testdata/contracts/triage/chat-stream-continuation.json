@@ -1,0 +1,399 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.45.1"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "be7c06ed-5e53-4585-9028-2f35e34de3c8"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "example-triage-1792418675-62506"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "example.http"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://127.0.0.1:28081/v1/chat/completions"
+                  }
+                },
+                {
+                  "key": "server.address",
+                  "value": {
+                    "stringValue": "127.0.0.1"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418675799783000",
+              "flags": 256,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "POST",
+              "parentSpanId": "0889310356bfab81",
+              "spanId": "ca66a92aaaea297b",
+              "startTimeUnixNano": "1792418675798675000",
+              "status": {},
+              "traceId": "c6dffb97d053c8a0a6afec8704d3a9d7"
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "opentelemetry.util.genai.handler",
+            "version": "1.1b0"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "triage-auto"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "fake-small"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-0cb5c30d3bcc8bf1"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "30"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "40"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418675803110000",
+              "flags": 256,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "chat triage-auto",
+              "spanId": "0889310356bfab81",
+              "startTimeUnixNano": "1792418675797513000",
+              "status": {},
+              "traceId": "c6dffb97d053c8a0a6afec8704d3a9d7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "triage"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "f175b21"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "go"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.47.0"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "github.com/thnhdatle/triage"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "fakellm"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "fake-small"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "fake-small"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418675798943928",
+              "events": [
+                {
+                  "attributes": [
+                    {
+                      "key": "exception.type",
+                      "value": {
+                        "stringValue": "*provider.Error"
+                      }
+                    },
+                    {
+                      "key": "exception.message",
+                      "value": {
+                        "stringValue": "provider: upstream unavailable: stream ended without [DONE]"
+                      }
+                    }
+                  ],
+                  "name": "exception",
+                  "timeUnixNano": "1792418675798943386"
+                }
+              ],
+              "flags": 259,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "chat fake-small",
+              "parentSpanId": "21ecffdd0a83203d",
+              "spanId": "40c9633cede0b4b7",
+              "startTimeUnixNano": "1792418675798320678",
+              "status": {
+                "code": "STATUS_CODE_ERROR",
+                "message": "200"
+              },
+              "traceId": "c6dffb97d053c8a0a6afec8704d3a9d7"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "fakellm"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "fake-strong"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "fake-strong"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "30"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "40"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418675801133136",
+              "flags": 259,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "chat fake-strong",
+              "parentSpanId": "21ecffdd0a83203d",
+              "spanId": "aec13f4ef60e3001",
+              "startTimeUnixNano": "1792418675798960636",
+              "status": {},
+              "traceId": "c6dffb97d053c8a0a6afec8704d3a9d7"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "triage-auto"
+                  }
+                },
+                {
+                  "key": "triage.route",
+                  "value": {
+                    "stringValue": "triage-auto"
+                  }
+                },
+                {
+                  "key": "triage.decision_id",
+                  "value": {
+                    "stringValue": "01M5A7MZ2PNRW6EXBJZ54VDBF1"
+                  }
+                },
+                {
+                  "key": "triage.privacy.mode",
+                  "value": {
+                    "stringValue": "off"
+                  }
+                },
+                {
+                  "key": "triage.privacy.findings",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "triage.cost_usd",
+                  "value": {
+                    "doubleValue": 0.0004375
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "30"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "40"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "fake-small"
+                  }
+                },
+                {
+                  "key": "triage.tier",
+                  "value": {
+                    "stringValue": "strong"
+                  }
+                },
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "/v1/chat/completions"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418675801169969",
+              "flags": 771,
+              "kind": "SPAN_KIND_SERVER",
+              "name": "route request",
+              "parentSpanId": "ca66a92aaaea297b",
+              "spanId": "21ecffdd0a83203d",
+              "startTimeUnixNano": "1792418675798222303",
+              "status": {},
+              "traceId": "c6dffb97d053c8a0a6afec8704d3a9d7"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

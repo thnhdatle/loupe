@@ -1,0 +1,75 @@
+{
+  "kind": "llm",
+  "status": "ok",
+  "service": "agent-app",
+  "model": "gpt-5",
+  "provider": "openai",
+  "usage": {
+    "input": 500,
+    "output": 200,
+    "cache_read": 300,
+    "cache_write": 50,
+    "reasoning": 90
+  },
+  "has_usage": true,
+  "session_id": "sess-9",
+  "user_id": "",
+  "error_type": "",
+  "flags": 0,
+  "attributes": {
+    "llm.invocation_parameters": "{\"temperature\":0}",
+    "llm.model_name": "gpt-5",
+    "llm.provider": "openai",
+    "llm.system": "openai",
+    "llm.token_count.completion": 200,
+    "llm.token_count.completion_details.reasoning": 90,
+    "llm.token_count.prompt": 500,
+    "llm.token_count.prompt_details.cache_read": 300,
+    "llm.token_count.prompt_details.cache_write": 50,
+    "llm.token_count.total": 700,
+    "openinference.span.kind": "LLM",
+    "session.id": "sess-9"
+  },
+  "content": [
+    {
+      "part": 0,
+      "source": "attribute",
+      "key": "input.value",
+      "role": "input",
+      "bytes": 11,
+      "body": "what is 2+2"
+    },
+    {
+      "part": 1,
+      "source": "attribute",
+      "key": "llm.input_messages.0.message.content",
+      "role": "system",
+      "bytes": 8,
+      "body": "be brief"
+    },
+    {
+      "part": 2,
+      "source": "attribute",
+      "key": "llm.input_messages.1.message.content",
+      "role": "user",
+      "bytes": 11,
+      "body": "what is 2+2"
+    },
+    {
+      "part": 3,
+      "source": "attribute",
+      "key": "llm.output_messages.0.message.content",
+      "role": "assistant",
+      "bytes": 1,
+      "body": "4"
+    },
+    {
+      "part": 4,
+      "source": "attribute",
+      "key": "output.value",
+      "role": "output",
+      "bytes": 1,
+      "body": "4"
+    }
+  ]
+}

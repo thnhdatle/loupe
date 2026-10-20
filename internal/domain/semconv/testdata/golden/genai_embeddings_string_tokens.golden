@@ -1,0 +1,29 @@
+{
+  "kind": "embedding",
+  "status": "error",
+  "service": "triage",
+  "model": "text-embedding-3-small",
+  "provider": "openai",
+  "usage": {
+    "input": 64,
+    "output": 0,
+    "cache_read": 16,
+    "cache_write": 8,
+    "reasoning": 0
+  },
+  "has_usage": true,
+  "session_id": "",
+  "user_id": "",
+  "error_type": "timeout",
+  "flags": 0,
+  "attributes": {
+    "error.type": "timeout",
+    "gen_ai.operation.name": "embeddings",
+    "gen_ai.request.model": "text-embedding-3-small",
+    "gen_ai.system": "openai",
+    "gen_ai.usage.cache_creation_input_tokens": 8,
+    "gen_ai.usage.cache_read_input_tokens": 16,
+    "gen_ai.usage.prompt_tokens": "64"
+  },
+  "content": []
+}

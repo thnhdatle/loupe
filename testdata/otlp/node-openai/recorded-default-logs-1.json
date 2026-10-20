@@ -1,0 +1,205 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "host"
+            }
+          },
+          {
+            "key": "host.arch",
+            "value": {
+              "stringValue": "arm64"
+            }
+          },
+          {
+            "key": "host.id",
+            "value": {
+              "stringValue": "host-id"
+            }
+          },
+          {
+            "key": "process.pid",
+            "value": {
+              "stringValue": "1"
+            }
+          },
+          {
+            "key": "process.executable.name",
+            "value": {
+              "stringValue": "node"
+            }
+          },
+          {
+            "key": "process.executable.path",
+            "value": {
+              "stringValue": "/usr/local/bin/node"
+            }
+          },
+          {
+            "key": "process.command_args",
+            "value": {
+              "stringValue": "/repo/app"
+            }
+          },
+          {
+            "key": "process.runtime.version",
+            "value": {
+              "stringValue": "23.11.0"
+            }
+          },
+          {
+            "key": "process.runtime.name",
+            "value": {
+              "stringValue": "nodejs"
+            }
+          },
+          {
+            "key": "process.runtime.description",
+            "value": {
+              "stringValue": "Node.js"
+            }
+          },
+          {
+            "key": "process.command",
+            "value": {
+              "stringValue": "/repo/app"
+            }
+          },
+          {
+            "key": "process.owner",
+            "value": {
+              "stringValue": "user"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "example-node-openai-1792418269-47766"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "nodejs"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.12.0"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "logRecords": [
+            {
+              "attributes": [
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "gen_ai.user.message"
+                  }
+                },
+                {
+                  "key": "gen_ai.system",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                }
+              ],
+              "body": {
+                "kvlistValue": {
+                  "values": [
+                    {
+                      "key": "content",
+                      "value": {
+                        "stringValue": "say hello to loupe"
+                      }
+                    }
+                  ]
+                }
+              },
+              "flags": 1,
+              "observedTimeUnixNano": "1792418269813000000",
+              "severityNumber": "SEVERITY_NUMBER_INFO",
+              "spanId": "74f3e9acebb70143",
+              "timeUnixNano": "1792418269811000000",
+              "traceId": "3b7d741ba66daf4f9c4d30023ea19e09"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "gen_ai.choice"
+                  }
+                },
+                {
+                  "key": "gen_ai.system",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                }
+              ],
+              "body": {
+                "kvlistValue": {
+                  "values": [
+                    {
+                      "key": "finish_reason",
+                      "value": {
+                        "stringValue": "stop"
+                      }
+                    },
+                    {
+                      "key": "index",
+                      "value": {
+                        "intValue": "0"
+                      }
+                    },
+                    {
+                      "key": "message",
+                      "value": {
+                        "kvlistValue": {
+                          "values": [
+                            {
+                              "key": "content",
+                              "value": {
+                                "stringValue": "prairie bravo lumen prairie prairie cedar"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "flags": 1,
+              "observedTimeUnixNano": "1792418269880000000",
+              "severityNumber": "SEVERITY_NUMBER_INFO",
+              "spanId": "74f3e9acebb70143",
+              "timeUnixNano": "1792418269880000000",
+              "traceId": "3b7d741ba66daf4f9c4d30023ea19e09"
+            }
+          ],
+          "scope": {
+            "name": "@opentelemetry/instrumentation-openai",
+            "version": "0.21.0"
+          }
+        }
+      ]
+    }
+  ]
+}

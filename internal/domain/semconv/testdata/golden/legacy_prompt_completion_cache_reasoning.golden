@@ -1,0 +1,48 @@
+{
+  "kind": "llm",
+  "status": "unset",
+  "service": "legacy-app",
+  "model": "gpt-4o-2024-08-06",
+  "provider": "",
+  "usage": {
+    "input": 90,
+    "output": 30,
+    "cache_read": 40,
+    "cache_write": 10,
+    "reasoning": 5
+  },
+  "has_usage": true,
+  "session_id": "",
+  "user_id": "e-7",
+  "error_type": "",
+  "flags": 0,
+  "attributes": {
+    "enduser.id": "e-7",
+    "gen_ai.usage.cache_creation_input_tokens": 10,
+    "gen_ai.usage.cache_read_input_tokens": 40,
+    "gen_ai.usage.reasoning.output_tokens": 5,
+    "llm.request.model": "gpt-4o",
+    "llm.response.model": "gpt-4o-2024-08-06",
+    "llm.usage.completion_tokens": 30,
+    "llm.usage.prompt_tokens": 90,
+    "llm.usage.total_tokens": 120
+  },
+  "content": [
+    {
+      "part": 0,
+      "source": "attribute",
+      "key": "gen_ai.completion.0.content",
+      "role": "assistant",
+      "bytes": 4,
+      "body": "pong"
+    },
+    {
+      "part": 1,
+      "source": "attribute",
+      "key": "gen_ai.prompt.0.content",
+      "role": "user",
+      "bytes": 4,
+      "body": "ping"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"allowScriptTags":false}'>
+<title>{{.Title}} - Loupe</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/static/vendor/uPlot.min.css">
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/vendor/htmx.min.js" defer></script>
+<script src="/static/vendor/uPlot.iife.min.js" defer></script>
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="brand" href="/">Loupe</a>
+  <nav aria-label="Main">
+    <a href="/"{{if eq .Nav "overview"}} aria-current="page"{{end}}>Overview</a>
+    <a href="/traces"{{if eq .Nav "traces"}} aria-current="page"{{end}}>Traces</a>
+    <a href="/sessions"{{if eq .Nav "sessions"}} aria-current="page"{{end}}>Sessions</a>
+    <a href="/models"{{if eq .Nav "models"}} aria-current="page"{{end}}>Models</a>
+  </nav>
+  {{if .LoggedIn}}<form class="signout" method="post" action="/logout"><button type="submit">Sign out</button></form>{{end}}
+</header>
+<main id="main">
+{{template "content" .}}
+</main>
+<footer class="foot"><span>Times are UTC.</span></footer>
+</body>
+</html>
+{{end}}

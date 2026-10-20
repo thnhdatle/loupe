@@ -1,0 +1,38 @@
+{
+  "logs": [
+    {
+      "event_name": "gen_ai.user.message",
+      "trace_id": "3b7d741ba66daf4f9c4d30023ea19e09",
+      "span_id": "74f3e9acebb70143",
+      "kept": true,
+      "content": [
+        {
+          "part": 0,
+          "source": "log",
+          "key": "gen_ai.user.message",
+          "role": "user",
+          "bytes": 18,
+          "body": "say hello to loupe",
+          "time_ns": 1792418269811000000
+        }
+      ]
+    },
+    {
+      "event_name": "gen_ai.choice",
+      "trace_id": "3b7d741ba66daf4f9c4d30023ea19e09",
+      "span_id": "74f3e9acebb70143",
+      "kept": true,
+      "content": [
+        {
+          "part": 0,
+          "source": "log",
+          "key": "gen_ai.choice",
+          "role": "assistant",
+          "bytes": 100,
+          "body": "{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"prairie bravo lumen prairie prairie cedar\"}}",
+          "time_ns": 1792418269880000000
+        }
+      ]
+    }
+  ]
+}

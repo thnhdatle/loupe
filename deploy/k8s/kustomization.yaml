@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - statefulset.yaml
+  - service.yaml
+# Pin the release you deploy here.
+images:
+  - name: ghcr.io/thnhdatle/loupe
+    newTag: v0.1.0

@@ -1,0 +1,133 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "example-go-manual-1792418270-47780"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "go"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.47.0"
+            }
+          }
+        ]
+      },
+      "schemaUrl": "https://opentelemetry.io/schemas/1.43.0",
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "example"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.input.messages",
+                  "value": {
+                    "stringValue": "[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"content\":\"say hello to loupe\"}]}]"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-5dbba79a81c2f2de"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "stop"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "6"
+                  }
+                },
+                {
+                  "key": "gen_ai.output.messages",
+                  "value": {
+                    "stringValue": "[{\"role\":\"assistant\",\"finish_reason\":\"stop\",\"parts\":[{\"type\":\"text\",\"content\":\"prairie bravo lumen prairie prairie cedar\"}]}]"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418270322622541",
+              "flags": 257,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "chat gpt-4o-mini",
+              "parentSpanId": "2f5e6ee64c206751",
+              "spanId": "219001e3fe5f8766",
+              "startTimeUnixNano": "1792418270317110000",
+              "status": {},
+              "traceId": "12b9329e9110f6f92ea78ae6d674ac2f"
+            },
+            {
+              "endTimeUnixNano": "1792418270322626250",
+              "flags": 257,
+              "kind": "SPAN_KIND_INTERNAL",
+              "name": "go-manual-example",
+              "spanId": "2f5e6ee64c206751",
+              "startTimeUnixNano": "1792418270317105000",
+              "status": {},
+              "traceId": "12b9329e9110f6f92ea78ae6d674ac2f"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

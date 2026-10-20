@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Build context: sources only. Hidden files and directories (VCS data, editor
+# and tool state) and local outputs never enter the image build.
+.*
+bin/
+dist/
+acceptance/logs/
+node_modules
+*.db
+coverage.out
+out/

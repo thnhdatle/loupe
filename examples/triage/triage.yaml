@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: Apache-2.0
+# Triage in front of fakellm for the Loupe example. run.sh replaces FAKELLM_BASE_URL with the
+# fakellm address as seen from the container. Tracing is switched on with the standard
+# OTEL_EXPORTER_OTLP_* variables, not here.
+server:
+  listen: "0.0.0.0:8080"
+  allow_unauthenticated: true
+admin:
+  listen: "0.0.0.0:9091"
+auth:
+  enabled: false
+api:
+  expose_decision_detail: true
+providers:
+  fakellm: { type: openaicompat, base_url: "FAKELLM_BASE_URL" }
+targets:
+  - name: local-small
+    provider: fakellm
+    model: fake-small
+    locality: local
+    tier: weak
+    context_window: 32768
+    capabilities: [tools, json_mode]
+    pricing: { input_per_mtok: 0, output_per_mtok: 0 }
+  - name: cloud-strong
+    provider: fakellm
+    model: fake-strong
+    locality: cloud
+    tier: strong
+    context_window: 200000
+    capabilities: [tools, vision, json_mode]
+    pricing: { input_per_mtok: 1.25, output_per_mtok: 10.0 }
+  - name: local-embed
+    provider: fakellm
+    model: fake-embed
+    locality: local
+    capabilities: [embeddings]
+    context_window: 8191
+    pricing: { input_per_mtok: 0.02, output_per_mtok: 0 }
+routes:
+  # Chat route: weak tier first, fallback to the strong tier on a failed attempt or a cut stream.
+  - name: triage-auto
+    pool: [local-small, cloud-strong]
+    privacy: { mode: off }
+    strategy: none
+    default_tier: weak
+    on_tier_unavailable: escalate
+    fallback: [tier:strong, tier:weak]
+  - name: triage-embed
+    pool: [local-embed]
+    privacy: { mode: off }
+decisions:
+  buffer_size: 1000

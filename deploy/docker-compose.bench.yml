@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Benchmarks run the loupe binary natively; this stack only
+# provides the dependencies the load generator talks to.
+name: loupe-bench
+
+services:
+  fakellm:
+    image: ${RAYLD_FAKELLM_IMAGE:-ghcr.io/thnhdatle/fakellm:v0.1.0}
+    ports:
+      - "127.0.0.1:8090:8090"

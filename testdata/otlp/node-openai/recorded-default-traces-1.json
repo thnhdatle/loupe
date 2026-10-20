@@ -1,0 +1,212 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "host"
+            }
+          },
+          {
+            "key": "host.arch",
+            "value": {
+              "stringValue": "arm64"
+            }
+          },
+          {
+            "key": "host.id",
+            "value": {
+              "stringValue": "host-id"
+            }
+          },
+          {
+            "key": "process.pid",
+            "value": {
+              "stringValue": "1"
+            }
+          },
+          {
+            "key": "process.executable.name",
+            "value": {
+              "stringValue": "node"
+            }
+          },
+          {
+            "key": "process.executable.path",
+            "value": {
+              "stringValue": "/usr/local/bin/node"
+            }
+          },
+          {
+            "key": "process.command_args",
+            "value": {
+              "stringValue": "/repo/app"
+            }
+          },
+          {
+            "key": "process.runtime.version",
+            "value": {
+              "stringValue": "23.11.0"
+            }
+          },
+          {
+            "key": "process.runtime.name",
+            "value": {
+              "stringValue": "nodejs"
+            }
+          },
+          {
+            "key": "process.runtime.description",
+            "value": {
+              "stringValue": "Node.js"
+            }
+          },
+          {
+            "key": "process.command",
+            "value": {
+              "stringValue": "/repo/app"
+            }
+          },
+          {
+            "key": "process.owner",
+            "value": {
+              "stringValue": "user"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "example-node-openai-1792418269-47766"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "nodejs"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.12.0"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "@opentelemetry/instrumentation-openai",
+            "version": "0.21.0"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.system",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "server.address",
+                  "value": {
+                    "stringValue": "127.0.0.1"
+                  }
+                },
+                {
+                  "key": "server.port",
+                  "value": {
+                    "intValue": "18090"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "stop"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-81403283be9bf795"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "6"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418269880276792",
+              "flags": 257,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "chat gpt-4o-mini",
+              "parentSpanId": "0c1bd9ad3acb9a92",
+              "spanId": "74f3e9acebb70143",
+              "startTimeUnixNano": "1792418269810000000",
+              "status": {},
+              "traceId": "3b7d741ba66daf4f9c4d30023ea19e09"
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "example"
+          },
+          "spans": [
+            {
+              "endTimeUnixNano": "1792418269881842250",
+              "flags": 257,
+              "kind": "SPAN_KIND_INTERNAL",
+              "name": "node-openai-example",
+              "spanId": "0c1bd9ad3acb9a92",
+              "startTimeUnixNano": "1792418269806000000",
+              "status": {},
+              "traceId": "3b7d741ba66daf4f9c4d30023ea19e09"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

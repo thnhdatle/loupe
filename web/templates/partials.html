@@ -1,0 +1,16 @@
+{{define "rangepicker"}}
+<div class="range">
+  <nav aria-label="Time range">
+    {{range .Presets}}<a href="?range={{.Key}}"{{if .Current}} aria-current="true"{{end}}>{{.Label}}</a>{{end}}
+  </nav>
+  <form method="get" class="custom">
+    <label>From (UTC) <input type="datetime-local" name="from" value="{{.CustomFrom}}"></label>
+    <label>To (UTC) <input type="datetime-local" name="to" value="{{.CustomTo}}"></label>
+    <button type="submit">Apply</button>
+  </form>
+</div>
+{{end}}
+
+{{define "bar"}}<svg class="bar" viewBox="0 0 1000 12" preserveAspectRatio="none" role="presentation" focusable="false"><rect class="{{.Class}}" x="{{.X}}" y="0" width="{{.W}}" height="12"/></svg>{{end}}
+
+{{define "status"}}{{if .}}<span class="status status-error">error</span>{{else}}<span class="status status-ok">ok</span>{{end}}{{end}}

@@ -1,0 +1,29 @@
+{{define "content"}}
+<p class="crumbs"><a href="/sessions">Sessions</a> / <span class="mono">{{.Summary.ID}}</span></p>
+<h1>Session {{.Summary.ID}}</h1>
+<dl class="meta">
+  {{if .Summary.UserID}}<div><dt>User</dt><dd>{{.Summary.UserID}}</dd></div>{{end}}
+  <div><dt>First activity</dt><dd>{{ts .Summary.FirstNs}} UTC</dd></div>
+  <div><dt>Last activity</dt><dd>{{ts .Summary.LastNs}} UTC</dd></div>
+  <div><dt>Traces</dt><dd>{{num (int64 .Summary.TraceCount)}}</dd></div>
+  <div><dt>Tokens</dt><dd>{{num (tokens .Summary.Usage)}}</dd></div>
+  <div><dt>Cost</dt><dd>{{money .Summary.CostNanos}}</dd></div>
+</dl>
+<h2>Timeline</h2>
+{{if .Rows}}
+<section class="waterfall timeline" aria-label="Session timeline">
+  <ol>
+  {{range .Rows}}
+    <li>
+      <a class="wrow" href="/traces/{{.TraceID}}">
+        <span class="wname"><span class="wtext">{{ts .StartNs}}</span> <span class="wtext">{{if .RootName}}{{.RootName}}{{else}}(unnamed){{end}}</span>{{if .HasError}} <span class="status status-error">error</span>{{end}}</span>
+        <span class="wbar">{{template "bar" bar .X .W "bar-llm"}}</span>
+        <span class="wdur">{{dur .DurationNs}} / {{money .CostNanos}}</span>
+      </a>
+    </li>
+  {{end}}
+  </ol>
+</section>
+{{else}}<p class="notice">No traces on this page.</p>{{end}}
+{{if .NextHref}}<p class="pager"><a rel="next" href="{{.NextHref}}">Next</a></p>{{end}}
+{{end}}

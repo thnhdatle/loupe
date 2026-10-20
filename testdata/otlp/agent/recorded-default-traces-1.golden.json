@@ -1,0 +1,149 @@
+{
+  "spans": [
+    {
+      "name": "invoke_agent weather-agent",
+      "trace_id": "901ae41348d35af0c9d3a67778e04394",
+      "span_id": "6b78bba696e0a843",
+      "parent_span_id": "",
+      "kind": "agent",
+      "status": "unset",
+      "service": "example-agent-1792418270-47801",
+      "model": "",
+      "provider": "openai",
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": false,
+      "session_id": "example-agent-1792418270-47801",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "gen_ai.agent.name": "weather-agent",
+        "gen_ai.conversation.id": "example-agent-1792418270-47801",
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.provider.name": "openai"
+      },
+      "content": []
+    },
+    {
+      "name": "chat gpt-4o-mini",
+      "trace_id": "901ae41348d35af0c9d3a67778e04394",
+      "span_id": "f01cce638a710ef5",
+      "parent_span_id": "6b78bba696e0a843",
+      "kind": "llm",
+      "status": "unset",
+      "service": "example-agent-1792418270-47801",
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "usage": {
+        "input": 6,
+        "output": 7,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": true,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-4o-mini",
+        "gen_ai.response.finish_reasons": [
+          "tool_calls"
+        ],
+        "gen_ai.response.id": "chatcmpl-2bc5c340aef6b1b8",
+        "gen_ai.response.model": "gpt-4o-mini",
+        "gen_ai.usage.input_tokens": 6,
+        "gen_ai.usage.output_tokens": 7
+      },
+      "content": []
+    },
+    {
+      "name": "execute_tool lookup_weather",
+      "trace_id": "901ae41348d35af0c9d3a67778e04394",
+      "span_id": "27347de74cfe7c1d",
+      "parent_span_id": "6b78bba696e0a843",
+      "kind": "tool",
+      "status": "unset",
+      "service": "example-agent-1792418270-47801",
+      "model": "",
+      "provider": "",
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": false,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.call.id": "call_2bc5c340aef6b1b8",
+        "gen_ai.tool.name": "lookup_weather",
+        "gen_ai.tool.type": "function"
+      },
+      "content": [
+        {
+          "part": 0,
+          "source": "attribute",
+          "key": "gen_ai.tool.call.arguments",
+          "role": "tool",
+          "bytes": 41,
+          "body": "{\"input\": \"what is the weather in Paris\"}"
+        },
+        {
+          "part": 1,
+          "source": "attribute",
+          "key": "gen_ai.tool.call.result",
+          "role": "tool",
+          "bytes": 10,
+          "body": "sunny, 21C"
+        }
+      ]
+    },
+    {
+      "name": "chat gpt-4o-mini",
+      "trace_id": "901ae41348d35af0c9d3a67778e04394",
+      "span_id": "b0d22f8be5cb7c7e",
+      "parent_span_id": "6b78bba696e0a843",
+      "kind": "llm",
+      "status": "unset",
+      "service": "example-agent-1792418270-47801",
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "usage": {
+        "input": 8,
+        "output": 6,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": true,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-4o-mini",
+        "gen_ai.response.finish_reasons": [
+          "stop"
+        ],
+        "gen_ai.response.id": "chatcmpl-024189073f0e45f4",
+        "gen_ai.response.model": "gpt-4o-mini",
+        "gen_ai.usage.input_tokens": 8,
+        "gen_ai.usage.output_tokens": 6
+      },
+      "content": []
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "logs": [
+    {
+      "event_name": "gen_ai.client.inference.operation.details",
+      "trace_id": "901ae41348d35af0c9d3a67778e04394",
+      "span_id": "f01cce638a710ef5",
+      "kept": true,
+      "content": [
+        {
+          "part": 0,
+          "source": "log",
+          "key": "gen_ai.client.inference.operation.details",
+          "role": "",
+          "bytes": 588,
+          "body": "{\"gen_ai.input.messages\":[{\"parts\":[{\"content\":\"what is the weather in Paris\",\"type\":\"text\"}],\"role\":\"user\"}],\"gen_ai.operation.name\":\"chat\",\"gen_ai.output.messages\":[{\"finish_reason\":\"tool_calls\",\"parts\":[{\"arguments\":{\"input\":\"what is the weather in Paris\"},\"id\":\"call_2bc5c340aef6b1b8\",\"name\":\"lookup_weather\",\"type\":\"tool_call\"}],\"role\":\"assistant\"}],\"gen_ai.request.model\":\"gpt-4o-mini\",\"gen_ai.response.finish_reasons\":[\"tool_calls\"],\"gen_ai.response.id\":\"chatcmpl-2bc5c340aef6b1b8\",\"gen_ai.response.model\":\"gpt-4o-mini\",\"gen_ai.usage.input_tokens\":6,\"gen_ai.usage.output_tokens\":7}",
+          "time_ns": 1792418270892964000
+        }
+      ]
+    },
+    {
+      "event_name": "gen_ai.client.inference.operation.details",
+      "trace_id": "901ae41348d35af0c9d3a67778e04394",
+      "span_id": "b0d22f8be5cb7c7e",
+      "kept": true,
+      "content": [
+        {
+          "part": 0,
+          "source": "log",
+          "key": "gen_ai.client.inference.operation.details",
+          "role": "",
+          "bytes": 783,
+          "body": "{\"gen_ai.input.messages\":[{\"parts\":[{\"content\":\"what is the weather in Paris\",\"type\":\"text\"}],\"role\":\"user\"},{\"parts\":[{\"arguments\":{\"input\":\"what is the weather in Paris\"},\"id\":\"call_2bc5c340aef6b1b8\",\"name\":\"lookup_weather\",\"type\":\"tool_call\"}],\"role\":\"assistant\"},{\"parts\":[{\"id\":\"call_2bc5c340aef6b1b8\",\"response\":\"sunny, 21C\",\"type\":\"tool_call_response\"}],\"role\":\"tool\"}],\"gen_ai.operation.name\":\"chat\",\"gen_ai.output.messages\":[{\"finish_reason\":\"stop\",\"parts\":[{\"content\":\"lumen juniper ember bravo meadow flint\",\"type\":\"text\"}],\"role\":\"assistant\"}],\"gen_ai.request.model\":\"gpt-4o-mini\",\"gen_ai.response.finish_reasons\":[\"stop\"],\"gen_ai.response.id\":\"chatcmpl-024189073f0e45f4\",\"gen_ai.response.model\":\"gpt-4o-mini\",\"gen_ai.usage.input_tokens\":8,\"gen_ai.usage.output_tokens\":6}",
+          "time_ns": 1792418270897280000
+        }
+      ]
+    }
+  ]
+}

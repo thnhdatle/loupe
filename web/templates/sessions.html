@@ -1,0 +1,27 @@
+{{define "content"}}
+<h1>Sessions</h1>
+{{template "rangepicker" .Range}}
+{{if .Rows}}
+<table class="data">
+  <thead><tr>
+    <th scope="col">Session</th><th scope="col">User</th><th scope="col">First activity (UTC)</th>
+    <th scope="col">Last activity (UTC)</th><th scope="col" class="num">Traces</th>
+    <th scope="col" class="num">Tokens</th><th scope="col" class="num">Cost</th>
+  </tr></thead>
+  <tbody>
+  {{range .Rows}}
+  <tr>
+    <th scope="row"><a href="/sessions/{{.ID}}">{{.ID}}</a></th>
+    <td>{{.UserID}}</td>
+    <td>{{ts .FirstNs}}</td>
+    <td>{{ts .LastNs}}</td>
+    <td class="num">{{num (int64 .TraceCount)}}</td>
+    <td class="num">{{num (tokens .Usage)}}</td>
+    <td class="num">{{money .CostNanos}}</td>
+  </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}<p class="notice">No sessions in this range.</p>{{end}}
+{{if .NextHref}}<p class="pager"><a rel="next" href="{{.NextHref}}">Next</a></p>{{end}}
+{{end}}

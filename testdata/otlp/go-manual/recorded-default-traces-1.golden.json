@@ -1,0 +1,80 @@
+{
+  "spans": [
+    {
+      "name": "go-manual-example",
+      "trace_id": "12b9329e9110f6f92ea78ae6d674ac2f",
+      "span_id": "2f5e6ee64c206751",
+      "parent_span_id": "",
+      "kind": "other",
+      "status": "unset",
+      "service": "example-go-manual-1792418270-47780",
+      "model": "",
+      "provider": "",
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": false,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {},
+      "content": []
+    },
+    {
+      "name": "chat gpt-4o-mini",
+      "trace_id": "12b9329e9110f6f92ea78ae6d674ac2f",
+      "span_id": "219001e3fe5f8766",
+      "parent_span_id": "2f5e6ee64c206751",
+      "kind": "llm",
+      "status": "unset",
+      "service": "example-go-manual-1792418270-47780",
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "usage": {
+        "input": 4,
+        "output": 6,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": true,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-4o-mini",
+        "gen_ai.response.finish_reasons": [
+          "stop"
+        ],
+        "gen_ai.response.id": "chatcmpl-5dbba79a81c2f2de",
+        "gen_ai.response.model": "gpt-4o-mini",
+        "gen_ai.usage.input_tokens": 4,
+        "gen_ai.usage.output_tokens": 6
+      },
+      "content": [
+        {
+          "part": 0,
+          "source": "attribute",
+          "key": "gen_ai.input.messages",
+          "role": "input",
+          "bytes": 74,
+          "body": "[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"content\":\"say hello to loupe\"}]}]"
+        },
+        {
+          "part": 1,
+          "source": "attribute",
+          "key": "gen_ai.output.messages",
+          "role": "output",
+          "bytes": 125,
+          "body": "[{\"role\":\"assistant\",\"finish_reason\":\"stop\",\"parts\":[{\"type\":\"text\",\"content\":\"prairie bravo lumen prairie prairie cedar\"}]}]"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: Apache-2.0
+# Every Loupe option with its default. Env override: LOUPE_<PATH_IN_UPPER_SNAKE>
+# (for example LOUPE_RECEIVER_GRPC_LISTEN). Secrets only via *_file keys.
+# Durations: Go strings plus a "d" suffix (30s, 14d). Sizes: bytes with suffix (64MiB).
+
+receiver:
+  grpc:
+    listen: "127.0.0.1:4317"
+    tls: { cert_file: "", key_file: "" }   # both set or both empty
+  http:
+    listen: "127.0.0.1:4318"
+    tls: { cert_file: "", key_file: "" }
+  tokens_file: ""                # one token per line
+  allow_unauthenticated: false   # required for non-loopback without tokens
+  max_request_bytes: 16MiB       # after decompression
+  max_spans_per_request: 10000
+  max_attribute_bytes: 64KiB
+  max_inflight_bytes: 64MiB
+ui:
+  listen: "127.0.0.1:3000"       # dashboard + REST API /v1
+  tls: { cert_file: "", key_file: "" }
+  allow_unauthenticated: false
+  session_ttl: 12h
+  secure_cookie: false           # forced on when ui.tls is set
+api:
+  token_file: ""
+  generate_token: false          # image: true
+admin:
+  listen: "127.0.0.1:9092"       # /healthz, /readyz, /metrics, pprof
+debug:
+  pprof: false
+storage:
+  path: "./loupe.db"             # image: /data/loupe.db
+  backup_before_migrate: true
+runtime:
+  memory_limit: 640MiB           # GOMEMLIMIT unless set in env; 0 = off
+ingest:
+  queue_spans: 100000
+  queue_bytes: 256MiB
+  overflow: reject               # reject | drop
+  sync_ack: false
+writer:
+  batch_spans: 2000
+  batch_interval: 200ms
+content:
+  capture: off                   # off | on | metadata_only
+  max_bytes: 32KiB
+  redact:
+    - email
+    - api_key
+    # - { name: ticket, pattern: "TCK-[0-9]+", replacement: "[TICKET]" }
+retention:
+  spans: 14d
+  content: 7d
+  rollups_hourly: 35d
+  rollups_daily: 400d
+  orphan_content: 1h
+  max_db_bytes: 10GiB            # 0 = off
+  interval: 10m
+  batch: 5000
+pricing:
+  file: ""                       # user price table merged over the embedded default
+self_tracing:
+  endpoint: ""                   # not implemented in v0.1; the value is ignored
+log:
+  level: info
+  format: json                   # json | text
+  access_log: false
+shutdown_timeout: 30s

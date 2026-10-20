@@ -1,0 +1,38 @@
+{
+  "spans": [
+    {
+      "name": "chat claude-sonnet-4",
+      "trace_id": "3df7651916cd43dd8448eb211c80319f",
+      "span_id": "e0ad6b7169203334",
+      "parent_span_id": "",
+      "kind": "llm",
+      "status": "ok",
+      "service": "handwritten-go-manual",
+      "model": "claude-sonnet-4-20250514",
+      "provider": "anthropic",
+      "usage": {
+        "input": 1200,
+        "output": 540,
+        "cache_read": 800,
+        "cache_write": 100,
+        "reasoning": 320
+      },
+      "has_usage": true,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-4",
+        "gen_ai.response.model": "claude-sonnet-4-20250514",
+        "gen_ai.usage.cache_creation.input_tokens": 100,
+        "gen_ai.usage.cache_read.input_tokens": 800,
+        "gen_ai.usage.input_tokens": 1200,
+        "gen_ai.usage.output_tokens": 540,
+        "gen_ai.usage.reasoning.output_tokens": 320
+      },
+      "content": []
+    }
+  ]
+}

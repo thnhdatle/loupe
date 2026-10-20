@@ -1,0 +1,242 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "handwritten-agent"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "example"
+          },
+          "spans": [
+            {
+              "traceId": "4ef7651916cd43dd8448eb211c803190",
+              "spanId": "f1ad6b7169203335",
+              "name": "invoke_agent weather-agent",
+              "kind": "SPAN_KIND_CLIENT",
+              "startTimeUnixNano": "1792420000000000000",
+              "endTimeUnixNano": "1792420005000000000",
+              "status": {
+                "code": "STATUS_CODE_OK"
+              },
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "invoke_agent"
+                  }
+                },
+                {
+                  "key": "gen_ai.agent.name",
+                  "value": {
+                    "stringValue": "weather-agent"
+                  }
+                },
+                {
+                  "key": "gen_ai.conversation.id",
+                  "value": {
+                    "stringValue": "handwritten-session-1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "4ef7651916cd43dd8448eb211c803190",
+              "spanId": "f2ad6b7169203336",
+              "name": "chat claude-sonnet-4",
+              "kind": "SPAN_KIND_CLIENT",
+              "startTimeUnixNano": "1792420001000000000",
+              "endTimeUnixNano": "1792420002000000000",
+              "status": {
+                "code": "STATUS_CODE_OK"
+              },
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "anthropic"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "claude-sonnet-4"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "claude-sonnet-4-20250514"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tool_calls"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "900"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "60"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.cache_creation.input_tokens",
+                  "value": {
+                    "intValue": "700"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.reasoning.output_tokens",
+                  "value": {
+                    "intValue": "20"
+                  }
+                }
+              ],
+              "parentSpanId": "f1ad6b7169203335"
+            },
+            {
+              "traceId": "4ef7651916cd43dd8448eb211c803190",
+              "spanId": "f3ad6b7169203337",
+              "name": "execute_tool lookup_weather",
+              "kind": "SPAN_KIND_INTERNAL",
+              "startTimeUnixNano": "1792420002000000000",
+              "endTimeUnixNano": "1792420003000000000",
+              "status": {
+                "code": "STATUS_CODE_OK"
+              },
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "lookup_weather"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.call.id",
+                  "value": {
+                    "stringValue": "call_1"
+                  }
+                }
+              ],
+              "parentSpanId": "f1ad6b7169203335"
+            },
+            {
+              "traceId": "4ef7651916cd43dd8448eb211c803190",
+              "spanId": "f4ad6b7169203338",
+              "name": "chat claude-sonnet-4",
+              "kind": "SPAN_KIND_CLIENT",
+              "startTimeUnixNano": "1792420003000000000",
+              "endTimeUnixNano": "1792420004000000000",
+              "status": {
+                "code": "STATUS_CODE_OK"
+              },
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "anthropic"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "claude-sonnet-4"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "claude-sonnet-4-20250514"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "stop"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "1000"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "80"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.cache_read.input_tokens",
+                  "value": {
+                    "intValue": "700"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.reasoning.output_tokens",
+                  "value": {
+                    "intValue": "30"
+                  }
+                }
+              ],
+              "parentSpanId": "f1ad6b7169203335"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
