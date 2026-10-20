@@ -1,0 +1,9 @@
+{{define "content"}}
+<h1>Sign in</h1>
+<p>Enter an API token from <code>api.token_file</code>.</p>
+{{if .Message}}<p class="notice" role="alert">{{.Message}}</p>{{end}}
+<form method="post" action="/login" class="login">
+  <label>API token <input type="password" name="token" autocomplete="current-password" required autofocus></label>
+  <button type="submit">Sign in</button>
+</form>
+{{end}}

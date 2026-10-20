@@ -1,0 +1,147 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.45.1"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "7cd19cbb-3cbe-4b30-9ee5-6fb16608a8f2"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "example-python-openai-1792418268-47729"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0",
+          "scope": {
+            "name": "opentelemetry.util.genai.handler",
+            "version": "1.1b0"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "stop"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-dc84ba057abba3d6"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "6"
+                  }
+                },
+                {
+                  "key": "gen_ai.input.messages",
+                  "value": {
+                    "stringValue": "[{\"role\":\"user\",\"parts\":[{\"content\":\"say hello to loupe\",\"type\":\"text\"}]}]"
+                  }
+                },
+                {
+                  "key": "gen_ai.output.messages",
+                  "value": {
+                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"content\":\"prairie bravo lumen prairie prairie cedar\",\"type\":\"text\"}],\"finish_reason\":\"stop\"}]"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418268410373000",
+              "flags": 256,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "chat gpt-4o-mini",
+              "parentSpanId": "9e6e398f7332479e",
+              "spanId": "1e41583cb5c2df2e",
+              "startTimeUnixNano": "1792418268396671000",
+              "status": {},
+              "traceId": "e9613b01e932e8e4256f9779c53a8c1f"
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "example"
+          },
+          "spans": [
+            {
+              "endTimeUnixNano": "1792418268410428000",
+              "flags": 256,
+              "kind": "SPAN_KIND_INTERNAL",
+              "name": "python-openai-example",
+              "spanId": "9e6e398f7332479e",
+              "startTimeUnixNano": "1792418268396443000",
+              "status": {},
+              "traceId": "e9613b01e932e8e4256f9779c53a8c1f"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

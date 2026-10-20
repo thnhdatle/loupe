@@ -1,0 +1,32 @@
+{
+  "resource": {"service.name": "agent-app"},
+  "trace_id": "a1a2a3a4a5a6a7a8a9aaabacadaeafb0",
+  "span_id": "b1b2b3b4b5b6b7b8",
+  "name": "ChatCompletion",
+  "span_kind": 1,
+  "start_ns": 2000000000,
+  "end_ns": 2800000000,
+  "status_code": 1,
+  "attributes": {
+    "openinference.span.kind": "LLM",
+    "llm.provider": "openai",
+    "llm.system": "openai",
+    "llm.model_name": "gpt-5",
+    "llm.token_count.prompt": 500,
+    "llm.token_count.completion": 200,
+    "llm.token_count.total": 700,
+    "llm.token_count.prompt_details.cache_read": 300,
+    "llm.token_count.prompt_details.cache_write": 50,
+    "llm.token_count.completion_details.reasoning": 90,
+    "session.id": "sess-9",
+    "input.value": "what is 2+2",
+    "output.value": "4",
+    "llm.input_messages.0.message.role": "system",
+    "llm.input_messages.0.message.content": "be brief",
+    "llm.input_messages.1.message.role": "user",
+    "llm.input_messages.1.message.content": "what is 2+2",
+    "llm.output_messages.0.message.role": "assistant",
+    "llm.output_messages.0.message.content": "4",
+    "llm.invocation_parameters": "{\"temperature\":0}"
+  }
+}

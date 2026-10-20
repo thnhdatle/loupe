@@ -1,0 +1,25 @@
+{
+  "resource": {"service.name": "legacy-app"},
+  "trace_id": "c1c2c3c4c5c6c7c8c9cacbcccdcecfd0",
+  "span_id": "d1d2d3d4d5d6d7d8",
+  "name": "openai.chat",
+  "span_kind": 3,
+  "start_ns": 7000000000,
+  "end_ns": 7400000000,
+  "status_code": 0,
+  "attributes": {
+    "llm.request.model": "gpt-4o",
+    "llm.response.model": "gpt-4o-2024-08-06",
+    "llm.usage.prompt_tokens": 90,
+    "llm.usage.completion_tokens": 30,
+    "llm.usage.total_tokens": 120,
+    "gen_ai.usage.cache_read_input_tokens": 40,
+    "gen_ai.usage.cache_creation_input_tokens": 10,
+    "gen_ai.usage.reasoning.output_tokens": 5,
+    "gen_ai.prompt.0.role": "user",
+    "gen_ai.prompt.0.content": "ping",
+    "gen_ai.completion.0.role": "assistant",
+    "gen_ai.completion.0.content": "pong",
+    "enduser.id": "e-7"
+  }
+}

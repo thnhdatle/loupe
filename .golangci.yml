@@ -1,0 +1,124 @@
+# golangci-lint v2.14.0 (pinned; CI installs the same version)
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  build-tags:
+    - integration
+    - acceptance
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - gosec
+    - revive
+    - gocritic
+    - errorlint
+    - wrapcheck
+    - bodyclose
+    - noctx
+    - contextcheck
+    - containedctx
+    - sqlclosecheck
+    - rowserrcheck
+    - nilerr
+    - nilnil
+    - exhaustive
+    - forcetypeassert
+    - misspell
+    - unparam
+    - unconvert
+    - prealloc
+    - predeclared
+    - funlen
+    - gocyclo
+    - gocognit
+    - nestif
+    - lll
+    - godot
+    - dupl
+    - goconst
+    - depguard
+    - testifylint
+    - thelper
+    - tparallel
+    - paralleltest
+    - usestdlibvars
+    - perfsprint
+    - nolintlint
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    funlen:
+      statements: 60
+      lines: -1
+    gocyclo:
+      min-complexity: 15
+    gocognit:
+      min-complexity: 20
+    nestif:
+      min-complexity: 4
+    lll:
+      line-length: 120
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: var-naming
+        - name: error-strings
+        - name: error-naming
+        - name: context-as-argument
+        - name: argument-limit
+          arguments: [5]
+    depguard:
+      rules:
+        domain:
+          files: ["**/internal/domain/**", "!$test"]
+          allow:
+            - $gostd
+            - github.com/thnhdatle/loupe/internal/domain
+        app:
+          files: ["**/internal/app/**", "!$test"]
+          allow:
+            - $gostd
+            - github.com/thnhdatle/loupe/internal/domain
+            - github.com/thnhdatle/loupe/internal/platform
+  exclusions:
+    generated: lax
+    rules:
+      # wrapcheck applies to adapters only.
+      - path-except: internal/adapter/
+        linters:
+          - wrapcheck
+      # Test files may relax these four linters only.
+      - path: _test\.go
+        linters:
+          - funlen
+          - dupl
+          - goconst
+          - gosec
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/thnhdatle/loupe
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

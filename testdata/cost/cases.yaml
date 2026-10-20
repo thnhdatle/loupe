@@ -1,0 +1,1951 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Cost fixture: 200 cases with hand-checked expected cost_nanos.
+# Prices are USD per million tokens written as YAML scalar text and parsed as exact decimals
+# (never float64). Expected values were computed independently of the Go code with Python
+# Decimal arithmetic; each explanation shows the selected entry and the cost arithmetic of docs/guides/pricing.md:
+#   count*price(term) in nano-USD per Mtok, numerator, numerator/1e6, half-up result.
+# Span starts are RFC 3339 UTC; an effective_from is inclusive.
+# kind: span  -> one span priced by the cost formula (checked by internal/domain/cost).
+# kind: trace -> trace totals after the usage-duplicate rule (checked by acceptance LPE-05).
+#   cost_nanos sums counted (non-duplicate) spans, null when none is priced; unpriced_spans
+#   counts counted spans with tokens and no cost; calls counts counted llm/embedding spans.
+prices:
+  default:
+    - id: d-gpt4o-v1
+      match: exact
+      provider: openai
+      model: gpt-4o
+      input_per_mtok: 5.00
+      output_per_mtok: 15.00
+      effective_from: 2024-05-13T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-gpt4o-v2
+      match: exact
+      provider: openai
+      model: gpt-4o
+      input_per_mtok: 2.50
+      output_per_mtok: 10.00
+      cache_read_per_mtok: 1.25
+      effective_from: 2024-10-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-gpt4o-mini
+      match: exact
+      provider: openai
+      model: gpt-4o-mini
+      input_per_mtok: 0.15
+      output_per_mtok: 0.60
+      cache_read_per_mtok: 0.075
+      effective_from: 2024-07-18T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-gpt4o-glob
+      match: glob
+      model: "gpt-4o*"
+      input_per_mtok: 2.50
+      output_per_mtok: 10.00
+      cache_read_per_mtok: 1.25
+      effective_from: 2024-05-13T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-gpt4o-mini-glob
+      match: glob
+      model: "gpt-4o-mini*"
+      input_per_mtok: 0.15
+      output_per_mtok: 0.60
+      effective_from: 2024-07-18T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-o3-mini
+      match: exact
+      provider: openai
+      model: o3-mini
+      input_per_mtok: 1.10
+      output_per_mtok: 4.40
+      cache_read_per_mtok: 0.55
+      effective_from: 2025-01-31T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-gpt41
+      match: exact
+      provider: openai
+      model: gpt-4.1
+      input_per_mtok: 2.00
+      output_per_mtok: 8.00
+      cache_read_per_mtok: 0.50
+      effective_from: 2025-04-14T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-gpt4-glob
+      match: glob
+      provider: openai
+      model: "gpt-4*"
+      input_per_mtok: 30
+      output_per_mtok: 60
+      effective_from: 2023-03-14T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-sonnet4
+      match: exact
+      provider: anthropic
+      model: claude-sonnet-4
+      input_per_mtok: 3
+      output_per_mtok: 15
+      cache_read_per_mtok: 0.30
+      cache_write_per_mtok: 3.75
+      effective_from: 2025-05-22T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://www.anthropic.com/pricing"
+    - id: d-claude-anthropic
+      match: glob
+      provider: anthropic
+      model: "claude-*"
+      input_per_mtok: 3
+      output_per_mtok: 15
+      cache_read_per_mtok: 0.30
+      cache_write_per_mtok: 3.75
+      effective_from: 2024-03-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://www.anthropic.com/pricing"
+    - id: d-claude-any
+      match: glob
+      model: "claude-*"
+      input_per_mtok: 3.30
+      output_per_mtok: 16.50
+      cache_read_per_mtok: 0.33
+      cache_write_per_mtok: 4.125
+      effective_from: 2024-03-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: d-haiku35
+      match: glob
+      provider: anthropic
+      model: "claude-3-5-haiku*"
+      input_per_mtok: 0.80
+      output_per_mtok: 4.00
+      cache_read_per_mtok: 0.08
+      cache_write_per_mtok: 1.00
+      effective_from: 2024-11-04T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://www.anthropic.com/pricing"
+    - id: d-gemini25-flash-v1
+      match: exact
+      provider: google
+      model: gemini-2.5-flash
+      input_per_mtok: 0.15
+      output_per_mtok: 0.60
+      cache_read_per_mtok: 0.0375
+      reasoning_per_mtok: 3.50
+      effective_from: 2025-04-17T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://ai.google.dev/pricing"
+    - id: d-gemini25-flash-v2
+      match: exact
+      provider: google
+      model: gemini-2.5-flash
+      input_per_mtok: 0.30
+      output_per_mtok: 2.50
+      cache_read_per_mtok: 0.075
+      effective_from: 2025-06-17T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://ai.google.dev/pricing"
+    - id: d-emb3-small
+      match: exact
+      provider: openai
+      model: text-embedding-3-small
+      input_per_mtok: 0.02
+      output_per_mtok: 0
+      effective_from: 2024-01-25T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-emb3-large
+      match: exact
+      provider: openai
+      model: text-embedding-3-large
+      input_per_mtok: 0.13
+      output_per_mtok: 0
+      effective_from: 2024-01-25T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://openai.com/api/pricing"
+    - id: d-llama-any
+      match: exact
+      model: llama-3.1-8b-instant
+      input_per_mtok: 0.05
+      output_per_mtok: 0.08
+      effective_from: 2024-07-23T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: d-llama-groq
+      match: exact
+      provider: groq
+      model: llama-3.1-8b-instant
+      input_per_mtok: 0.06
+      output_per_mtok: 0.09
+      effective_from: 2024-07-23T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://groq.com/pricing"
+    - id: d-mistral-large
+      match: glob
+      provider: mistral
+      model: "mistral-large-*"
+      input_per_mtok: 2
+      output_per_mtok: 6
+      effective_from: 2024-11-18T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://mistral.ai/pricing"
+    - id: d-qwen-any
+      match: glob
+      model: "qwen?-*"
+      input_per_mtok: 0.10
+      output_per_mtok: 0.30
+      effective_from: 2025-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: d-qwen3
+      match: glob
+      model: "qwen3-*"
+      input_per_mtok: 0.18
+      output_per_mtok: 0.70
+      effective_from: 2025-04-29T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: d-deepseek-r1
+      match: exact
+      provider: deepseek
+      model: deepseek-reasoner
+      input_per_mtok: 0.55
+      output_per_mtok: 2.19
+      cache_read_per_mtok: 0.14
+      effective_from: 2025-01-20T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "https://api-docs.deepseek.com/quick_start/pricing"
+    - id: d-mix-star-b
+      match: glob
+      model: "mix-*-b"
+      input_per_mtok: 1
+      output_per_mtok: 2
+      effective_from: 2025-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: d-mix-a-star
+      match: glob
+      model: "mix-a-*"
+      input_per_mtok: 7
+      output_per_mtok: 9
+      effective_from: 2025-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+  user:
+    - id: u-gpt4o-mini
+      match: exact
+      provider: openai
+      model: gpt-4o-mini
+      input_per_mtok: 0.12
+      output_per_mtok: 0.48
+      cache_read_per_mtok: 0.06
+      effective_from: 2025-03-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "contract 2025"
+    - id: u-sonnet-glob
+      match: glob
+      provider: anthropic
+      model: "claude-sonnet-*"
+      input_per_mtok: 2.70
+      output_per_mtok: 13.50
+      cache_read_per_mtok: 0.27
+      cache_write_per_mtok: 3.375
+      effective_from: 2025-07-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "contract 2025"
+    - id: u-tiny-half
+      match: exact
+      model: tiny-half
+      input_per_mtok: 0.0000005
+      output_per_mtok: 0.0000015
+      effective_from: 2025-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: u-nano
+      match: exact
+      model: nano-model
+      input_per_mtok: 0.000000001
+      output_per_mtok: 0.000000003
+      effective_from: 2025-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: u-ft-mini
+      match: glob
+      provider: openai
+      model: "ft:gpt-4o-mini:*"
+      input_per_mtok: 0.30
+      output_per_mtok: 1.20
+      cache_read_per_mtok: 0.15
+      effective_from: 2024-08-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: u-local
+      match: glob
+      model: "local/*"
+      input_per_mtok: 0
+      output_per_mtok: 0
+      effective_from: 2020-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: u-big
+      match: exact
+      model: big-model
+      input_per_mtok: 75.000000000
+      output_per_mtok: 150
+      effective_from: 2025-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: u-max-price
+      match: exact
+      model: max-price
+      input_per_mtok: 9223372036.854775807
+      output_per_mtok: 9223372036.854775807
+      effective_from: 2025-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: u-gpt41
+      match: exact
+      model: gpt-4.1
+      input_per_mtok: 1.80
+      output_per_mtok: 7.20
+      cache_read_per_mtok: 0.45
+      effective_from: 2025-06-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+    - id: u-reason
+      match: exact
+      model: reason-x
+      input_per_mtok: 1.000000001
+      output_per_mtok: 2.5
+      cache_read_per_mtok: 0.333333333
+      cache_write_per_mtok: 1.250000001
+      reasoning_per_mtok: 7.777777777
+      effective_from: 2025-01-01T00:00:00Z
+      as_of: 2026-10-01T00:00:00Z
+      source: "loupe test fixture"
+cases:
+  - id: s001
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "exact gpt-4o latest version; d-gpt4o-v2: 1000*2500000000(in) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s002
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-10-01T00:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "boundary: exactly v2 effective_from; d-gpt4o-v2: 1000*2500000000(in) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s003
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-09-30T23:59:59.999999999Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 8000000, price: d-gpt4o-v1, usage_clamped: false}
+    explanation: "boundary: 1ns before v2 uses v1; d-gpt4o-v1: 1000*5000000000(in) + 200*15000000000(out) = 8000000000000; /1e6 = 8000000 -> 8000000"
+  - id: s004
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-05-13T00:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 8000000, price: d-gpt4o-v1, usage_clamped: false}
+    explanation: "boundary: exactly v1 effective_from; d-gpt4o-v1: 1000*5000000000(in) + 200*15000000000(out) = 8000000000000; /1e6 = 8000000 -> 8000000"
+  - id: s005
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-05-12T23:59:59Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 42000000, price: d-gpt4-glob, usage_clamped: false}
+    explanation: "before any gpt-4o version: openai gpt-4* glob (legacy gpt-4 price) applies; d-gpt4-glob: 1000*30000000000(in) + 200*60000000000(out) = 42000000000000; /1e6 = 42000000 -> 42000000"
+  - id: s006
+    kind: span
+    provider: openai
+    model: gpt-4o-2024-08-06
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 400, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4000000, price: d-gpt4o-glob, usage_clamped: false}
+    explanation: "dated snapshot matches glob gpt-4o*, cache read 1.25; d-gpt4o-glob: 600*2500000000(in) + 400*1250000000(cr) + 200*10000000000(out) = 4000000000000; /1e6 = 4000000 -> 4000000"
+  - id: s007
+    kind: span
+    provider: openai
+    model: gpt-4o-mini-2024-07-18
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 5000, output: 700, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1170000, price: d-gpt4o-mini-glob, usage_clamped: false}
+    explanation: "glob gpt-4o-mini* (11 literals) beats gpt-4o* (6); d-gpt4o-mini-glob: 5000*150000000(in) + 700*600000000(out) = 1170000000000; /1e6 = 1170000 -> 1170000"
+  - id: s008
+    kind: span
+    provider: azure
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-glob, usage_clamped: false}
+    explanation: "provider azure: openai exact skipped, provider-less glob applies; d-gpt4o-glob: 1000*2500000000(in) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s009
+    kind: span
+    provider: OpenAI
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "provider compared case-insensitively; d-gpt4o-v2: 1000*2500000000(in) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s010
+    kind: span
+    provider: openai
+    model: GPT-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: model compared case-sensitively: GPT-4o unpriced"
+  - id: s011
+    kind: span
+    provider: openai
+    model: gpt-4-turbo
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 42000000, price: d-gpt4-glob, usage_clamped: false}
+    explanation: "openai glob gpt-4* (5 literals); d-gpt4-glob: 1000*30000000000(in) + 200*60000000000(out) = 42000000000000; /1e6 = 42000000 -> 42000000"
+  - id: s012
+    kind: span
+    provider: azure
+    model: gpt-4-turbo
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: gpt-4* is openai-only; azure unpriced"
+  - id: s013
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2025-05-01T00:00:00Z
+    usage: {input: 2000, output: 300, cache_read: 1000, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4900000, price: d-gpt41, usage_clamped: false}
+    explanation: "default exact before user series starts; d-gpt41: 1000*2000000000(in) + 1000*500000000(cr) + 300*8000000000(out) = 4900000000000; /1e6 = 4900000 -> 4900000"
+  - id: s014
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2025-06-01T00:00:00Z
+    usage: {input: 2000, output: 300, cache_read: 1000, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4410000, price: u-gpt41, usage_clamped: false}
+    explanation: "user provider-less exact beats default provider-specific exact; u-gpt41: 1000*1800000000(in) + 1000*450000000(cr) + 300*7200000000(out) = 4410000000000; /1e6 = 4410000 -> 4410000"
+  - id: s015
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2025-04-13T23:59:59Z
+    usage: {input: 2000, output: 300, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 78000000, price: d-gpt4-glob, usage_clamped: false}
+    explanation: "exact gpt-4.1 not yet effective: glob gpt-4* applies; d-gpt4-glob: 2000*30000000000(in) + 300*60000000000(out) = 78000000000000; /1e6 = 78000000 -> 78000000"
+  - id: s016
+    kind: span
+    provider: groq
+    model: llama-3.1-8b-instant
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 10000, output: 2000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 780000, price: d-llama-groq, usage_clamped: false}
+    explanation: "provider-specific exact beats provider-less exact; d-llama-groq: 10000*60000000(in) + 2000*90000000(out) = 780000000000; /1e6 = 780000 -> 780000"
+  - id: s017
+    kind: span
+    provider: together
+    model: llama-3.1-8b-instant
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 10000, output: 2000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 660000, price: d-llama-any, usage_clamped: false}
+    explanation: "other provider: provider-less exact; d-llama-any: 10000*50000000(in) + 2000*80000000(out) = 660000000000; /1e6 = 660000 -> 660000"
+  - id: s018
+    kind: span
+    provider: ""
+    model: llama-3.1-8b-instant
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 10000, output: 2000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 660000, price: d-llama-any, usage_clamped: false}
+    explanation: "no provider: provider-less exact; d-llama-any: 10000*50000000(in) + 2000*80000000(out) = 660000000000; /1e6 = 660000 -> 660000"
+  - id: s019
+    kind: span
+    provider: ""
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-glob, usage_clamped: false}
+    explanation: "no provider: openai exact skipped, provider-less glob; d-gpt4o-glob: 1000*2500000000(in) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s020
+    kind: span
+    provider: anthropic
+    model: claude-3-opus
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 100, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-claude-anthropic, usage_clamped: false}
+    explanation: "provider-specific glob beats provider-less glob of equal literals; d-claude-anthropic: 1000*3000000000(in) + 100*15000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s021
+    kind: span
+    provider: aws.bedrock
+    model: claude-3-opus
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 100, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4950000, price: d-claude-any, usage_clamped: false}
+    explanation: "bedrock: only the provider-less claude-* glob matches; d-claude-any: 1000*3300000000(in) + 100*16500000000(out) = 4950000000000; /1e6 = 4950000 -> 4950000"
+  - id: s022
+    kind: span
+    provider: anthropic
+    model: claude-3-5-haiku-20241022
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 4000, output: 500, cache_read: 1000, cache_write: 2000, reasoning: 0}
+    expected: {cost_nanos: 4880000, price: d-haiku35, usage_clamped: false}
+    explanation: "longer glob claude-3-5-haiku* wins; d-haiku35: 1000*800000000(in) + 1000*80000000(cr) + 2000*1000000000(cw) + 500*4000000000(out) = 4880000000000; /1e6 = 4880000 -> 4880000"
+  - id: s023
+    kind: span
+    provider: anthropic
+    model: claude-3-5-haiku-20241022
+    start: 2024-11-03T00:00:00Z
+    usage: {input: 4000, output: 500, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 19500000, price: d-claude-anthropic, usage_clamped: false}
+    explanation: "haiku glob not yet effective: claude-* applies; d-claude-anthropic: 4000*3000000000(in) + 500*15000000000(out) = 19500000000000; /1e6 = 19500000 -> 19500000"
+  - id: s024
+    kind: span
+    provider: mistral
+    model: mistral-large-2411
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 3000, output: 600, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 9600000, price: d-mistral-large, usage_clamped: false}
+    explanation: "mistral glob; d-mistral-large: 3000*2000000000(in) + 600*6000000000(out) = 9600000000000; /1e6 = 9600000 -> 9600000"
+  - id: s025
+    kind: span
+    provider: mistralai
+    model: mistral-large-2411
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 3000, output: 600, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: provider mismatch for provider-specific glob"
+  - id: s026
+    kind: span
+    provider: ""
+    model: qwen3-8b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 8000, output: 1200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 2280000, price: d-qwen3, usage_clamped: false}
+    explanation: "qwen3-* (6 literals) beats qwen?-* (5); d-qwen3: 8000*180000000(in) + 1200*700000000(out) = 2280000000000; /1e6 = 2280000 -> 2280000"
+  - id: s027
+    kind: span
+    provider: ""
+    model: qwen3-8b
+    start: 2025-04-28T23:59:59Z
+    usage: {input: 8000, output: 1200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1160000, price: d-qwen-any, usage_clamped: false}
+    explanation: "qwen3-* not yet effective: qwen?-*; d-qwen-any: 8000*100000000(in) + 1200*300000000(out) = 1160000000000; /1e6 = 1160000 -> 1160000"
+  - id: s028
+    kind: span
+    provider: ""
+    model: qwen2-7b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 8000, output: 1200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1160000, price: d-qwen-any, usage_clamped: false}
+    explanation: "? matches one character; d-qwen-any: 8000*100000000(in) + 1200*300000000(out) = 1160000000000; /1e6 = 1160000 -> 1160000"
+  - id: s029
+    kind: span
+    provider: ""
+    model: qwen25-7b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 8000, output: 1200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: ? matches exactly one character: qwen25-7b unpriced"
+  - id: s030
+    kind: span
+    provider: ""
+    model: mix-a-b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 1000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 3000000, price: d-mix-star-b, usage_clamped: false}
+    explanation: "glob tie (6 literals each): pattern mix-*-b sorts before mix-a-*; d-mix-star-b: 1000*1000000000(in) + 1000*2000000000(out) = 3000000000000; /1e6 = 3000000 -> 3000000"
+  - id: s031
+    kind: span
+    provider: ""
+    model: mix-a-c
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 1000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 16000000, price: d-mix-a-star, usage_clamped: false}
+    explanation: "only mix-a-* matches; d-mix-a-star: 1000*7000000000(in) + 1000*9000000000(out) = 16000000000000; /1e6 = 16000000 -> 16000000"
+  - id: s032
+    kind: span
+    provider: ""
+    model: mix-z-b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 1000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 3000000, price: d-mix-star-b, usage_clamped: false}
+    explanation: "only mix-*-b matches; d-mix-star-b: 1000*1000000000(in) + 1000*2000000000(out) = 3000000000000; /1e6 = 3000000 -> 3000000"
+  - id: s033
+    kind: span
+    provider: ""
+    model: local/qwen/qwen3-8b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 50000, output: 9000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 0, price: u-local, usage_clamped: false}
+    explanation: "user glob local/* crosses slashes; free model priced 0; u-local: 50000*0(in) + 9000*0(out) = 0; /1e6 = 0 -> 0"
+  - id: s034
+    kind: span
+    provider: openai
+    model: "ft:gpt-4o-mini:acme::abc123"
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 2000, output: 500, cache_read: 1000, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1050000, price: u-ft-mini, usage_clamped: false}
+    explanation: "user glob for fine-tunes; u-ft-mini: 1000*300000000(in) + 1000*150000000(cr) + 500*1200000000(out) = 1050000000000; /1e6 = 1050000 -> 1050000"
+  - id: s035
+    kind: span
+    provider: openai
+    model: "ft:gpt-4o-mini:acme::abc123"
+    start: 2024-07-31T00:00:00Z
+    usage: {input: 2000, output: 500, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: user fine-tune glob not yet effective; gpt-4o-mini* needs prefix"
+  - id: s036
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 10000, output: 2000, cache_read: 6000, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1800000, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "user series replaces default gpt-4o-mini series; u-gpt4o-mini: 4000*120000000(in) + 6000*60000000(cr) + 2000*480000000(out) = 1800000000000; /1e6 = 1800000 -> 1800000"
+  - id: s037
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2025-03-01T00:00:00Z
+    usage: {input: 10000, output: 2000, cache_read: 6000, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1800000, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "boundary: exactly user effective_from; u-gpt4o-mini: 4000*120000000(in) + 6000*60000000(cr) + 2000*480000000(out) = 1800000000000; /1e6 = 1800000 -> 1800000"
+  - id: s038
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2025-02-28T23:59:59Z
+    usage: {input: 10000, output: 2000, cache_read: 6000, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 2700000, price: d-gpt4o-mini-glob, usage_clamped: false}
+    explanation: "default exact series replaced: before the user version the glob applies (cache read at input price); d-gpt4o-mini-glob: 4000*150000000(in) + 6000*150000000(cr) + 2000*600000000(out) = 2700000000000; /1e6 = 2700000 -> 2700000"
+  - id: s039
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-08-01T00:00:00Z
+    usage: {input: 10000, output: 500, cache_read: 2000, cache_write: 5000, reasoning: 0}
+    expected: {cost_nanos: 32265000, price: u-sonnet-glob, usage_clamped: false}
+    explanation: "user glob beats default exact; u-sonnet-glob: 3000*2700000000(in) + 2000*270000000(cr) + 5000*3375000000(cw) + 500*13500000000(out) = 32265000000000; /1e6 = 32265000 -> 32265000"
+  - id: s040
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-30T23:59:59Z
+    usage: {input: 10000, output: 500, cache_read: 2000, cache_write: 5000, reasoning: 0}
+    expected: {cost_nanos: 35850000, price: d-sonnet4, usage_clamped: false}
+    explanation: "user glob not yet effective: default exact; d-sonnet4: 3000*3000000000(in) + 2000*300000000(cr) + 5000*3750000000(cw) + 500*15000000000(out) = 35850000000000; /1e6 = 35850000 -> 35850000"
+  - id: s041
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-05-21T00:00:00Z
+    usage: {input: 10000, output: 500, cache_read: 2000, cache_write: 5000, reasoning: 0}
+    expected: {cost_nanos: 35850000, price: d-claude-anthropic, usage_clamped: false}
+    explanation: "neither exact nor user glob effective: claude-* glob; d-claude-anthropic: 3000*3000000000(in) + 2000*300000000(cr) + 5000*3750000000(cw) + 500*15000000000(out) = 35850000000000; /1e6 = 35850000 -> 35850000"
+  - id: s042
+    kind: span
+    provider: aws.bedrock
+    model: claude-sonnet-4
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 10000, output: 500, cache_read: 2000, cache_write: 5000, reasoning: 0}
+    expected: {cost_nanos: 39435000, price: d-claude-any, usage_clamped: false}
+    explanation: "user glob is anthropic-only; provider-less default glob; d-claude-any: 3000*3300000000(in) + 2000*330000000(cr) + 5000*4125000000(cw) + 500*16500000000(out) = 39435000000000; /1e6 = 39435000 -> 39435000"
+  - id: s043
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-01T00:00:00Z
+    usage: {input: 10000, output: 500, cache_read: 2000, cache_write: 5000, reasoning: 0}
+    expected: {cost_nanos: 35850000, price: d-sonnet4, usage_clamped: false}
+    explanation: "Anthropic cache write 3.75 and read 0.30; d-sonnet4: 3000*3000000000(in) + 2000*300000000(cr) + 5000*3750000000(cw) + 500*15000000000(out) = 35850000000000; /1e6 = 35850000 -> 35850000"
+  - id: s044
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-01T00:00:00Z
+    usage: {input: 25000, output: 1000, cache_read: 0, cache_write: 25000, reasoning: 0}
+    expected: {cost_nanos: 108750000, price: d-sonnet4, usage_clamped: false}
+    explanation: "all input written to cache; d-sonnet4: 25000*3750000000(cw) + 1000*15000000000(out) = 108750000000000; /1e6 = 108750000 -> 108750000"
+  - id: s045
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-01T00:00:00Z
+    usage: {input: 25000, output: 1000, cache_read: 25000, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 22500000, price: d-sonnet4, usage_clamped: false}
+    explanation: "all input read from cache; d-sonnet4: 25000*300000000(cr) + 1000*15000000000(out) = 22500000000000; /1e6 = 22500000 -> 22500000"
+  - id: s046
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 300, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "cache write without price falls back to input; d-gpt4o-v2: 700*2500000000(in) + 300*2500000000(cw) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s047
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-06-01T00:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 600, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 8000000, price: d-gpt4o-v1, usage_clamped: false}
+    explanation: "v1 has no cache read price: input price; d-gpt4o-v1: 400*5000000000(in) + 600*5000000000(cr) + 200*15000000000(out) = 8000000000000; /1e6 = 8000000 -> 8000000"
+  - id: s048
+    kind: span
+    provider: openai
+    model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1500, output: 4000, cache_read: 0, cache_write: 0, reasoning: 3200}
+    expected: {cost_nanos: 19250000, price: d-o3-mini, usage_clamped: false}
+    explanation: "reasoning without reasoning price: output price; d-o3-mini: 1500*1100000000(in) + 800*4400000000(out) + 3200*4400000000(rs) = 19250000000000; /1e6 = 19250000 -> 19250000"
+  - id: s049
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2025-05-01T00:00:00Z
+    usage: {input: 1500, output: 4000, cache_read: 0, cache_write: 0, reasoning: 3200}
+    expected: {cost_nanos: 11905000, price: d-gemini25-flash-v1, usage_clamped: false}
+    explanation: "reasoning with reasoning price 3.50; d-gemini25-flash-v1: 1500*150000000(in) + 800*600000000(out) + 3200*3500000000(rs) = 11905000000000; /1e6 = 11905000 -> 11905000"
+  - id: s050
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2025-06-17T00:00:00Z
+    usage: {input: 1500, output: 4000, cache_read: 0, cache_write: 0, reasoning: 3200}
+    expected: {cost_nanos: 10450000, price: d-gemini25-flash-v2, usage_clamped: false}
+    explanation: "v2 drops reasoning price: output price; d-gemini25-flash-v2: 1500*300000000(in) + 800*2500000000(out) + 3200*2500000000(rs) = 10450000000000; /1e6 = 10450000 -> 10450000"
+  - id: s051
+    kind: span
+    provider: deepseek
+    model: deepseek-reasoner
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 3000, output: 6000, cache_read: 1000, cache_write: 0, reasoning: 5000}
+    expected: {cost_nanos: 14380000, price: d-deepseek-r1, usage_clamped: false}
+    explanation: "reasoning priced as output with cache read; d-deepseek-r1: 2000*550000000(in) + 1000*140000000(cr) + 1000*2190000000(out) + 5000*2190000000(rs) = 14380000000000; /1e6 = 14380000 -> 14380000"
+  - id: s052
+    kind: span
+    provider: ""
+    model: reason-x
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 1000, cache_read: 100, cache_write: 100, reasoning: 999}
+    expected: {cost_nanos: 8730833, price: u-reason, usage_clamped: false}
+    explanation: "all five prices set, 9-digit decimals; u-reason: 800*1000000001(in) + 100*333333333(cr) + 100*1250000001(cw) + 1*2500000000(out) + 999*7777777777(rs) = 8730833333423; /1e6 = 8730833.333423 -> 8730833"
+  - id: s053
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 100, output: 20, cache_read: 80, cache_write: 50, reasoning: 0}
+    expected: {cost_nanos: 425000, price: d-gpt4o-v2, usage_clamped: true}
+    explanation: "cache_read+cache_write > input: uncached clamps to 0; d-gpt4o-v2: 80*1250000000(cr) + 50*2500000000(cw) + 20*10000000000(out) = 425000000000; /1e6 = 425000 -> 425000 (clamped)"
+  - id: s054
+    kind: span
+    provider: openai
+    model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 20}
+    expected: {cost_nanos: 198000, price: d-o3-mini, usage_clamped: true}
+    explanation: "reasoning > output: plain output clamps to 0; d-o3-mini: 100*1100000000(in) + 20*4400000000(rs) = 198000000000; /1e6 = 198000 -> 198000 (clamped)"
+  - id: s055
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-01T00:00:00Z
+    usage: {input: 10, output: 5, cache_read: 10, cache_write: 10, reasoning: 9}
+    expected: {cost_nanos: 175500, price: d-sonnet4, usage_clamped: true}
+    explanation: "both clamps; d-sonnet4: 10*300000000(cr) + 10*3750000000(cw) + 9*15000000000(rs) = 175500000000; /1e6 = 175500 -> 175500 (clamped)"
+  - id: s056
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 100, output: 20, cache_read: 100, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 325000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "cache_read == input: no clamp; d-gpt4o-v2: 100*1250000000(cr) + 20*10000000000(out) = 325000000000; /1e6 = 325000 -> 325000"
+  - id: s057
+    kind: span
+    provider: openai
+    model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 100, output: 20, cache_read: 0, cache_write: 0, reasoning: 20}
+    expected: {cost_nanos: 198000, price: d-o3-mini, usage_clamped: false}
+    explanation: "reasoning == output: no clamp; d-o3-mini: 100*1100000000(in) + 20*4400000000(rs) = 198000000000; /1e6 = 198000 -> 198000"
+  - id: s058
+    kind: span
+    provider: ""
+    model: reason-x
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 0, output: 0, cache_read: 5, cache_write: 5, reasoning: 5}
+    expected: {cost_nanos: 46806, price: u-reason, usage_clamped: true}
+    explanation: "counts only in detail fields: both clamp; u-reason: 5*333333333(cr) + 5*1250000001(cw) + 5*7777777777(rs) = 46805555555; /1e6 = 46805.555555 -> 46806 (clamped)"
+  - id: s059
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1, price: u-tiny-half, usage_clamped: false}
+    explanation: "exactly 0.5 nano rounds up to 1; u-tiny-half: 1000*500(in) = 500000; /1e6 = 0.5 -> 1"
+  - id: s060
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 999, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 0, price: u-tiny-half, usage_clamped: false}
+    explanation: "just below 0.5 nano rounds to 0; u-tiny-half: 999*500(in) = 499500; /1e6 = 0.4995 -> 0"
+  - id: s061
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 3000, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 2, price: u-tiny-half, usage_clamped: false}
+    explanation: "exactly 1.5 nano rounds up to 2; u-tiny-half: 3000*500(in) = 1500000; /1e6 = 1.5 -> 2"
+  - id: s062
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 0, output: 1000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 2, price: u-tiny-half, usage_clamped: false}
+    explanation: "exactly 1.5 nano from output rounds up to 2; u-tiny-half: 1000*1500(out) = 1500000; /1e6 = 1.5 -> 2"
+  - id: s063
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 1000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 2, price: u-tiny-half, usage_clamped: false}
+    explanation: "2.0 nano exact; u-tiny-half: 1000*500(in) + 1000*1500(out) = 2000000; /1e6 = 2 -> 2"
+  - id: s064
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 5000, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 3, price: u-tiny-half, usage_clamped: false}
+    explanation: "exactly 2.5 nano rounds up to 3 (not banker's 2); u-tiny-half: 5000*500(in) = 2500000; /1e6 = 2.5 -> 3"
+  - id: s065
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1001, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1, price: u-tiny-half, usage_clamped: false}
+    explanation: "0.5005 nano rounds to 1; u-tiny-half: 1001*500(in) = 500500; /1e6 = 0.5005 -> 1"
+  - id: s066
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1, output: 1, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 0, price: u-tiny-half, usage_clamped: false}
+    explanation: "0.002 nano rounds to 0; u-tiny-half: 1*500(in) + 1*1500(out) = 2000; /1e6 = 0.002 -> 0"
+  - id: s067
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 2000, output: 333, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1, price: u-tiny-half, usage_clamped: false}
+    explanation: "one rounding per span, not per term: 1 + 0.4995 = 1.4995 -> 1; u-tiny-half: 2000*500(in) + 333*1500(out) = 1499500; /1e6 = 1.4995 -> 1"
+  - id: s068
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 333, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1, price: u-tiny-half, usage_clamped: false}
+    explanation: "per-term rounding would give 1+0=1; sum 0.9995 -> 1; u-tiny-half: 1000*500(in) + 333*1500(out) = 999500; /1e6 = 0.9995 -> 1"
+  - id: s069
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1667, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1, price: u-tiny-half, usage_clamped: false}
+    explanation: "0.8335 nano rounds to 1; u-tiny-half: 1667*500(in) = 833500; /1e6 = 0.8335 -> 1"
+  - id: s070
+    kind: span
+    provider: ""
+    model: nano-model
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 500000, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1, price: u-nano, usage_clamped: false}
+    explanation: "1 nano/Mtok: 500000 tokens = exactly 0.5 nano -> 1; u-nano: 500000*1(in) = 500000; /1e6 = 0.5 -> 1"
+  - id: s071
+    kind: span
+    provider: ""
+    model: nano-model
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 499999, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 0, price: u-nano, usage_clamped: false}
+    explanation: "1 nano/Mtok: 499999 tokens -> 0; u-nano: 499999*1(in) = 499999; /1e6 = 0.499999 -> 0"
+  - id: s072
+    kind: span
+    provider: ""
+    model: nano-model
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1500000, output: 500000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 3, price: u-nano, usage_clamped: false}
+    explanation: "1.5 + 1.5 = 3.0 nano; u-nano: 1500000*1(in) + 500000*3(out) = 3000000; /1e6 = 3 -> 3"
+  - id: s073
+    kind: span
+    provider: ""
+    model: nano-model
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 0, output: 166667, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1, price: u-nano, usage_clamped: false}
+    explanation: "0.500001 nano -> 1; u-nano: 166667*3(out) = 500001; /1e6 = 0.500001 -> 1"
+  - id: s074
+    kind: span
+    provider: openai
+    model: text-embedding-3-small
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 3, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 60, price: d-emb3-small, usage_clamped: false}
+    explanation: "3 embedding tokens = 60 nano-USD; d-emb3-small: 3*20000000(in) = 60000000; /1e6 = 60 -> 60"
+  - id: s075
+    kind: span
+    provider: openai
+    model: text-embedding-3-small
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 20, price: d-emb3-small, usage_clamped: false}
+    explanation: "1 embedding token = 20 nano-USD; d-emb3-small: 1*20000000(in) = 20000000; /1e6 = 20 -> 20"
+  - id: s076
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1, output: 1, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 600, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "1+1 tokens, sub-micro; u-gpt4o-mini: 1*120000000(in) + 1*480000000(out) = 600000000; /1e6 = 600 -> 600"
+  - id: s077
+    kind: span
+    provider: openai
+    model: text-embedding-3-large
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 7, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 910, price: d-emb3-large, usage_clamped: false}
+    explanation: "7 tokens at 0.13; d-emb3-large: 7*130000000(in) = 910000000; /1e6 = 910 -> 910"
+  - id: s078
+    kind: span
+    provider: ""
+    model: llama-3.1-8b-instant
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 3, output: 2, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 310, price: d-llama-any, usage_clamped: false}
+    explanation: "5 tokens at 0.05/0.08; d-llama-any: 3*50000000(in) + 2*80000000(out) = 310000000; /1e6 = 310 -> 310"
+  - id: s079
+    kind: span
+    provider: anthropic
+    model: claude-3-5-haiku-20241022
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1, output: 0, cache_read: 1, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 80, price: d-haiku35, usage_clamped: false}
+    explanation: "one cached token = 80 nano-USD; d-haiku35: 1*80000000(cr) = 80000000; /1e6 = 80 -> 80"
+  - id: s080
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 0, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "priced model without usage costs 0; u-gpt4o-mini: 0 = 0; /1e6 = 0 -> 0"
+  - id: s081
+    kind: span
+    provider: openai
+    model: text-embedding-3-small
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 0, price: d-emb3-small, usage_clamped: false}
+    explanation: "zero tokens costs 0; d-emb3-small: 0 = 0; /1e6 = 0 -> 0"
+  - id: s082
+    kind: span
+    provider: openai
+    model: ""
+    request_model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "empty response model: request model gpt-4o; d-gpt4o-v2: 1000*2500000000(in) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s083
+    kind: span
+    provider: openai
+    model: gpt-4o-2024-11-20
+    request_model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-glob, usage_clamped: false}
+    explanation: "response model wins over request model; d-gpt4o-glob: 1000*2500000000(in) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s084
+    kind: span
+    provider: openai
+    model: my-finetune
+    request_model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: non-empty unpriced response model does not fall back"
+  - id: s085
+    kind: span
+    provider: openai
+    model: ""
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: both models empty"
+  - id: s086
+    kind: span
+    provider: openai
+    model: ""
+    request_model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 216000, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "request model fallback with user series; u-gpt4o-mini: 1000*120000000(in) + 200*480000000(out) = 216000000000; /1e6 = 216000 -> 216000"
+  - id: s087
+    kind: span
+    provider: anthropic
+    model: ""
+    request_model: claude-sonnet-4
+    start: 2025-06-01T00:00:00Z
+    usage: {input: 10000, output: 500, cache_read: 2000, cache_write: 5000, reasoning: 0}
+    expected: {cost_nanos: 35850000, price: d-sonnet4, usage_clamped: false}
+    explanation: "request model fallback, cache write; d-sonnet4: 3000*3000000000(in) + 2000*300000000(cr) + 5000*3750000000(cw) + 500*15000000000(out) = 35850000000000; /1e6 = 35850000 -> 35850000"
+  - id: s088
+    kind: span
+    provider: openai
+    model: gpt-4o
+    request_model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 4500000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "response equals request; d-gpt4o-v2: 1000*2500000000(in) + 200*10000000000(out) = 4500000000000; /1e6 = 4500000 -> 4500000"
+  - id: s089
+    kind: span
+    provider: openai
+    model: triage-auto
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1200, output: 300, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: router alias unpriced"
+  - id: s090
+    kind: span
+    provider: ""
+    model: mystery-model
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 10, output: 10, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: unknown model"
+  - id: s091
+    kind: span
+    provider: ""
+    model: mystery-model
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: unknown model without usage"
+  - id: s092
+    kind: span
+    provider: deepseek
+    model: deepseek-chat
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 10, output: 10, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: provider known, model unknown"
+  - id: s093
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2025-04-16T23:59:59Z
+    usage: {input: 10, output: 10, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: before first version"
+  - id: s094
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2024-12-31T23:59:59Z
+    usage: {input: 1000, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: user entry before effective_from"
+  - id: s095
+    kind: span
+    provider: ""
+    model: big-model
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000000000000, output: 100000000000, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 90000000000000000, price: u-big, usage_clamped: false}
+    explanation: "numerator 9e22 exceeds 2^64; u-big: 1000000000000*75000000000(in) + 100000000000*150000000000(out) = 90000000000000000000000; /1e6 = 90000000000000000 -> 90000000000000000"
+  - id: s096
+    kind: span
+    provider: ""
+    model: big-model
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 123456789012, output: 98765432109, cache_read: 0, cache_write: 0, reasoning: 1234567}
+    expected: {cost_nanos: 24074073992250000, price: u-big, usage_clamped: false}
+    explanation: "large odd counts; u-big: 123456789012*75000000000(in) + 98764197542*150000000000(out) + 1234567*150000000000(rs) = 24074073992250000000000; /1e6 = 24074073992250000 -> 24074073992250000"
+  - id: s097
+    kind: span
+    provider: ""
+    model: max-price
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 9223372036855, price: u-max-price, usage_clamped: false}
+    explanation: "max int64 price, 1 token; u-max-price: 1*9223372036854775807(in) = 9223372036854775807; /1e6 = 9223372036854.775807 -> 9223372036855"
+  - id: s098
+    kind: span
+    provider: ""
+    model: max-price
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000000, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 9223372036854775807, price: u-max-price, usage_clamped: false}
+    explanation: "max int64 price, 1e6 tokens = MaxInt64 nanos exactly; u-max-price: 1000000*9223372036854775807(in) = 9223372036854775807000000; /1e6 = 9223372036854775807 -> 9223372036854775807"
+  - id: s099
+    kind: span
+    provider: ""
+    model: max-price
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 500000, output: 499999, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 9223362813482738952, price: u-max-price, usage_clamped: false}
+    explanation: "max price split across input and output; u-max-price: 500000*9223372036854775807(in) + 499999*9223372036854775807(out) = 9223362813482738952224193; /1e6 = 9223362813482738952.224193 -> 9223362813482738952"
+  - id: s100
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1000000000000000, output: 100000000000000, cache_read: 100000000000000, cache_write: 10000000000000, reasoning: 0}
+    expected: {cost_nanos: 3375000000000000000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "1e15 tokens; d-gpt4o-v2: 890000000000000*2500000000(in) + 100000000000000*1250000000(cr) + 10000000000000*2500000000(cw) + 100000000000000*10000000000(out) = 3375000000000000000000000; /1e6 = 3375000000000000000 -> 3375000000000000000"
+  - id: s101
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-01T00:00:00Z
+    usage: {input: 100000000000000, output: 10000000000000, cache_read: 30000000000000, cache_write: 20000000000000, reasoning: 0}
+    expected: {cost_nanos: 384000000000000000, price: d-sonnet4, usage_clamped: false}
+    explanation: "1e14 tokens, all categories; d-sonnet4: 50000000000000*3000000000(in) + 30000000000000*300000000(cr) + 20000000000000*3750000000(cw) + 10000000000000*15000000000(out) = 384000000000000000000000; /1e6 = 384000000000000000 -> 384000000000000000"
+  - id: s102
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 31532, output: 13890, cache_read: 0, cache_write: 0, reasoning: 7701}
+    expected: {cost_nanos: 217730000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "bulk #1; d-gpt4o-v2: 31532*2500000000(in) + 6189*10000000000(out) + 7701*10000000000(rs) = 217730000000000; /1e6 = 217730000 -> 217730000"
+  - id: s103
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-07-01T08:30:00Z
+    usage: {input: 7258, output: 22854, cache_read: 0, cache_write: 0, reasoning: 4514}
+    expected: {cost_nanos: 379100000, price: d-gpt4o-v1, usage_clamped: false}
+    explanation: "bulk #2; d-gpt4o-v1: 7258*5000000000(in) + 18340*15000000000(out) + 4514*15000000000(rs) = 379100000000000; /1e6 = 379100000 -> 379100000"
+  - id: s104
+    kind: span
+    provider: openai
+    model: gpt-4o-2024-08-06
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 115397, output: 42126, cache_read: 35565, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 665296250, price: d-gpt4o-glob, usage_clamped: false}
+    explanation: "bulk #3; d-gpt4o-glob: 79832*2500000000(in) + 35565*1250000000(cr) + 42126*10000000000(out) = 665296250000000; /1e6 = 665296250 -> 665296250"
+  - id: s105
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 413343997, output: 172591267, cache_read: 0, cache_write: 0, reasoning: 68041540}
+    expected: {cost_nanos: 132445087800, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "bulk #4; u-gpt4o-mini: 413343997*120000000(in) + 104549727*480000000(out) + 68041540*480000000(rs) = 132445087800000000; /1e6 = 132445087800 -> 132445087800"
+  - id: s106
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2024-12-01T00:00:00Z
+    usage: {input: 432945752, output: 246003841, cache_read: 182164813, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 212544167400, price: d-gpt4o-mini-glob, usage_clamped: false}
+    explanation: "bulk #5; d-gpt4o-mini-glob: 250780939*150000000(in) + 182164813*150000000(cr) + 246003841*600000000(out) = 212544167400000000; /1e6 = 212544167400 -> 212544167400"
+  - id: s107
+    kind: span
+    provider: openai
+    model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 174326, output: 22003, cache_read: 70460, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 249818800, price: d-o3-mini, usage_clamped: false}
+    explanation: "bulk #6; d-o3-mini: 103866*1100000000(in) + 70460*550000000(cr) + 22003*4400000000(out) = 249818800000000; /1e6 = 249818800 -> 249818800"
+  - id: s108
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 96404, output: 40678, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 466408800, price: u-gpt41, usage_clamped: false}
+    explanation: "bulk #7; u-gpt41: 96404*1800000000(in) + 40678*7200000000(out) = 466408800000000; /1e6 = 466408800 -> 466408800"
+  - id: s109
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2025-05-15T00:00:00Z
+    usage: {input: 0, output: 47082, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 376656000, price: d-gpt41, usage_clamped: false}
+    explanation: "bulk #8; d-gpt41: 47082*8000000000(out) = 376656000000000; /1e6 = 376656000 -> 376656000"
+  - id: s110
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-10T00:00:00Z
+    usage: {input: 151766, output: 45919, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1144083000, price: d-sonnet4, usage_clamped: false}
+    explanation: "bulk #9; d-sonnet4: 151766*3000000000(in) + 45919*15000000000(out) = 1144083000000000; /1e6 = 1144083000 -> 1144083000"
+  - id: s111
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 65671, output: 39860, cache_read: 14118, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 681114960, price: u-sonnet-glob, usage_clamped: false}
+    explanation: "bulk #10; u-sonnet-glob: 51553*2700000000(in) + 14118*270000000(cr) + 39860*13500000000(out) = 681114960000000; /1e6 = 681114960 -> 681114960"
+  - id: s112
+    kind: span
+    provider: anthropic
+    model: claude-3-5-haiku-latest
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 123081, output: 4563, cache_read: 0, cache_write: 0, reasoning: 1944}
+    expected: {cost_nanos: 116716800, price: d-haiku35, usage_clamped: false}
+    explanation: "bulk #11; d-haiku35: 123081*800000000(in) + 2619*4000000000(out) + 1944*4000000000(rs) = 116716800000000; /1e6 = 116716800 -> 116716800"
+  - id: s113
+    kind: span
+    provider: aws.bedrock
+    model: claude-3-7-sonnet
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 91428, output: 20272, cache_read: 77484, cache_write: 31, reasoning: 1348}
+    expected: {cost_nanos: 406098495, price: d-claude-any, usage_clamped: false}
+    explanation: "bulk #12; d-claude-any: 13913*3300000000(in) + 77484*330000000(cr) + 31*4125000000(cw) + 18924*16500000000(out) + 1348*16500000000(rs) = 406098495000000; /1e6 = 406098495 -> 406098495"
+  - id: s114
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2025-05-20T00:00:00Z
+    usage: {input: 63018, output: 25400, cache_read: 0, cache_write: 0, reasoning: 23906}
+    expected: {cost_nanos: 94020100, price: d-gemini25-flash-v1, usage_clamped: false}
+    explanation: "bulk #13; d-gemini25-flash-v1: 63018*150000000(in) + 1494*600000000(out) + 23906*3500000000(rs) = 94020100000000; /1e6 = 94020100 -> 94020100"
+  - id: s115
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 5229, output: 34530, cache_read: 0, cache_write: 0, reasoning: 26529}
+    expected: {cost_nanos: 87893700, price: d-gemini25-flash-v2, usage_clamped: false}
+    explanation: "bulk #14; d-gemini25-flash-v2: 5229*300000000(in) + 8001*2500000000(out) + 26529*2500000000(rs) = 87893700000000; /1e6 = 87893700 -> 87893700"
+  - id: s116
+    kind: span
+    provider: deepseek
+    model: deepseek-reasoner
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 155394, output: 37562, cache_read: 0, cache_write: 0, reasoning: 17691}
+    expected: {cost_nanos: 167727480, price: d-deepseek-r1, usage_clamped: false}
+    explanation: "bulk #15; d-deepseek-r1: 155394*550000000(in) + 19871*2190000000(out) + 17691*2190000000(rs) = 167727480000000; /1e6 = 167727480 -> 167727480"
+  - id: s117
+    kind: span
+    provider: groq
+    model: llama-3.1-8b-instant
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 538455724, output: 80417238, cache_read: 0, cache_write: 0, reasoning: 25567474}
+    expected: {cost_nanos: 39544894860, price: d-llama-groq, usage_clamped: false}
+    explanation: "bulk #16; d-llama-groq: 538455724*60000000(in) + 54849764*90000000(out) + 25567474*90000000(rs) = 39544894860000000; /1e6 = 39544894860 -> 39544894860"
+  - id: s118
+    kind: span
+    provider: ""
+    model: qwen3-32b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 25688, output: 20941, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 19282540, price: d-qwen3, usage_clamped: false}
+    explanation: "bulk #17; d-qwen3: 25688*180000000(in) + 20941*700000000(out) = 19282540000000; /1e6 = 19282540 -> 19282540"
+  - id: s119
+    kind: span
+    provider: ""
+    model: reason-x
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 185802, output: 37866, cache_read: 0, cache_write: 0, reasoning: 21507}
+    expected: {cost_nanos: 393976167, price: u-reason, usage_clamped: false}
+    explanation: "bulk #18; u-reason: 185802*1000000001(in) + 16359*2500000000(out) + 21507*7777777777(rs) = 393976166835741; /1e6 = 393976166.835741 -> 393976167"
+  - id: s120
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 99673, output: 16574, cache_read: 97870, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 75, price: u-tiny-half, usage_clamped: false}
+    explanation: "bulk #19; u-tiny-half: 1803*500(in) + 97870*500(cr) + 16574*1500(out) = 74697500; /1e6 = 74.6975 -> 75"
+  - id: s121
+    kind: span
+    provider: openai
+    model: ""
+    request_model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 677540498, output: 229429049, cache_read: 341168458, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 3561681162500, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "bulk #20; d-gpt4o-v2: 336372040*2500000000(in) + 341168458*1250000000(cr) + 229429049*10000000000(out) = 3561681162500000000; /1e6 = 3561681162500 -> 3561681162500"
+  - id: s122
+    kind: span
+    provider: openai
+    model: ""
+    request_model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 39114, output: 46306, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 246771800, price: d-o3-mini, usage_clamped: false}
+    explanation: "bulk #21; d-o3-mini: 39114*1100000000(in) + 46306*4400000000(out) = 246771800000000; /1e6 = 246771800 -> 246771800"
+  - id: s123
+    kind: span
+    provider: openai
+    model: text-embedding-3-small
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 112172, output: 32500, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 2243440, price: d-emb3-small, usage_clamped: false}
+    explanation: "bulk #22; d-emb3-small: 112172*20000000(in) + 32500*0(out) = 2243440000000; /1e6 = 2243440 -> 2243440"
+  - id: s124
+    kind: span
+    provider: mistral
+    model: mistral-large-latest
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 151369, output: 17330, cache_read: 32583, cache_write: 46504, reasoning: 0}
+    expected: {cost_nanos: 406718000, price: d-mistral-large, usage_clamped: false}
+    explanation: "bulk #23; d-mistral-large: 72282*2000000000(in) + 32583*2000000000(cr) + 46504*2000000000(cw) + 17330*6000000000(out) = 406718000000000; /1e6 = 406718000 -> 406718000"
+  - id: s125
+    kind: span
+    provider: openai
+    model: unknown-model-x
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 162667785, output: 31994395, cache_read: 71897263, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: bulk #24"
+  - id: s126
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 66028, output: 14475, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 309820000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "bulk #25; d-gpt4o-v2: 66028*2500000000(in) + 14475*10000000000(out) = 309820000000000; /1e6 = 309820000 -> 309820000"
+  - id: s127
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-07-01T08:30:00Z
+    usage: {input: 162836, output: 22447, cache_read: 144140, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1150885000, price: d-gpt4o-v1, usage_clamped: false}
+    explanation: "bulk #26; d-gpt4o-v1: 18696*5000000000(in) + 144140*5000000000(cr) + 22447*15000000000(out) = 1150885000000000; /1e6 = 1150885000 -> 1150885000"
+  - id: s128
+    kind: span
+    provider: openai
+    model: gpt-4o-2024-08-06
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 120824, output: 33364, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 635700000, price: d-gpt4o-glob, usage_clamped: false}
+    explanation: "bulk #27; d-gpt4o-glob: 120824*2500000000(in) + 33364*10000000000(out) = 635700000000000; /1e6 = 635700000 -> 635700000"
+  - id: s129
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 26400, output: 41593, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 23132640, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "bulk #28; u-gpt4o-mini: 26400*120000000(in) + 41593*480000000(out) = 23132640000000; /1e6 = 23132640 -> 23132640"
+  - id: s130
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2024-12-01T00:00:00Z
+    usage: {input: 95153, output: 18679, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 25480350, price: d-gpt4o-mini-glob, usage_clamped: false}
+    explanation: "bulk #29; d-gpt4o-mini-glob: 95153*150000000(in) + 18679*600000000(out) = 25480350000000; /1e6 = 25480350 -> 25480350"
+  - id: s131
+    kind: span
+    provider: openai
+    model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 81067008, output: 164161276, cache_read: 16370774, cache_write: 8, reasoning: 8217673}
+    expected: {cost_nanos: 802479397500, price: d-o3-mini, usage_clamped: false}
+    explanation: "bulk #30; d-o3-mini: 64696226*1100000000(in) + 16370774*550000000(cr) + 8*1100000000(cw) + 155943603*4400000000(out) + 8217673*4400000000(rs) = 802479397500000000; /1e6 = 802479397500 -> 802479397500"
+  - id: s132
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 187374, output: 43227, cache_read: 39742, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 594855900, price: u-gpt41, usage_clamped: false}
+    explanation: "bulk #31; u-gpt41: 147632*1800000000(in) + 39742*450000000(cr) + 43227*7200000000(out) = 594855900000000; /1e6 = 594855900 -> 594855900"
+  - id: s133
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2025-05-15T00:00:00Z
+    usage: {input: 142633, output: 27432, cache_read: 86838, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 374465000, price: d-gpt41, usage_clamped: false}
+    explanation: "bulk #32; d-gpt41: 55795*2000000000(in) + 86838*500000000(cr) + 27432*8000000000(out) = 374465000000000; /1e6 = 374465000 -> 374465000"
+  - id: s134
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-10T00:00:00Z
+    usage: {input: 117352, output: 17742, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 618186000, price: d-sonnet4, usage_clamped: false}
+    explanation: "bulk #33; d-sonnet4: 117352*3000000000(in) + 17742*15000000000(out) = 618186000000000; /1e6 = 618186000 -> 618186000"
+  - id: s135
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 54940, output: 23707, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 468382500, price: u-sonnet-glob, usage_clamped: false}
+    explanation: "bulk #34; u-sonnet-glob: 54940*2700000000(in) + 23707*13500000000(out) = 468382500000000; /1e6 = 468382500 -> 468382500"
+  - id: s136
+    kind: span
+    provider: anthropic
+    model: claude-3-5-haiku-latest
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 88081, output: 36007, cache_read: 75494, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 160137120, price: d-haiku35, usage_clamped: false}
+    explanation: "bulk #35; d-haiku35: 12587*800000000(in) + 75494*80000000(cr) + 36007*4000000000(out) = 160137120000000; /1e6 = 160137120 -> 160137120"
+  - id: s137
+    kind: span
+    provider: aws.bedrock
+    model: claude-3-7-sonnet
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 167399, output: 6299, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 656350200, price: d-claude-any, usage_clamped: false}
+    explanation: "bulk #36; d-claude-any: 167399*3300000000(in) + 6299*16500000000(out) = 656350200000000; /1e6 = 656350200 -> 656350200"
+  - id: s138
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2025-05-20T00:00:00Z
+    usage: {input: 569310555, output: 64902708, cache_read: 210742577, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 100629668138, price: d-gemini25-flash-v1, usage_clamped: false}
+    explanation: "bulk #37; d-gemini25-flash-v1: 358567978*150000000(in) + 210742577*37500000(cr) + 64902708*600000000(out) = 100629668137500000; /1e6 = 100629668137.5 -> 100629668138"
+  - id: s139
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 57363, output: 34221, cache_read: 26091, cache_write: 29258, reasoning: 0}
+    expected: {cost_nanos: 96890925, price: d-gemini25-flash-v2, usage_clamped: false}
+    explanation: "bulk #38; d-gemini25-flash-v2: 2014*300000000(in) + 26091*75000000(cr) + 29258*300000000(cw) + 34221*2500000000(out) = 96890925000000; /1e6 = 96890925 -> 96890925"
+  - id: s140
+    kind: span
+    provider: deepseek
+    model: deepseek-reasoner
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 169188, output: 3779, cache_read: 102923, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 59130980, price: d-deepseek-r1, usage_clamped: false}
+    explanation: "bulk #39; d-deepseek-r1: 66265*550000000(in) + 102923*140000000(cr) + 3779*2190000000(out) = 59130980000000; /1e6 = 59130980 -> 59130980"
+  - id: s141
+    kind: span
+    provider: groq
+    model: llama-3.1-8b-instant
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 173652, output: 4315, cache_read: 37400, cache_write: 9294, reasoning: 0}
+    expected: {cost_nanos: 10807470, price: d-llama-groq, usage_clamped: false}
+    explanation: "bulk #40; d-llama-groq: 126958*60000000(in) + 37400*60000000(cr) + 9294*60000000(cw) + 4315*90000000(out) = 10807470000000; /1e6 = 10807470 -> 10807470"
+  - id: s142
+    kind: span
+    provider: ""
+    model: qwen3-32b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 138789, output: 11074, cache_read: 119585, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 32733820, price: d-qwen3, usage_clamped: false}
+    explanation: "bulk #41; d-qwen3: 19204*180000000(in) + 119585*180000000(cr) + 11074*700000000(out) = 32733820000000; /1e6 = 32733820 -> 32733820"
+  - id: s143
+    kind: span
+    provider: ""
+    model: reason-x
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 185492, output: 2687, cache_read: 66149, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 148110167, price: u-reason, usage_clamped: false}
+    explanation: "bulk #42; u-reason: 119343*1000000001(in) + 66149*333333333(cr) + 2687*2500000000(out) = 148110166763960; /1e6 = 148110166.76396 -> 148110167"
+  - id: s144
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 180637, output: 13596, cache_read: 0, cache_write: 0, reasoning: 5065}
+    expected: {cost_nanos: 111, price: u-tiny-half, usage_clamped: false}
+    explanation: "bulk #43; u-tiny-half: 180637*500(in) + 8531*1500(out) + 5065*1500(rs) = 110712500; /1e6 = 110.7125 -> 111"
+  - id: s145
+    kind: span
+    provider: openai
+    model: ""
+    request_model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 78013, output: 10974, cache_read: 0, cache_write: 0, reasoning: 4466}
+    expected: {cost_nanos: 304772500, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "bulk #44; d-gpt4o-v2: 78013*2500000000(in) + 6508*10000000000(out) + 4466*10000000000(rs) = 304772500000000; /1e6 = 304772500 -> 304772500"
+  - id: s146
+    kind: span
+    provider: openai
+    model: ""
+    request_model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 79778, output: 39955, cache_read: 24138, cache_write: 52215, reasoning: 0}
+    expected: {cost_nanos: 250281900, price: d-o3-mini, usage_clamped: false}
+    explanation: "bulk #45; d-o3-mini: 3425*1100000000(in) + 24138*550000000(cr) + 52215*1100000000(cw) + 39955*4400000000(out) = 250281900000000; /1e6 = 250281900 -> 250281900"
+  - id: s147
+    kind: span
+    provider: openai
+    model: text-embedding-3-small
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 121074, output: 38404, cache_read: 99224, cache_write: 20, reasoning: 13104}
+    expected: {cost_nanos: 2421480, price: d-emb3-small, usage_clamped: false}
+    explanation: "bulk #46; d-emb3-small: 21830*20000000(in) + 99224*20000000(cr) + 20*20000000(cw) + 25300*0(out) + 13104*0(rs) = 2421480000000; /1e6 = 2421480 -> 2421480"
+  - id: s148
+    kind: span
+    provider: mistral
+    model: mistral-large-latest
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 44671, output: 46501, cache_read: 7254, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 368348000, price: d-mistral-large, usage_clamped: false}
+    explanation: "bulk #47; d-mistral-large: 37417*2000000000(in) + 7254*2000000000(cr) + 46501*6000000000(out) = 368348000000000; /1e6 = 368348000 -> 368348000"
+  - id: s149
+    kind: span
+    provider: openai
+    model: unknown-model-x
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 1375, output: 47486, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: bulk #48"
+  - id: s150
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 152900, output: 34102, cache_read: 56656, cache_write: 73308, reasoning: 0}
+    expected: {cost_nanos: 652450000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "bulk #49; d-gpt4o-v2: 22936*2500000000(in) + 56656*1250000000(cr) + 73308*2500000000(cw) + 34102*10000000000(out) = 652450000000000; /1e6 = 652450000 -> 652450000"
+  - id: s151
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-07-01T08:30:00Z
+    usage: {input: 174957, output: 45638, cache_read: 113008, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1559355000, price: d-gpt4o-v1, usage_clamped: false}
+    explanation: "bulk #50; d-gpt4o-v1: 61949*5000000000(in) + 113008*5000000000(cr) + 45638*15000000000(out) = 1559355000000000; /1e6 = 1559355000 -> 1559355000"
+  - id: s152
+    kind: span
+    provider: openai
+    model: gpt-4o-2024-08-06
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 52036, output: 46152, cache_read: 1789, cache_write: 5300, reasoning: 0}
+    expected: {cost_nanos: 589373750, price: d-gpt4o-glob, usage_clamped: false}
+    explanation: "bulk #51; d-gpt4o-glob: 44947*2500000000(in) + 1789*1250000000(cr) + 5300*2500000000(cw) + 46152*10000000000(out) = 589373750000000; /1e6 = 589373750 -> 589373750"
+  - id: s153
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 93350, output: 16948, cache_read: 6675, cache_write: 31147, reasoning: 0}
+    expected: {cost_nanos: 18936540, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "bulk #52; u-gpt4o-mini: 55528*120000000(in) + 6675*60000000(cr) + 31147*120000000(cw) + 16948*480000000(out) = 18936540000000; /1e6 = 18936540 -> 18936540"
+  - id: s154
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2024-12-01T00:00:00Z
+    usage: {input: 137546, output: 37247, cache_read: 0, cache_write: 0, reasoning: 28635}
+    expected: {cost_nanos: 42980100, price: d-gpt4o-mini-glob, usage_clamped: false}
+    explanation: "bulk #53; d-gpt4o-mini-glob: 137546*150000000(in) + 8612*600000000(out) + 28635*600000000(rs) = 42980100000000; /1e6 = 42980100 -> 42980100"
+  - id: s155
+    kind: span
+    provider: openai
+    model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 131731, output: 13308, cache_read: 115865, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 139733550, price: d-o3-mini, usage_clamped: false}
+    explanation: "bulk #54; d-o3-mini: 15866*1100000000(in) + 115865*550000000(cr) + 13308*4400000000(out) = 139733550000000; /1e6 = 139733550 -> 139733550"
+  - id: s156
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 76572, output: 2112, cache_read: 72215, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 55545750, price: u-gpt41, usage_clamped: false}
+    explanation: "bulk #55; u-gpt41: 4357*1800000000(in) + 72215*450000000(cr) + 2112*7200000000(out) = 55545750000000; /1e6 = 55545750 -> 55545750"
+  - id: s157
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2025-05-15T00:00:00Z
+    usage: {input: 143405, output: 4926, cache_read: 0, cache_write: 0, reasoning: 2300}
+    expected: {cost_nanos: 326218000, price: d-gpt41, usage_clamped: false}
+    explanation: "bulk #56; d-gpt41: 143405*2000000000(in) + 2626*8000000000(out) + 2300*8000000000(rs) = 326218000000000; /1e6 = 326218000 -> 326218000"
+  - id: s158
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-10T00:00:00Z
+    usage: {input: 131532, output: 40722, cache_read: 0, cache_write: 0, reasoning: 27698}
+    expected: {cost_nanos: 1005426000, price: d-sonnet4, usage_clamped: false}
+    explanation: "bulk #57; d-sonnet4: 131532*3000000000(in) + 13024*15000000000(out) + 27698*15000000000(rs) = 1005426000000000; /1e6 = 1005426000 -> 1005426000"
+  - id: s159
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 361854864, output: 74536999, cache_read: 0, cache_write: 0, reasoning: 47558608}
+    expected: {cost_nanos: 1983257619300, price: u-sonnet-glob, usage_clamped: false}
+    explanation: "bulk #58; u-sonnet-glob: 361854864*2700000000(in) + 26978391*13500000000(out) + 47558608*13500000000(rs) = 1983257619300000000; /1e6 = 1983257619300 -> 1983257619300"
+  - id: s160
+    kind: span
+    provider: anthropic
+    model: claude-3-5-haiku-latest
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 56772, output: 25703, cache_read: 8592, cache_write: 24302, reasoning: 0}
+    expected: {cost_nanos: 146903760, price: d-haiku35, usage_clamped: false}
+    explanation: "bulk #59; d-haiku35: 23878*800000000(in) + 8592*80000000(cr) + 24302*1000000000(cw) + 25703*4000000000(out) = 146903760000000; /1e6 = 146903760 -> 146903760"
+  - id: s161
+    kind: span
+    provider: aws.bedrock
+    model: claude-3-7-sonnet
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 179830, output: 48264, cache_read: 0, cache_write: 0, reasoning: 8073}
+    expected: {cost_nanos: 1389795000, price: d-claude-any, usage_clamped: false}
+    explanation: "bulk #60; d-claude-any: 179830*3300000000(in) + 40191*16500000000(out) + 8073*16500000000(rs) = 1389795000000000; /1e6 = 1389795000 -> 1389795000"
+  - id: s162
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2025-05-20T00:00:00Z
+    usage: {input: 155883, output: 45304, cache_read: 0, cache_write: 0, reasoning: 3430}
+    expected: {cost_nanos: 60511850, price: d-gemini25-flash-v1, usage_clamped: false}
+    explanation: "bulk #61; d-gemini25-flash-v1: 155883*150000000(in) + 41874*600000000(out) + 3430*3500000000(rs) = 60511850000000; /1e6 = 60511850 -> 60511850"
+  - id: s163
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 114172, output: 27094, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 101986600, price: d-gemini25-flash-v2, usage_clamped: false}
+    explanation: "bulk #62; d-gemini25-flash-v2: 114172*300000000(in) + 27094*2500000000(out) = 101986600000000; /1e6 = 101986600 -> 101986600"
+  - id: s164
+    kind: span
+    provider: deepseek
+    model: deepseek-reasoner
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 198078208, output: 121073656, cache_read: 45079285, cache_write: 127742078, reasoning: 0}
+    expected: {cost_nanos: 355611814190, price: d-deepseek-r1, usage_clamped: false}
+    explanation: "bulk #63; d-deepseek-r1: 25256845*550000000(in) + 45079285*140000000(cr) + 127742078*550000000(cw) + 121073656*2190000000(out) = 355611814190000000; /1e6 = 355611814190 -> 355611814190"
+  - id: s165
+    kind: span
+    provider: groq
+    model: llama-3.1-8b-instant
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 163793, output: 35488, cache_read: 0, cache_write: 0, reasoning: 28554}
+    expected: {cost_nanos: 13021500, price: d-llama-groq, usage_clamped: false}
+    explanation: "bulk #64; d-llama-groq: 163793*60000000(in) + 6934*90000000(out) + 28554*90000000(rs) = 13021500000000; /1e6 = 13021500 -> 13021500"
+  - id: s166
+    kind: span
+    provider: ""
+    model: qwen3-32b
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 53889, output: 35026, cache_read: 18795, cache_write: 29735, reasoning: 0}
+    expected: {cost_nanos: 34218220, price: d-qwen3, usage_clamped: false}
+    explanation: "bulk #65; d-qwen3: 5359*180000000(in) + 18795*180000000(cr) + 29735*180000000(cw) + 35026*700000000(out) = 34218220000000; /1e6 = 34218220 -> 34218220"
+  - id: s167
+    kind: span
+    provider: ""
+    model: reason-x
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 190079, output: 7533, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 208911500, price: u-reason, usage_clamped: false}
+    explanation: "bulk #66; u-reason: 190079*1000000001(in) + 7533*2500000000(out) = 208911500190079; /1e6 = 208911500.190079 -> 208911500"
+  - id: s168
+    kind: span
+    provider: ""
+    model: tiny-half
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 41008571, output: 20303495, cache_read: 36801424, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 50960, price: u-tiny-half, usage_clamped: false}
+    explanation: "bulk #67; u-tiny-half: 4207147*500(in) + 36801424*500(cr) + 20303495*1500(out) = 50959528000; /1e6 = 50959.528 -> 50960"
+  - id: s169
+    kind: span
+    provider: openai
+    model: ""
+    request_model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 143727, output: 2611, cache_read: 115582, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 240950000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "bulk #68; d-gpt4o-v2: 28145*2500000000(in) + 115582*1250000000(cr) + 2611*10000000000(out) = 240950000000000; /1e6 = 240950000 -> 240950000"
+  - id: s170
+    kind: span
+    provider: openai
+    model: ""
+    request_model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 56911, output: 19910, cache_read: 44413, cache_write: 14, reasoning: 3693}
+    expected: {cost_nanos: 125778950, price: d-o3-mini, usage_clamped: false}
+    explanation: "bulk #69; d-o3-mini: 12484*1100000000(in) + 44413*550000000(cr) + 14*1100000000(cw) + 16217*4400000000(out) + 3693*4400000000(rs) = 125778950000000; /1e6 = 125778950 -> 125778950"
+  - id: s171
+    kind: span
+    provider: openai
+    model: text-embedding-3-small
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 113773, output: 1835, cache_read: 35276, cache_write: 24, reasoning: 1056}
+    expected: {cost_nanos: 2275460, price: d-emb3-small, usage_clamped: false}
+    explanation: "bulk #70; d-emb3-small: 78473*20000000(in) + 35276*20000000(cr) + 24*20000000(cw) + 779*0(out) + 1056*0(rs) = 2275460000000; /1e6 = 2275460 -> 2275460"
+  - id: s172
+    kind: span
+    provider: mistral
+    model: mistral-large-latest
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 120275, output: 17935, cache_read: 0, cache_write: 0, reasoning: 7508}
+    expected: {cost_nanos: 348160000, price: d-mistral-large, usage_clamped: false}
+    explanation: "bulk #71; d-mistral-large: 120275*2000000000(in) + 10427*6000000000(out) + 7508*6000000000(rs) = 348160000000000; /1e6 = 348160000 -> 348160000"
+  - id: s173
+    kind: span
+    provider: openai
+    model: unknown-model-x
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 126841, output: 19802, cache_read: 78675, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: null, price: null, usage_clamped: false}
+    explanation: "unpriced: bulk #72"
+  - id: s174
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 188007, output: 2193, cache_read: 59606, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 417440000, price: d-gpt4o-v2, usage_clamped: false}
+    explanation: "bulk #73; d-gpt4o-v2: 128401*2500000000(in) + 59606*1250000000(cr) + 2193*10000000000(out) = 417440000000000; /1e6 = 417440000 -> 417440000"
+  - id: s175
+    kind: span
+    provider: openai
+    model: gpt-4o
+    start: 2024-07-01T08:30:00Z
+    usage: {input: 15122, output: 18186, cache_read: 0, cache_write: 0, reasoning: 2245}
+    expected: {cost_nanos: 348400000, price: d-gpt4o-v1, usage_clamped: false}
+    explanation: "bulk #74; d-gpt4o-v1: 15122*5000000000(in) + 15941*15000000000(out) + 2245*15000000000(rs) = 348400000000000; /1e6 = 348400000 -> 348400000"
+  - id: s176
+    kind: span
+    provider: openai
+    model: gpt-4o-2024-08-06
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 101252, output: 27697, cache_read: 0, cache_write: 0, reasoning: 11831}
+    expected: {cost_nanos: 530100000, price: d-gpt4o-glob, usage_clamped: false}
+    explanation: "bulk #75; d-gpt4o-glob: 101252*2500000000(in) + 15866*10000000000(out) + 11831*10000000000(rs) = 530100000000000; /1e6 = 530100000 -> 530100000"
+  - id: s177
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 117623, output: 11970, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 19860360, price: u-gpt4o-mini, usage_clamped: false}
+    explanation: "bulk #76; u-gpt4o-mini: 117623*120000000(in) + 11970*480000000(out) = 19860360000000; /1e6 = 19860360 -> 19860360"
+  - id: s178
+    kind: span
+    provider: openai
+    model: gpt-4o-mini
+    start: 2024-12-01T00:00:00Z
+    usage: {input: 152583, output: 42280, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 48255450, price: d-gpt4o-mini-glob, usage_clamped: false}
+    explanation: "bulk #77; d-gpt4o-mini-glob: 152583*150000000(in) + 42280*600000000(out) = 48255450000000; /1e6 = 48255450 -> 48255450"
+  - id: s179
+    kind: span
+    provider: openai
+    model: o3-mini
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 120221, output: 3802, cache_read: 3842, cache_write: 6679, reasoning: 0}
+    expected: {cost_nanos: 146858800, price: d-o3-mini, usage_clamped: false}
+    explanation: "bulk #78; d-o3-mini: 109700*1100000000(in) + 3842*550000000(cr) + 6679*1100000000(cw) + 3802*4400000000(out) = 146858800000000; /1e6 = 146858800 -> 146858800"
+  - id: s180
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 43663, output: 7682, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 133903800, price: u-gpt41, usage_clamped: false}
+    explanation: "bulk #79; u-gpt41: 43663*1800000000(in) + 7682*7200000000(out) = 133903800000000; /1e6 = 133903800 -> 133903800"
+  - id: s181
+    kind: span
+    provider: openai
+    model: gpt-4.1
+    start: 2025-05-15T00:00:00Z
+    usage: {input: 21573, output: 23210, cache_read: 3878, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 223009000, price: d-gpt41, usage_clamped: false}
+    explanation: "bulk #80; d-gpt41: 17695*2000000000(in) + 3878*500000000(cr) + 23210*8000000000(out) = 223009000000000; /1e6 = 223009000 -> 223009000"
+  - id: s182
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4
+    start: 2025-06-10T00:00:00Z
+    usage: {input: 139538, output: 5724, cache_read: 42227, cache_write: 92535, reasoning: 0}
+    expected: {cost_nanos: 459862350, price: d-sonnet4, usage_clamped: false}
+    explanation: "bulk #81; d-sonnet4: 4776*3000000000(in) + 42227*300000000(cr) + 92535*3750000000(cw) + 5724*15000000000(out) = 459862350000000; /1e6 = 459862350 -> 459862350"
+  - id: s183
+    kind: span
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 98313, output: 5097, cache_read: 55708, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 198884160, price: u-sonnet-glob, usage_clamped: false}
+    explanation: "bulk #82; u-sonnet-glob: 42605*2700000000(in) + 55708*270000000(cr) + 5097*13500000000(out) = 198884160000000; /1e6 = 198884160 -> 198884160"
+  - id: s184
+    kind: span
+    provider: anthropic
+    model: claude-3-5-haiku-latest
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 106727, output: 12524, cache_read: 32099, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 112366320, price: d-haiku35, usage_clamped: false}
+    explanation: "bulk #83; d-haiku35: 74628*800000000(in) + 32099*80000000(cr) + 12524*4000000000(out) = 112366320000000; /1e6 = 112366320 -> 112366320"
+  - id: s185
+    kind: span
+    provider: aws.bedrock
+    model: claude-3-7-sonnet
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 159898, output: 39103, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 1172862900, price: d-claude-any, usage_clamped: false}
+    explanation: "bulk #84; d-claude-any: 159898*3300000000(in) + 39103*16500000000(out) = 1172862900000000; /1e6 = 1172862900 -> 1172862900"
+  - id: s186
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2025-05-20T00:00:00Z
+    usage: {input: 40336, output: 17959, cache_read: 13287, cache_write: 24711, reasoning: 0}
+    expected: {cost_nanos: 15331013, price: d-gemini25-flash-v1, usage_clamped: false}
+    explanation: "bulk #85; d-gemini25-flash-v1: 2338*150000000(in) + 13287*37500000(cr) + 24711*150000000(cw) + 17959*600000000(out) = 15331012500000; /1e6 = 15331012.5 -> 15331013"
+  - id: s187
+    kind: span
+    provider: google
+    model: gemini-2.5-flash
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 120480, output: 13888, cache_read: 3977, cache_write: 39058, reasoning: 0}
+    expected: {cost_nanos: 69969175, price: d-gemini25-flash-v2, usage_clamped: false}
+    explanation: "bulk #86; d-gemini25-flash-v2: 77445*300000000(in) + 3977*75000000(cr) + 39058*300000000(cw) + 13888*2500000000(out) = 69969175000000; /1e6 = 69969175 -> 69969175"
+  - id: s188
+    kind: span
+    provider: deepseek
+    model: deepseek-reasoner
+    start: 2026-01-15T12:00:00Z
+    usage: {input: 145713, output: 38584, cache_read: 0, cache_write: 0, reasoning: 0}
+    expected: {cost_nanos: 164641110, price: d-deepseek-r1, usage_clamped: false}
+    explanation: "bulk #87; d-deepseek-r1: 145713*550000000(in) + 38584*2190000000(out) = 164641110000000; /1e6 = 164641110 -> 164641110"
+  - id: t001
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: agent, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000002", kind: other, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000004", parent: "0000000000000003", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 1000, output: 200, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 4500000, unpriced_spans: 0, input_tokens: 1000, output_tokens: 200, calls: 1}
+    explanation: "duplicate llm descendant behind an http client span (rule 1); duplicates ['04']; counted 02=4500000; total 4500000"
+  - id: t002
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: chain, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: anthropic, model: claude-sonnet-4, start: 2025-06-01T00:00:00Z, usage: {input: 500, output: 100, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000002", kind: llm, provider: openai, model: gpt-4o-mini, start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000004", parent: "0000000000000002", kind: llm, provider: anthropic, model: claude-sonnet-4, start: 2025-06-01T00:00:00Z, usage: {input: 500, output: 100, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 3000000, unpriced_spans: 0, input_tokens: 500, output_tokens: 100, calls: 1}
+    explanation: "fallback group: failed attempt without usage + successful attempt sum to route request (rule 2); duplicates ['03', '04']; counted 02=3000000; total 3000000"
+  - id: t003
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 3000, output: 900, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 1000, output: 400, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 2000, output: 500, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 16500000, unpriced_spans: 0, input_tokens: 3000, output_tokens: 900, calls: 1}
+    explanation: "continuation group: two attempts summing to the route request; duplicates ['02', '03']; counted 01=16500000; total 16500000"
+  - id: t004
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: embedding, provider: openai, model: text-embedding-3-small, start: 2025-06-01T00:00:00Z, usage: {input: 800, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: other, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000002", kind: embedding, provider: openai, model: text-embedding-3-small, start: 2025-06-01T00:00:00Z, usage: {input: 800, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000004", parent: "0000000000000003", kind: embedding, provider: openai, model: text-embedding-3-small, start: 2025-06-01T00:00:00Z, usage: {input: 800, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 16000, unpriced_spans: 0, input_tokens: 800, output_tokens: 0, calls: 1}
+    explanation: "embedding duplicate chain counted once at the client span; duplicates ['03', '04']; counted 01=16000; total 16000"
+  - id: t005
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: agent, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: openai, model: triage-auto, start: 2025-06-01T00:00:00Z, usage: {input: 1200, output: 300, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000002", kind: other, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000004", parent: "0000000000000003", kind: llm, provider: triage, model: default-route, start: 2025-06-01T00:00:00Z, usage: {input: 1200, output: 300, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000005", parent: "0000000000000004", kind: llm, provider: openai, model: gpt-4o-mini, start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000006", parent: "0000000000000004", kind: llm, provider: anthropic, model: claude-sonnet-4, start: 2025-06-01T00:00:00Z, usage: {input: 1200, output: 300, cache_read: 200, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 7560000, unpriced_spans: 0, input_tokens: 1200, output_tokens: 300, calls: 1}
+    explanation: "unpriced kept triage-auto takes attempts' cost through unpriced route request; duplicates ['04', '05', '06']; counted 02=7560000; total 7560000"
+  - id: t006
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: llm, provider: openai, model: triage-auto, start: 2025-06-01T00:00:00Z, usage: {input: 100, output: 20, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: triage, model: default-route, start: 2025-06-01T00:00:00Z, usage: {input: 100, output: 20, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000002", kind: llm, provider: local, model: my-local-model, start: 2025-06-01T00:00:00Z, usage: {input: 100, output: 20, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: null, unpriced_spans: 1, input_tokens: 100, output_tokens: 20, calls: 1}
+    explanation: "every duplicate unpriced: kept span stays unpriced; duplicates ['02', '03']; counted 01=None; total None"
+  - id: t007
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 1000, output: 100, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 600, output: 50, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 300, output: 50, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 6750000, unpriced_spans: 0, input_tokens: 1900, output_tokens: 200, calls: 3}
+    explanation: "group not summing and no equal span: nothing flagged; duplicates []; counted 01=3500000, 02=2000000, 03=1250000; total 6750000"
+  - id: t008
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 500, output: 50, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 1750000, unpriced_spans: 0, input_tokens: 500, output_tokens: 50, calls: 2}
+    explanation: "ancestor with zero usage: nothing flagged; duplicates []; counted 01=0, 02=1750000; total 1750000"
+  - id: t009
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: llm, provider: openai, model: triage-auto, start: 2025-06-01T00:00:00Z, usage: {input: 400, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000012", parent: "0000000000000001", kind: llm, provider: anthropic, model: claude-sonnet-4, start: 2025-06-01T00:00:00Z, usage: {input: 400, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000011", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 400, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 1400000, unpriced_spans: 0, input_tokens: 400, output_tokens: 40, calls: 1}
+    explanation: "rule 1 with two equal priced spans: unpriced kept takes the lowest span id; duplicates ['11', '12']; counted 01=1400000; total 1400000"
+  - id: t010
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: chain, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: "", model: mystery-model, start: 2025-06-01T00:00:00Z, usage: {input: 50, output: 5, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000001", kind: tool, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000004", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o-mini, start: 2025-06-01T00:00:00Z, usage: {input: 100, output: 10, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 16800, unpriced_spans: 1, input_tokens: 150, output_tokens: 15, calls: 2}
+    explanation: "independent calls: one unpriced with tokens, one priced; duplicates []; counted 02=None, 04=16800; total 16800"
+  - id: t011
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 300, output: 30, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: other, provider: "", model: "", start: 2025-06-01T00:00:00Z, usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000002", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 300, output: 30, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000004", parent: "0000000000000003", kind: embedding, provider: openai, model: text-embedding-3-small, start: 2025-06-01T00:00:00Z, usage: {input: 300, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: 1056000, unpriced_spans: 0, input_tokens: 600, output_tokens: 30, calls: 2}
+    explanation: "embedding under an llm chain is not compared across kinds; duplicates ['03']; counted 01=1050000, 04=6000; total 1056000"
+  - id: t012
+    kind: trace
+    spans:
+      - {id: "0000000000000001", parent: "", kind: llm, provider: openai, model: triage-auto, start: 2025-06-01T00:00:00Z, usage: {input: 900, output: 90, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000002", parent: "0000000000000001", kind: llm, provider: openai, model: gpt-4o, start: 2025-06-01T00:00:00Z, usage: {input: 400, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}}
+      - {id: "0000000000000003", parent: "0000000000000001", kind: llm, provider: local, model: my-local-model, start: 2025-06-01T00:00:00Z, usage: {input: 500, output: 50, cache_read: 0, cache_write: 0, reasoning: 0}}
+    expected: {cost_nanos: null, unpriced_spans: 1, input_tokens: 900, output_tokens: 90, calls: 1}
+    explanation: "rule 2 group with an unpriced span with tokens: no cost transfer; duplicates ['02', '03']; counted 01=None; total None"

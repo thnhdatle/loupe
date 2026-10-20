@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: Apache-2.0
+version: 2
+project_name: loupe
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: loupe
+    main: ./cmd/loupe
+    binary: loupe
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.buildDate={{ .Date }}
+
+archives:
+  - id: loupe
+    formats: [tar.gz]
+    name_template: "loupe_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+      - deploy/config.example.yaml
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - id: archive-sbom
+    artifacts: archive
+    cmd: syft
+    args: ["$artifact", "--output", "spdx-json=$document"]
+    documents: ["${artifact}.sbom.spdx.json"]
+
+dockers_v2:
+  - id: loupe
+    ids: [loupe]
+    dockerfile: Dockerfile
+    images:
+      - ghcr.io/thnhdatle/loupe
+    tags:
+      - "v{{ .Version }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - latest
+    platforms: [linux/amd64, linux/arm64]
+    build_args:
+      BIN_SOURCE: prebuilt
+    labels:
+      org.opencontainers.image.title: loupe
+      org.opencontainers.image.source: https://github.com/thnhdatle/loupe
+      org.opencontainers.image.licenses: Apache-2.0
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+    sbom: true
+
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: thnhdatle
+    name: loupe
+  # Notes are the CHANGELOG.md section of the tag (scripts/release-notes.sh),
+  # passed by the release workflow with --release-notes.

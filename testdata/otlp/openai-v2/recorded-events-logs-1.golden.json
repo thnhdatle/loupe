@@ -1,0 +1,21 @@
+{
+  "logs": [
+    {
+      "event_name": "gen_ai.client.inference.operation.details",
+      "trace_id": "3d447e567dfa77c5572feb479eaf93ac",
+      "span_id": "aa6c027f7b05f190",
+      "kept": true,
+      "content": [
+        {
+          "part": 0,
+          "source": "log",
+          "key": "gen_ai.client.inference.operation.details",
+          "role": "",
+          "bytes": 509,
+          "body": "{\"gen_ai.input.messages\":[{\"parts\":[{\"content\":\"say hello to loupe\",\"type\":\"text\"}],\"role\":\"user\"}],\"gen_ai.operation.name\":\"chat\",\"gen_ai.output.messages\":[{\"finish_reason\":\"stop\",\"parts\":[{\"content\":\"prairie bravo lumen prairie prairie cedar\",\"type\":\"text\"}],\"role\":\"assistant\"}],\"gen_ai.request.model\":\"gpt-4o-mini\",\"gen_ai.response.finish_reasons\":[\"stop\"],\"gen_ai.response.id\":\"chatcmpl-9f420cd329183631\",\"gen_ai.response.model\":\"gpt-4o-mini\",\"gen_ai.usage.input_tokens\":4,\"gen_ai.usage.output_tokens\":6}",
+          "time_ns": 1792418267847387000
+        }
+      ]
+    }
+  ]
+}

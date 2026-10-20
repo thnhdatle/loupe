@@ -1,0 +1,934 @@
+openapi: 3.1.0
+info:
+  title: Loupe API
+  version: 0.1.0
+  summary: REST query and admin API of the Loupe LLM observability store.
+  description: |
+    Served on the UI listener (`ui.listen`) under `/v1`. Authentication is a Bearer
+    token from `api.token_file`; it is not required when the listener is loopback
+    or `ui.allow_unauthenticated` is true. The dashboard session cookie
+    (`loupe_session`) authorises `GET /v1/*` except `/v1/admin/*`; it never
+    authorises mutating or admin routes.
+
+    Timestamps in requests are RFC 3339. Timestamps in trace and span bodies are
+    nanoseconds since the Unix epoch (`*_ns`). Costs are nano-USD integers
+    (`*_cost_nanos`, `cost_nanos`); `null` means unpriced. Lists are cursor
+    paginated: `limit` (default 50, max 500) and the opaque `cursor` returned as
+    `next_cursor` (empty on the last page).
+
+    Every error is the envelope `{"error": {"code", "message", "request_id"}}`;
+    codes are registered in `docs/guides/errors.md`. Unknown or repeated query
+    parameters are rejected with `invalid_parameter`.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: http://127.0.0.1:3000
+    description: Default UI listener
+security:
+  - bearer: []
+  - session: []
+tags:
+  - name: traces
+  - name: sessions
+  - name: stats
+  - name: export
+  - name: users
+  - name: admin
+  - name: meta
+paths:
+  /v1/traces:
+    get:
+      operationId: listTraces
+      tags: [traces]
+      summary: List traces
+      description: |
+        Trace-level filters apply to the trace; span-level filters (`service`,
+        `model`, `provider`, `kind`, `status`, `min_duration_ms`, `name`) must
+        all match the same span. Sorted descending by default.
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - {name: session_id, in: query, schema: {type: string}, example: sess-42}
+        - {name: user_id, in: query, schema: {type: string}, example: alice}
+        - name: min_cost
+          in: query
+          description: Minimum trace cost in USD, a decimal string.
+          schema: {type: string}
+          example: "0.01"
+        - {name: has_error, in: query, schema: {type: boolean}, example: true}
+        - {name: service, in: query, schema: {type: string}, example: agent-api}
+        - {name: model, in: query, schema: {type: string}, example: gpt-4o}
+        - {name: provider, in: query, schema: {type: string}, example: openai}
+        - {name: kind, in: query, schema: {$ref: '#/components/schemas/Kind'}, example: llm}
+        - {name: status, in: query, schema: {$ref: '#/components/schemas/Status'}, example: ok}
+        - {name: min_duration_ms, in: query, schema: {type: integer, minimum: 0}, example: 100}
+        - name: name
+          in: query
+          description: Case-sensitive prefix of the span name.
+          schema: {type: string}
+          example: agent.
+        - {name: sort, in: query, schema: {type: string, enum: [start, cost, duration]}, example: cost}
+        - {name: order, in: query, schema: {type: string, enum: [asc, desc]}, example: desc}
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: One page of trace summaries.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TracePage'}
+              example:
+                data:
+                  - trace_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    root_name: agent.run
+                    service: agent-api
+                    start_ns: 1792400000000000000
+                    end_ns: 1792400002000000000
+                    duration_ns: 2000000000
+                    span_count: 2
+                    models: [gpt-4o]
+                    usage: {input: 120, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}
+                    cost_nanos: 1500000
+                    unpriced_spans: 0
+                    has_error: false
+                    session_id: sess-42
+                    user_id: alice
+                next_cursor: ""
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/Internal'}
+  /v1/traces/{trace_id}:
+    get:
+      operationId: getTrace
+      tags: [traces]
+      summary: Get a trace with its span tree
+      description: |
+        Content is returned only when stored and `include_content=true`. Spans with
+        a content marker report `content_stripped: true`.
+      parameters:
+        - $ref: '#/components/parameters/TraceId'
+        - {name: include_content, in: query, schema: {type: boolean}, example: false}
+      responses:
+        '200':
+          description: The trace summary and its spans ordered by start time.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TraceDetail'}
+              example:
+                summary:
+                  trace_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                  root_name: agent.run
+                  service: agent-api
+                  start_ns: 1792400000000000000
+                  end_ns: 1792400002000000000
+                  duration_ns: 2000000000
+                  span_count: 2
+                  models: [gpt-4o]
+                  usage: {input: 120, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}
+                  cost_nanos: 1500000
+                  unpriced_spans: 0
+                  has_error: false
+                  session_id: sess-42
+                  user_id: alice
+                spans:
+                  - span_id: 00f067aa0ba902b7
+                    parent_span_id: ""
+                    service: agent-api
+                    name: agent.run
+                    kind: agent
+                    status: ok
+                    start_ns: 1792400000000000000
+                    end_ns: 1792400002000000000
+                    duration_ns: 2000000000
+                    model: ""
+                    provider: ""
+                    usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+                    has_usage: false
+                    cost_nanos: null
+                    session_id: sess-42
+                    user_id: alice
+                    error_type: ""
+                    attr_truncated: false
+                    usage_duplicate: false
+                    usage_clamped: false
+                    attributes: {}
+                    content_stripped: false
+                  - span_id: 53995c3f42cd8ad8
+                    parent_span_id: 00f067aa0ba902b7
+                    service: agent-api
+                    name: chat gpt-4o
+                    kind: llm
+                    status: ok
+                    start_ns: 1792400000100000000
+                    end_ns: 1792400001900000000
+                    duration_ns: 1800000000
+                    model: gpt-4o
+                    provider: openai
+                    usage: {input: 120, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}
+                    has_usage: true
+                    cost_nanos: 1500000
+                    session_id: sess-42
+                    user_id: alice
+                    error_type: ""
+                    attr_truncated: false
+                    usage_duplicate: false
+                    usage_clamped: false
+                    attributes: {gen_ai.system: openai}
+                    content_stripped: false
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/Internal'}
+  /v1/sessions:
+    get:
+      operationId: listSessions
+      tags: [sessions]
+      summary: List sessions by last activity
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - {name: user_id, in: query, schema: {type: string}, example: alice}
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: One page of session summaries, most recent first.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SessionPage'}
+              example:
+                data:
+                  - id: sess-42
+                    user_id: alice
+                    first_ns: 1792400000000000000
+                    last_ns: 1792400060000000000
+                    trace_count: 3
+                    usage: {input: 360, output: 120, cache_read: 0, cache_write: 0, reasoning: 0}
+                    cost_nanos: 4500000
+                next_cursor: ""
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/Internal'}
+  /v1/sessions/{id}:
+    get:
+      operationId: getSession
+      tags: [sessions]
+      summary: Get a session with its traces
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}, example: sess-42}
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: The session totals and one page of its traces ordered by start time.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SessionDetail'}
+              example:
+                summary:
+                  id: sess-42
+                  user_id: alice
+                  first_ns: 1792400000000000000
+                  last_ns: 1792400060000000000
+                  trace_count: 1
+                  usage: {input: 120, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}
+                  cost_nanos: 1500000
+                data:
+                  - trace_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    root_name: agent.run
+                    service: agent-api
+                    start_ns: 1792400000000000000
+                    end_ns: 1792400002000000000
+                    duration_ns: 2000000000
+                    span_count: 2
+                    models: [gpt-4o]
+                    usage: {input: 120, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}
+                    cost_nanos: 1500000
+                    unpriced_spans: 0
+                    has_error: false
+                    session_id: sess-42
+                    user_id: alice
+                next_cursor: ""
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/Internal'}
+  /v1/stats/overview:
+    get:
+      operationId: statsOverview
+      tags: [stats]
+      summary: Aggregate statistics over a range
+      description: |
+        Ranges are rounded outward to whole hours and the effective range is
+        returned; days are UTC. `group_by=user` returns the top 50 users by cost
+        plus `other`.
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - {name: group_by, in: query, schema: {type: string, enum: [model, provider, service, kind, user]}, example: model}
+        - {name: interval, in: query, schema: {type: string, enum: [hour, day]}, example: hour}
+        - {name: kind, in: query, schema: {$ref: '#/components/schemas/Kind'}, example: llm}
+      responses:
+        '200':
+          description: Totals, groups and a time series.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Overview'}
+              example:
+                from: "2026-10-18T08:00:00Z"
+                to: "2026-10-19T09:00:00Z"
+                group_by: model
+                interval: hour
+                total:
+                  requests: 10
+                  errors: 1
+                  usage: {input: 1200, output: 400, cache_read: 0, cache_write: 0, reasoning: 0}
+                  cost_nanos: 15000000
+                  unpriced: 0
+                  p50_ns: 900000000
+                  p95_ns: 1800000000
+                  p99_ns: 2000000000
+                groups:
+                  - key: gpt-4o
+                    other: false
+                    users: 0
+                    stats:
+                      requests: 10
+                      errors: 1
+                      usage: {input: 1200, output: 400, cache_read: 0, cache_write: 0, reasoning: 0}
+                      cost_nanos: 15000000
+                      unpriced: 0
+                      p50_ns: 900000000
+                      p95_ns: 1800000000
+                      p99_ns: 2000000000
+                series:
+                  - bucket: "2026-10-19T08:00:00Z"
+                    key: gpt-4o
+                    other: false
+                    stats:
+                      requests: 10
+                      errors: 1
+                      usage: {input: 1200, output: 400, cache_read: 0, cache_write: 0, reasoning: 0}
+                      cost_nanos: 15000000
+                      unpriced: 0
+                      p50_ns: 900000000
+                      p95_ns: 1800000000
+                      p99_ns: 2000000000
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/Internal'}
+  /v1/stats/top-spans:
+    get:
+      operationId: statsTopSpans
+      tags: [stats]
+      summary: Most expensive or slowest llm spans
+      description: Spans flagged `usage_duplicate` are excluded for `by=cost`.
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - {name: by, in: query, schema: {type: string, enum: [cost, duration], default: cost}, example: cost}
+        - {name: limit, in: query, description: 'Default 50, max 500.', schema: {type: integer, minimum: 1, maximum: 500}, example: 10}
+      responses:
+        '200':
+          description: Spans with the trace each belongs to.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                additionalProperties: false
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/TopSpan'}
+              example:
+                data:
+                  - trace_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    span:
+                      span_id: 53995c3f42cd8ad8
+                      parent_span_id: 00f067aa0ba902b7
+                      service: agent-api
+                      name: chat gpt-4o
+                      kind: llm
+                      status: ok
+                      start_ns: 1792400000100000000
+                      end_ns: 1792400001900000000
+                      duration_ns: 1800000000
+                      model: gpt-4o
+                      provider: openai
+                      usage: {input: 120, output: 40, cache_read: 0, cache_write: 0, reasoning: 0}
+                      has_usage: true
+                      cost_nanos: 1500000
+                      session_id: sess-42
+                      user_id: alice
+                      error_type: ""
+                      attr_truncated: false
+                      usage_duplicate: false
+                      usage_clamped: false
+                      attributes: {}
+                      content_stripped: false
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/Internal'}
+  /v1/ingest/stats:
+    get:
+      operationId: ingestStats
+      tags: [stats]
+      summary: Ingest counters
+      responses:
+        '200':
+          description: Cumulative counters and current queue gauges.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/IngestStats'}
+              example:
+                received: 1000
+                stored: 990
+                duplicates: 5
+                rejected: {invalid_span: 2}
+                dropped: {queue_full: 3}
+                discarded: {metrics: 40}
+                content_stripped: 12
+                unpriced: 7
+                queue_spans: 0
+                queue_bytes: 0
+                inflight_bytes: 0
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/Internal'}
+  /v1/export/traces:
+    get:
+      operationId: exportTraces
+      tags: [export]
+      summary: Export traces as JSON Lines
+      description: |
+        Streams every trace whose start lies in `[from, to)` (default: the last
+        24 hours), ordered by start time then trace id, one JSON object per line.
+        A line is the body of `GET /v1/traces/{trace_id}` without content
+        (`TraceDetail`). The store is read in short keyset transactions, so the
+        WAL is never pinned by a slow client. An error after the first byte
+        cannot change the status: the server logs it and ends the stream.
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: format
+          in: query
+          description: The only supported format is `jsonl`, which is also the default.
+          schema: {type: string, enum: [jsonl], default: jsonl}
+          example: jsonl
+      responses:
+        '200':
+          description: A JSON Lines stream of traces.
+          content:
+            application/x-ndjson:
+              schema: {$ref: '#/components/schemas/TraceDetail'}
+              example:
+                summary:
+                  trace_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                  root_name: agent.run
+                  service: agent-api
+                  start_ns: 1792400000000000000
+                  end_ns: 1792400002000000000
+                  duration_ns: 2000000000
+                  span_count: 1
+                  models: []
+                  usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+                  cost_nanos: 0
+                  unpriced_spans: 0
+                  has_error: false
+                  session_id: ""
+                  user_id: ""
+                spans:
+                  - span_id: 00f067aa0ba902b7
+                    parent_span_id: ""
+                    service: agent-api
+                    name: agent.run
+                    kind: agent
+                    status: ok
+                    start_ns: 1792400000000000000
+                    end_ns: 1792400002000000000
+                    duration_ns: 2000000000
+                    model: ""
+                    provider: ""
+                    usage: {input: 0, output: 0, cache_read: 0, cache_write: 0, reasoning: 0}
+                    has_usage: false
+                    cost_nanos: null
+                    session_id: ""
+                    user_id: ""
+                    error_type: ""
+                    attr_truncated: false
+                    usage_duplicate: false
+                    usage_clamped: false
+                    attributes: {}
+                    content_stripped: false
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/Internal'}
+  /v1/users/{user_id}/data:
+    delete:
+      operationId: deleteUserData
+      tags: [users]
+      summary: Delete all data of a user
+      description: |
+        Deletes every trace in which the trace or any span has this `user_id`, the
+        user's sessions and per-user rollups, then checkpoints the WAL. Runs as a
+        job; poll `GET /v1/admin/jobs/{id}`. Bearer token only, never the cookie.
+      security:
+        - bearer: []
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: string}, example: alice}
+      responses:
+        '202':
+          description: The deletion job was started.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JobAccepted'}
+              example: {job_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyJobs'}
+        '500': {$ref: '#/components/responses/Internal'}
+        '503': {$ref: '#/components/responses/ShuttingDown'}
+  /v1/version:
+    get:
+      operationId: getVersion
+      tags: [meta]
+      summary: Build information
+      responses:
+        '200':
+          description: Version, commit, build date and Go version.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Version'}
+              example:
+                version: 0.1.0
+                commit: 1a2b3c4
+                build_date: "2026-10-19T08:00:00Z"
+                go_version: go1.26.0
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /v1/admin/pricing/recompute:
+    post:
+      operationId: adminPricingRecompute
+      tags: [admin]
+      summary: Recompute span costs from the current price table
+      security:
+        - bearer: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RecomputeRequest'}
+            example: {since: "2026-10-01T00:00:00Z", until: "2026-10-19T00:00:00Z"}
+      responses:
+        '202':
+          description: The recompute job was started.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JobAccepted'}
+              example: {job_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '413': {$ref: '#/components/responses/BodyTooLarge'}
+        '429': {$ref: '#/components/responses/TooManyJobs'}
+        '500': {$ref: '#/components/responses/Internal'}
+        '503': {$ref: '#/components/responses/ShuttingDown'}
+  /v1/admin/vacuum:
+    post:
+      operationId: adminVacuum
+      tags: [admin]
+      summary: Incremental vacuum and WAL checkpoint
+      security:
+        - bearer: []
+      responses:
+        '202':
+          description: The vacuum job was started.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JobAccepted'}
+              example: {job_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/TooManyJobs'}
+        '500': {$ref: '#/components/responses/Internal'}
+        '503': {$ref: '#/components/responses/ShuttingDown'}
+  /v1/admin/backups:
+    post:
+      operationId: adminBackup
+      tags: [admin]
+      summary: Back up the database with VACUUM INTO
+      description: Writes `<dir of storage.path>/backups/loupe-<UTC timestamp>.db`.
+      security:
+        - bearer: []
+      responses:
+        '202':
+          description: The backup job was started.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [job_id, path]
+                additionalProperties: false
+                properties:
+                  job_id: {type: string}
+                  path: {type: string, description: Destination file of the backup.}
+              example:
+                job_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3
+                path: /var/lib/loupe/backups/loupe-20261019T083015Z.db
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '429': {$ref: '#/components/responses/TooManyJobs'}
+        '500': {$ref: '#/components/responses/Internal'}
+        '503': {$ref: '#/components/responses/ShuttingDown'}
+  /v1/admin/jobs/{id}:
+    get:
+      operationId: adminGetJob
+      tags: [admin]
+      summary: Status and result of an admin job
+      security:
+        - bearer: []
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}, example: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+      responses:
+        '200':
+          description: The job status.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JobStatus'}
+              example:
+                job_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3
+                kind: vacuum
+                state: done
+                rows: 128
+                created_at: "2026-10-19T08:30:15Z"
+                started_at: "2026-10-19T08:30:16Z"
+                finished_at: "2026-10-19T08:30:17Z"
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/Internal'}
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: The API token from `api.token_file`.
+    session:
+      type: apiKey
+      in: cookie
+      name: loupe_session
+      description: Dashboard session cookie; authorises GET requests under /v1 except /v1/admin.
+  parameters:
+    From:
+      name: from
+      in: query
+      description: Inclusive start of the range, RFC 3339. Defaults to `to` minus 24 hours.
+      schema: {type: string, format: date-time}
+      example: "2026-10-18T08:00:00Z"
+    To:
+      name: to
+      in: query
+      description: Exclusive end of the range, RFC 3339. Defaults to now.
+      schema: {type: string, format: date-time}
+      example: "2026-10-19T08:00:00Z"
+    Limit:
+      name: limit
+      in: query
+      description: Page size, 1 to 500.
+      schema: {type: integer, minimum: 1, maximum: 500, default: 50}
+      example: 50
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque cursor from `next_cursor`; valid only for the same sort and order.
+      schema: {type: string}
+    TraceId:
+      name: trace_id
+      in: path
+      required: true
+      description: 32 hexadecimal characters.
+      schema: {type: string, pattern: '^[0-9a-fA-F]{32}$'}
+      example: 4bf92f3577b34da6a3ce929d0e0e4736
+  responses:
+    BadRequest:
+      description: A parameter, cursor, range, filter or id is invalid (`invalid_parameter`, `invalid_cursor`, `invalid_limit`, `invalid_range`, `invalid_sort`, `invalid_filter`, `invalid_id`).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example:
+            error: {code: invalid_parameter, message: 'unknown query parameter "foo"', request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+    Unauthorized:
+      description: Missing or invalid credentials.
+      headers:
+        WWW-Authenticate:
+          schema: {type: string}
+          example: Bearer realm="loupe"
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example:
+            error: {code: unauthorized, message: missing or invalid bearer token, request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+    NotFound:
+      description: Unknown endpoint, trace, session or job.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example:
+            error: {code: not_found, message: 'trace 4bf92f3577b34da6a3ce929d0e0e4736 not found', request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+    BodyTooLarge:
+      description: The request body exceeds the limit (4 KiB).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example:
+            error: {code: body_too_large, message: request body too large, request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+    TooManyJobs:
+      description: The admin job registry is full of unfinished jobs.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example:
+            error: {code: too_many_jobs, message: too many unfinished jobs, request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+    ShuttingDown:
+      description: The server is shutting down and accepts no new jobs.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example:
+            error: {code: shutting_down, message: shutting down, request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+    Internal:
+      description: Unexpected error; the log holds the entry with the same request id.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+          example:
+            error: {code: internal, message: internal error, request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      additionalProperties: false
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          additionalProperties: false
+          properties:
+            code: {type: string, description: Stable code, see docs/guides/errors.md.}
+            message: {type: string}
+            request_id: {type: string}
+    Kind:
+      type: string
+      enum: [llm, embedding, tool, retrieval, rerank, agent, chain, guardrail, other]
+    Status:
+      type: string
+      enum: [unset, ok, error]
+    Usage:
+      type: object
+      required: [input, output, cache_read, cache_write, reasoning]
+      additionalProperties: false
+      properties:
+        input: {type: integer, format: int64}
+        output: {type: integer, format: int64}
+        cache_read: {type: integer, format: int64}
+        cache_write: {type: integer, format: int64}
+        reasoning: {type: integer, format: int64}
+    TraceSummary:
+      type: object
+      required: [trace_id, root_name, service, start_ns, end_ns, duration_ns, span_count, models, usage, cost_nanos, unpriced_spans, has_error, session_id, user_id]
+      additionalProperties: false
+      properties:
+        trace_id: {type: string}
+        root_name: {type: string}
+        service: {type: string, description: Service of the root span.}
+        start_ns: {type: integer, format: int64}
+        end_ns: {type: integer, format: int64}
+        duration_ns: {type: integer, format: int64}
+        span_count: {type: integer}
+        models: {type: array, items: {type: string}}
+        usage: {$ref: '#/components/schemas/Usage'}
+        cost_nanos: {type: integer, format: int64}
+        unpriced_spans: {type: integer}
+        has_error: {type: boolean}
+        session_id: {type: string}
+        user_id: {type: string}
+    ContentPart:
+      type: object
+      required: [role, bytes, truncated, source]
+      additionalProperties: false
+      properties:
+        role: {type: string}
+        bytes: {type: integer}
+        body: {type: string, description: Present only with include_content=true and stored content.}
+        truncated: {type: boolean}
+        source: {type: string, enum: [attribute, event, log]}
+    Span:
+      type: object
+      required: [span_id, parent_span_id, service, name, kind, status, start_ns, end_ns, duration_ns, model, provider, usage, has_usage, cost_nanos, session_id, user_id, error_type, attr_truncated, usage_duplicate, usage_clamped, attributes, content_stripped]
+      additionalProperties: false
+      properties:
+        span_id: {type: string}
+        parent_span_id: {type: string, description: Empty for a root span.}
+        service: {type: string}
+        name: {type: string}
+        kind: {$ref: '#/components/schemas/Kind'}
+        status: {$ref: '#/components/schemas/Status'}
+        start_ns: {type: integer, format: int64}
+        end_ns: {type: integer, format: int64}
+        duration_ns: {type: integer, format: int64}
+        model: {type: string}
+        provider: {type: string}
+        usage: {$ref: '#/components/schemas/Usage'}
+        has_usage: {type: boolean}
+        cost_nanos: {type: [integer, 'null'], format: int64, description: null when unpriced.}
+        session_id: {type: string}
+        user_id: {type: string}
+        error_type: {type: string}
+        attr_truncated: {type: boolean}
+        usage_duplicate: {type: boolean}
+        usage_clamped: {type: boolean}
+        attributes: {type: object, description: Non-content span attributes.}
+        content: {type: array, items: {$ref: '#/components/schemas/ContentPart'}}
+        content_stripped: {type: boolean}
+    TraceDetail:
+      type: object
+      required: [summary, spans]
+      additionalProperties: false
+      properties:
+        summary: {$ref: '#/components/schemas/TraceSummary'}
+        spans: {type: array, items: {$ref: '#/components/schemas/Span'}}
+    TracePage:
+      type: object
+      required: [data, next_cursor]
+      additionalProperties: false
+      properties:
+        data: {type: array, items: {$ref: '#/components/schemas/TraceSummary'}}
+        next_cursor: {type: string}
+    SessionSummary:
+      type: object
+      required: [id, user_id, first_ns, last_ns, trace_count, usage, cost_nanos]
+      additionalProperties: false
+      properties:
+        id: {type: string}
+        user_id: {type: string}
+        first_ns: {type: integer, format: int64}
+        last_ns: {type: integer, format: int64}
+        trace_count: {type: integer}
+        usage: {$ref: '#/components/schemas/Usage'}
+        cost_nanos: {type: integer, format: int64}
+    SessionPage:
+      type: object
+      required: [data, next_cursor]
+      additionalProperties: false
+      properties:
+        data: {type: array, items: {$ref: '#/components/schemas/SessionSummary'}}
+        next_cursor: {type: string}
+    SessionDetail:
+      type: object
+      required: [summary, data, next_cursor]
+      additionalProperties: false
+      properties:
+        summary: {$ref: '#/components/schemas/SessionSummary'}
+        data: {type: array, items: {$ref: '#/components/schemas/TraceSummary'}}
+        next_cursor: {type: string}
+    TopSpan:
+      type: object
+      required: [trace_id, span]
+      additionalProperties: false
+      properties:
+        trace_id: {type: string}
+        span: {$ref: '#/components/schemas/Span'}
+    Stats:
+      type: object
+      required: [requests, errors, usage, cost_nanos, unpriced, p50_ns, p95_ns, p99_ns]
+      additionalProperties: false
+      properties:
+        requests: {type: integer, format: int64}
+        errors: {type: integer, format: int64}
+        usage: {$ref: '#/components/schemas/Usage'}
+        cost_nanos: {type: integer, format: int64}
+        unpriced: {type: integer, format: int64}
+        p50_ns: {type: integer, format: int64}
+        p95_ns: {type: integer, format: int64}
+        p99_ns: {type: integer, format: int64}
+    Overview:
+      type: object
+      required: [from, to, group_by, interval, total, groups, series]
+      additionalProperties: false
+      properties:
+        from: {type: string, format: date-time, description: Effective range start (rounded down to the hour).}
+        to: {type: string, format: date-time, description: Effective range end (rounded up to the hour).}
+        group_by: {type: string, description: Empty when ungrouped.}
+        interval: {type: string, enum: [hour, day]}
+        total: {$ref: '#/components/schemas/Stats'}
+        groups:
+          type: array
+          items:
+            type: object
+            required: [key, other, users, stats]
+            additionalProperties: false
+            properties:
+              key: {type: string}
+              other: {type: boolean, description: The aggregated remainder of group_by=user.}
+              users: {type: integer, description: Users in the "other" group.}
+              stats: {$ref: '#/components/schemas/Stats'}
+        series:
+          type: array
+          items:
+            type: object
+            required: [bucket, key, other, stats]
+            additionalProperties: false
+            properties:
+              bucket: {type: string, format: date-time}
+              key: {type: string}
+              other: {type: boolean}
+              stats: {$ref: '#/components/schemas/Stats'}
+    IngestStats:
+      type: object
+      required: [received, stored, duplicates, rejected, dropped, discarded, content_stripped, unpriced, queue_spans, queue_bytes, inflight_bytes]
+      additionalProperties: false
+      properties:
+        received: {type: integer, format: int64}
+        stored: {type: integer, format: int64}
+        duplicates: {type: integer, format: int64}
+        rejected: {type: object, additionalProperties: {type: integer, format: int64}, description: Counts by reason.}
+        dropped: {type: object, additionalProperties: {type: integer, format: int64}, description: Counts by reason.}
+        discarded: {type: object, additionalProperties: {type: integer, format: int64}, description: Counts by signal.}
+        content_stripped: {type: integer, format: int64}
+        unpriced: {type: integer, format: int64}
+        queue_spans: {type: integer, format: int64}
+        queue_bytes: {type: integer, format: int64}
+        inflight_bytes: {type: integer, format: int64}
+    Version:
+      type: object
+      required: [version, commit, build_date, go_version]
+      additionalProperties: false
+      properties:
+        version: {type: string}
+        commit: {type: string}
+        build_date: {type: string}
+        go_version: {type: string}
+    JobAccepted:
+      type: object
+      required: [job_id]
+      additionalProperties: false
+      properties:
+        job_id: {type: string}
+    RecomputeRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        since: {type: [string, 'null'], format: date-time}
+        until: {type: [string, 'null'], format: date-time}
+    JobStatus:
+      type: object
+      required: [job_id, kind, state, rows, created_at, started_at, finished_at]
+      additionalProperties: false
+      properties:
+        job_id: {type: string}
+        kind: {type: string, enum: [pricing_recompute, vacuum, backup, user_delete]}
+        state: {type: string, enum: [pending, running, done, failed]}
+        rows: {type: integer, description: Rows processed so far.}
+        error: {type: string, description: Failure text when state is failed.}
+        created_at: {type: string, format: date-time}
+        started_at: {type: [string, 'null'], format: date-time}
+        finished_at: {type: [string, 'null'], format: date-time}

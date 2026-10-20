@@ -1,0 +1,33 @@
+{
+  "resource": {"service.name": "triage", "service.version": "1.2.0"},
+  "trace_id": "0102030405060708090a0b0c0d0e0f10",
+  "span_id": "1112131415161718",
+  "parent_span_id": "2122232425262728",
+  "name": "chat claude-sonnet",
+  "span_kind": 3,
+  "start_ns": 1000000000,
+  "end_ns": 3500000000,
+  "status_code": 1,
+  "attributes": {
+    "gen_ai.operation.name": "chat",
+    "gen_ai.provider.name": "anthropic",
+    "gen_ai.request.model": "claude-sonnet",
+    "gen_ai.response.model": "claude-sonnet-20260101",
+    "gen_ai.usage.input_tokens": 1200,
+    "gen_ai.usage.output_tokens": 340,
+    "gen_ai.usage.cache_read.input_tokens": 800,
+    "gen_ai.usage.cache_write.input_tokens": 100,
+    "gen_ai.usage.reasoning.output_tokens": 120,
+    "gen_ai.usage.total_tokens": 1540,
+    "gen_ai.response.finish_reasons": ["stop"],
+    "gen_ai.conversation.id": "conv-1",
+    "user.id": "u-42",
+    "gen_ai.input.messages": [{"role": "user", "parts": [{"type": "text", "content": "hello"}]}],
+    "gen_ai.system_instructions": "be brief"
+  },
+  "events": [
+    {"name": "gen_ai.user.message", "time_ns": 1100000000, "attributes": {"gen_ai.system": "anthropic", "content": "hello"}},
+    {"name": "gen_ai.choice", "time_ns": 3400000000, "attributes": {"index": 0, "finish_reason": "stop", "message": {"content": "hi"}}},
+    {"name": "app.checkpoint", "time_ns": 2000000000, "attributes": {"note": "ignored"}}
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "spans": [
+    {
+      "name": "python-openai-example",
+      "trace_id": "3d447e567dfa77c5572feb479eaf93ac",
+      "span_id": "c96e75b1a090d4d3",
+      "parent_span_id": "",
+      "kind": "other",
+      "status": "unset",
+      "service": "example-python-openai-1792418267-47713",
+      "model": "",
+      "provider": "",
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": false,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {},
+      "content": []
+    },
+    {
+      "name": "chat gpt-4o-mini",
+      "trace_id": "3d447e567dfa77c5572feb479eaf93ac",
+      "span_id": "aa6c027f7b05f190",
+      "parent_span_id": "c96e75b1a090d4d3",
+      "kind": "llm",
+      "status": "unset",
+      "service": "example-python-openai-1792418267-47713",
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "usage": {
+        "input": 4,
+        "output": 6,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": true,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-4o-mini",
+        "gen_ai.response.finish_reasons": [
+          "stop"
+        ],
+        "gen_ai.response.id": "chatcmpl-9f420cd329183631",
+        "gen_ai.response.model": "gpt-4o-mini",
+        "gen_ai.usage.input_tokens": 4,
+        "gen_ai.usage.output_tokens": 6
+      },
+      "content": []
+    }
+  ]
+}

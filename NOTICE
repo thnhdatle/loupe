@@ -1,0 +1,29 @@
+Loupe
+Copyright 2026 The Loupe Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Vendored front-end assets (embedded in the binary from web/static/vendor/; the
+license texts sit next to the files):
+
+- htmx 2.0.11 - BSD Zero Clause License (0BSD) - https://htmx.org
+  Source: https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.11.tgz (package/dist/htmx.min.js)
+  SHA-256 htmx.min.js:
+    d6fdc75f204e6bdefa99b69bf1e6d4ac69b8a364f77929f45c13476b4000f717
+  SHA-256 LICENSE-htmx.txt:
+    d3d2456f76414f2456104660ebd65aff1c04cd7966b942bdabd63f3cdb316a38
+- uPlot 1.6.32 - MIT License - https://github.com/leeoniya/uPlot
+  Source: https://registry.npmjs.org/uplot/-/uplot-1.6.32.tgz
+  (package/dist/uPlot.iife.min.js and package/dist/uPlot.min.css)
+  SHA-256 uPlot.iife.min.js:
+    19c8d4c6ad88929a79f4ae49d6f7161566dfd0ba3d15cc495e974f787eb78f1f
+  SHA-256 uPlot.min.css:
+    df630c6a8d6f8eeaff264b50f73ce5b114f646ffd9a0bb74f049b0a00135fa04
+  SHA-256 LICENSE-uplot.txt:
+    8f989229699b4fe2f1a0432d0e9edc338a8a911e250e2d1b01ecd770a5f5b1bd
+
+Go module dependencies and their licenses are verified by `go-licenses check`
+(make security).
+Exception reviewed by hand: modernc.org/mathutil (a dependency of
+modernc.org/sqlite) is BSD-3-Clause; its LICENSE wording is not recognised by
+the go-licenses classifier, so scripts/security.sh ignores it explicitly.

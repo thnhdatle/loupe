@@ -1,0 +1,96 @@
+{
+  "spans": [
+    {
+      "name": "python-openinference-example",
+      "trace_id": "4be017fc609922eb0c1436b548dd7417",
+      "span_id": "e4a4bde1fd98be87",
+      "parent_span_id": "",
+      "kind": "other",
+      "status": "unset",
+      "service": "example-python-openinference-1792418268-47745",
+      "model": "",
+      "provider": "",
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": false,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {},
+      "content": []
+    },
+    {
+      "name": "ChatCompletion",
+      "trace_id": "4be017fc609922eb0c1436b548dd7417",
+      "span_id": "5c6b2b861eebf7ec",
+      "parent_span_id": "e4a4bde1fd98be87",
+      "kind": "llm",
+      "status": "ok",
+      "service": "example-python-openinference-1792418268-47745",
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "usage": {
+        "input": 4,
+        "output": 6,
+        "cache_read": 0,
+        "cache_write": 0,
+        "reasoning": 0
+      },
+      "has_usage": true,
+      "session_id": "",
+      "user_id": "",
+      "error_type": "",
+      "attributes": {
+        "input.mime_type": "application/json",
+        "llm.finish_reason": "stop",
+        "llm.invocation_parameters": "{\"model\": \"gpt-4o-mini\"}",
+        "llm.model_name": "gpt-4o-mini",
+        "llm.system": "openai",
+        "llm.token_count.completion": 6,
+        "llm.token_count.prompt": 4,
+        "llm.token_count.total": 10,
+        "openinference.span.kind": "LLM",
+        "output.mime_type": "application/json"
+      },
+      "content": [
+        {
+          "part": 0,
+          "source": "attribute",
+          "key": "input.value",
+          "role": "input",
+          "bytes": 89,
+          "body": "{\"model\": \"gpt-4o-mini\", \"messages\": [{\"role\": \"user\", \"content\": \"say hello to loupe\"}]}"
+        },
+        {
+          "part": 1,
+          "source": "attribute",
+          "key": "llm.input_messages.0.message.content",
+          "role": "user",
+          "bytes": 18,
+          "body": "say hello to loupe"
+        },
+        {
+          "part": 2,
+          "source": "attribute",
+          "key": "llm.output_messages.0.message.content",
+          "role": "assistant",
+          "bytes": 41,
+          "body": "prairie bravo lumen prairie prairie cedar"
+        },
+        {
+          "part": 3,
+          "source": "attribute",
+          "key": "output.value",
+          "role": "output",
+          "bytes": 304,
+          "body": "{\"id\":\"chatcmpl-c26e19b05de3bfa5\",\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"prairie bravo lumen prairie prairie cedar\",\"role\":\"assistant\"}}],\"created\":1792418268,\"model\":\"gpt-4o-mini\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":6,\"prompt_tokens\":4,\"total_tokens\":10}}"
+        }
+      ]
+    }
+  ]
+}

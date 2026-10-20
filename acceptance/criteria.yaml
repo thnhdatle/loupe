@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: Apache-2.0
+# Each criterion has thresholds for the reference machine (pass.mac) and for CI
+# runners (pass.ci, selected with CI=1). Tests read them at run time.
+# kind: functional (correctness), performance (calibrated for the reference
+# machine) or release (quickstart from a clean checkout).
+project: loupe
+machine: "MacBook Pro M3 Pro 36 GB, Docker VM 8 CPU / 10 GB"
+criteria:
+  - id: LPE-01
+    title: "Real SDKs (OTel GenAI Python openai-v2 and Node OpenAI, OpenInference Python OpenAI, manual Go spans) against fakellm incl. tool-call; both openai-v2 content forms; default metrics/logs exporters on; expected tree, kinds, models, tokens, cost and (capture on) content"
+    test: TestAcceptance_LPE01_SDKCompat
+    kind: functional
+    real_deps: [python, node, fakellm]
+    requires: [python, node, "sibling:fakellm"]
+    pass:
+      mac: { checks_passed_pct: 100, sdk_export_errors: 0 }
+      ci: { checks_passed_pct: 100, sdk_export_errors: 0 }
+
+  - id: LPE-02
+    title: "Sustained ingest, OTLP/HTTP protobuf, constant arrival rate, 10 min, benchmark payload, native binary, fresh DB per run"
+    test: BenchmarkAcceptance_LPE02_Ingest
+    kind: performance
+    real_deps: []
+    requires: [mac]
+    pass:
+      mac: { min_spans_per_s: 3000, minutes: 10, runs: 3, rejected: 0, dropped: 0, lost: 0, reported_only_spans_per_s: 5000 }
+      ci: { min_spans_per_s: 900, minutes: 10, runs: 3, rejected: 0, dropped: 0, lost: 0 }
+
+  - id: LPE-03
+    title: "Overload at 3x capacity (step search) for 5 min per overflow mode (reject, drop), non-retrying open-model load generator, 90% OTLP/HTTP + 10% OTLP/gRPC, default limits"
+    test: TestAcceptance_LPE03_Overload
+    kind: performance
+    real_deps: []
+    requires: [mac]
+    pass:
+      mac: { peak_rss_mib_max: 768, minutes_per_mode: 5, modes: 2, unaccounted_spans: 0, stats_mismatches: 0, grpc_rejections_without_retryinfo: 0 }
+      ci: { peak_rss_mib_max: 768, minutes_per_mode: 2, modes: 2, unaccounted_spans: 0, stats_mismatches: 0, grpc_rejections_without_retryinfo: 0 }
+
+  - id: LPE-04
+    title: "Dashboard/API query latency on a 2M-span DB built by gentraces through the real write path, for the 8 benchmark queries; each query 30 times after 3 warm-ups with rotated parameters, no concurrent ingest, explicit from/to"
+    test: BenchmarkAcceptance_LPE04_QueryLatency
+    kind: performance
+    real_deps: []
+    requires: [mac]
+    pass:
+      mac: { spans: 2000000, queries: 8, runs_per_query: 30, warmups: 3, p95_s_max: 1 }
+      ci: { spans: 1000000, queries: 8, runs_per_query: 30, warmups: 3, p95_s_max: 3 }
+
+  - id: LPE-05
+    title: "Cost correctness on the 200-case hand-checked fixture"
+    test: TestAcceptance_LPE05_Cost
+    kind: functional
+    real_deps: []
+    requires: []
+    pass:
+      mac: { exact_match_pct: 100, cases_min: 200 }
+      ci: { exact_match_pct: 100, cases_min: 200 }
+
+  - id: LPE-06
+    title: "Footprint: static binary, CGO disabled"
+    test: TestAcceptance_LPE06_Footprint
+    kind: performance
+    real_deps: [docker]
+    requires: [docker, mac]
+    pass:
+      mac: { start_to_ready_s_max: 1, idle_rss_mib_max: 100, idle_minutes: 10, image_mb_max: 50 }
+      ci: { start_to_ready_s_max: 1, idle_rss_mib_max: 100, idle_minutes: 10, image_mb_max: 50 }
+
+  - id: LPE-07
+    title: "Crash safety: kill -9 at random points under 1,000 spans/s OTLP/HTTP load (including during retention and recompute jobs), native binary, half the runs with sync_ack"
+    test: TestAcceptance_LPE07_CrashSafety
+    kind: functional
+    real_deps: []
+    requires: []
+    pass:
+      mac: { runs: 50, integrity_failures: 0, restart_failures: 0, lost_over_queue_spans: 0, sync_ack_lost: 0 }
+      ci: { runs: 20, integrity_failures: 0, restart_failures: 0, lost_over_queue_spans: 0, sync_ack_lost: 0 }
+
+  - id: LPE-08
+    title: "Retention, in-process with fake clock, 30 simulated days, retention.spans 7d, retention.content 3d, capture on, max_db_bytes 200 MiB"
+    test: TestAcceptance_LPE08_Retention
+    kind: functional
+    real_deps: []
+    requires: []
+    pass:
+      mac: { simulated_days: 30, retention_spans_days: 7, retention_content_days: 3, max_db_mib: 200, cap_overshoot_pct_max: 10, rollup_days_present: 30, expired_spans: 0, expired_content: 0, commit_p99_ratio_max: 2 }
+      ci: { simulated_days: 30, retention_spans_days: 7, retention_content_days: 3, max_db_mib: 200, cap_overshoot_pct_max: 10, rollup_days_present: 30, expired_spans: 0, expired_content: 0, commit_p99_ratio_max: 2 }
+
+  - id: LPE-09
+    title: "Percentile accuracy of rollups vs exact: 1M samples per distribution, 5 distributions, spread over 24 hourly rows and merged"
+    test: TestAcceptance_LPE09_Percentiles
+    kind: functional
+    real_deps: []
+    requires: []
+    pass:
+      mac: { samples_per_distribution: 1000000, distributions: 5, relative_error_pct_max: 2 }
+      ci: { samples_per_distribution: 1000000, distributions: 5, relative_error_pct_max: 2 }
+
+  - id: LPE-10
+    title: "Privacy: capture off, 10,000 spans with unique marker strings in every content carrier, native binary, log level debug"
+    test: TestAcceptance_LPE10_NoContentLeak
+    kind: functional
+    real_deps: []
+    requires: []
+    pass:
+      mac: { spans: 10000, markers_found: 0 }
+      ci: { spans: 10000, markers_found: 0 }
+
+  - id: LPE-11
+    title: "Dashboard smoke with Playwright on fixture data: login flow on a non-loopback listener, all 5 pages load, trace detail shows nested agent tree with tool spans and the content-not-stored hint for a stripped span"
+    test: TestAcceptance_LPE11_DashboardSmoke
+    kind: functional
+    real_deps: [node, playwright]
+    requires: [node, playwright]
+    pass:
+      mac: { checks_passed_pct: 100, console_errors: 0 }
+      ci: { checks_passed_pct: 100, console_errors: 0 }
+
+  - id: LPE-12
+    title: "Quickstart: README commands start Loupe (image defaults, volume, ports on host loopback) and an example app; the logged login URL works; trace visible via API within 10 s"
+    test: TestAcceptance_LPE12_Quickstart
+    kind: release
+    real_deps: [docker, fakellm]
+    requires: [docker, "sibling:fakellm"]
+    pass:
+      mac: { minutes_max: 5, trace_visible_s_max: 10, success: true }
+      ci: { minutes_max: 5, trace_visible_s_max: 10, success: true }

@@ -1,0 +1,9 @@
+reply: prairie bravo lumen prairie prairie cedar
+traces: 1
+spans: 2
+models: gpt-4o-mini
+tokens: input=4 output=6
+cost_nanos: 4200
+errors: false
+python-openinference-example [other]
+  ChatCompletion [llm] model=gpt-4o-mini in=4 out=6 cost_nanos=4200

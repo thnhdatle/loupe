@@ -1,0 +1,72 @@
+{
+  "kind": "llm",
+  "status": "ok",
+  "service": "triage",
+  "model": "claude-sonnet-20260101",
+  "provider": "anthropic",
+  "usage": {
+    "input": 1200,
+    "output": 340,
+    "cache_read": 800,
+    "cache_write": 100,
+    "reasoning": 120
+  },
+  "has_usage": true,
+  "session_id": "conv-1",
+  "user_id": "u-42",
+  "error_type": "",
+  "flags": 0,
+  "attributes": {
+    "gen_ai.conversation.id": "conv-1",
+    "gen_ai.operation.name": "chat",
+    "gen_ai.provider.name": "anthropic",
+    "gen_ai.request.model": "claude-sonnet",
+    "gen_ai.response.finish_reasons": [
+      "stop"
+    ],
+    "gen_ai.response.model": "claude-sonnet-20260101",
+    "gen_ai.usage.cache_read.input_tokens": 800,
+    "gen_ai.usage.cache_write.input_tokens": 100,
+    "gen_ai.usage.input_tokens": 1200,
+    "gen_ai.usage.output_tokens": 340,
+    "gen_ai.usage.reasoning.output_tokens": 120,
+    "gen_ai.usage.total_tokens": 1540,
+    "user.id": "u-42"
+  },
+  "content": [
+    {
+      "part": 0,
+      "source": "attribute",
+      "key": "gen_ai.input.messages",
+      "role": "input",
+      "bytes": 61,
+      "body": "[{\"parts\":[{\"content\":\"hello\",\"type\":\"text\"}],\"role\":\"user\"}]"
+    },
+    {
+      "part": 1,
+      "source": "attribute",
+      "key": "gen_ai.system_instructions",
+      "role": "system",
+      "bytes": 8,
+      "body": "be brief"
+    },
+    {
+      "part": 2,
+      "source": "event",
+      "key": "gen_ai.user.message",
+      "role": "user",
+      "bytes": 5,
+      "body": "hello",
+      "time_ns": 1100000000
+    },
+    {
+      "part": 3,
+      "source": "event",
+      "key": "gen_ai.choice",
+      "role": "assistant",
+      "bytes": 61,
+      "body": "{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"hi\"}}",
+      "time_ns": 3400000000
+    }
+  ]
+}

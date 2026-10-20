@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+name: loupe
+
+services:
+  loupe:
+    image: ${RAYLD_LOUPE_IMAGE:-thnhdatle/loupe:dev}
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      LOUPE_STORAGE_PATH: /data/loupe.db
+      LOUPE_RECEIVER_GRPC_LISTEN: 0.0.0.0:4317
+      LOUPE_RECEIVER_HTTP_LISTEN: 0.0.0.0:4318
+      LOUPE_UI_LISTEN: 0.0.0.0:3000
+      LOUPE_ADMIN_LISTEN: 0.0.0.0:9092
+      LOUPE_RECEIVER_ALLOW_UNAUTHENTICATED: "true"
+      LOUPE_API_TOKEN_FILE: /data/api_token
+      LOUPE_API_GENERATE_TOKEN: "true"
+    volumes:
+      - loupe-data:/data
+    # Host ports can be moved with LOUPE_*_HOST_PORT when the defaults are taken.
+    ports:
+      - "127.0.0.1:${LOUPE_UI_HOST_PORT:-3000}:3000"
+      - "127.0.0.1:${LOUPE_GRPC_HOST_PORT:-4317}:4317"
+      - "127.0.0.1:${LOUPE_HTTP_HOST_PORT:-4318}:4318"
+      - "127.0.0.1:${LOUPE_ADMIN_HOST_PORT:-9092}:9092"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/loupe", "healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+
+  # Fake OpenAI-compatible provider (from Triage), used by the examples and the
+  # acceptance suite. RAYLD_FAKELLM_IMAGE selects another image, for example a
+  # local thnhdatle/fakellm:dev.
+  fakellm:
+    image: ${RAYLD_FAKELLM_IMAGE:-ghcr.io/thnhdatle/fakellm:v0.1.0}
+    ports:
+      - "127.0.0.1:${FAKELLM_HOST_PORT:-8090}:8090"
+    restart: unless-stopped
+
+volumes:
+  loupe-data:

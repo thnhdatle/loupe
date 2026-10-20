@@ -1,0 +1,69 @@
+{{define "content"}}
+<h1>Traces</h1>
+<form method="get" action="/traces" class="filters" hx-get="/traces" hx-target="#results" hx-swap="outerHTML" hx-push-url="true">
+  <label>From (UTC) <input type="datetime-local" name="from" value="{{.Form.From}}"></label>
+  <label>To (UTC) <input type="datetime-local" name="to" value="{{.Form.To}}"></label>
+  <label>Service <input type="text" name="service" value="{{.Form.Service}}"></label>
+  <label>Model <input type="text" name="model" value="{{.Form.Model}}"></label>
+  <label>Provider <input type="text" name="provider" value="{{.Form.Provider}}"></label>
+  <label>Span name starts with <input type="text" name="name" value="{{.Form.Name}}"></label>
+  <label>Kind
+    <select name="kind">
+      <option value="">any</option>
+      {{range $k := (list "llm" "embedding" "tool" "retrieval" "rerank" "agent" "chain" "guardrail" "other")}}<option value="{{$k}}"{{if eq $k $.Form.Kind}} selected{{end}}>{{$k}}</option>{{end}}
+    </select>
+  </label>
+  <label>Span status
+    <select name="status">
+      <option value="">any</option>
+      {{range $s := (list "ok" "error" "unset")}}<option value="{{$s}}"{{if eq $s $.Form.Status}} selected{{end}}>{{$s}}</option>{{end}}
+    </select>
+  </label>
+  <label>Min cost (USD) <input type="text" inputmode="decimal" name="min_cost" value="{{.Form.MinCost}}"></label>
+  <label>Min duration (ms) <input type="text" inputmode="numeric" name="min_duration_ms" value="{{.Form.MinDurationMs}}"></label>
+  <label>Session <input type="text" name="session_id" value="{{.Form.SessionID}}"></label>
+  <label>User <input type="text" name="user_id" value="{{.Form.UserID}}"></label>
+  <label class="check"><input type="checkbox" name="has_error" value="1"{{if .Form.HasError}} checked{{end}}> Has error</label>
+  <label>Sort
+    <select name="sort">
+      {{range $s := (list "start" "cost" "duration")}}<option value="{{$s}}"{{if eq $s $.Form.Sort}} selected{{end}}>{{$s}}</option>{{end}}
+    </select>
+  </label>
+  <label>Order
+    <select name="order">
+      {{range $o := (list "desc" "asc")}}<option value="{{$o}}"{{if eq $o $.Form.Order}} selected{{end}}>{{$o}}</option>{{end}}
+    </select>
+  </label>
+  <div class="actions"><button type="submit">Apply filters</button> <a href="/traces">Reset</a></div>
+</form>
+{{template "traces_results" .}}
+{{end}}
+
+{{define "traces_results"}}
+<div id="results">
+{{if .Rows}}
+<table class="data">
+  <thead><tr>
+    <th scope="col">Time (UTC)</th><th scope="col">Root span</th><th scope="col">Service</th>
+    <th scope="col">Models</th><th scope="col" class="num">Duration</th><th scope="col" class="num">Tokens</th>
+    <th scope="col" class="num">Cost</th><th scope="col">Status</th>
+  </tr></thead>
+  <tbody>
+  {{range .Rows}}
+  <tr>
+    <td>{{ts .StartNs}}</td>
+    <th scope="row"><a href="/traces/{{.TraceID}}">{{if .RootName}}{{.RootName}}{{else}}(unnamed){{end}}</a></th>
+    <td>{{.Service}}</td>
+    <td>{{join .Models}}</td>
+    <td class="num">{{dur .DurationNs}}</td>
+    <td class="num">{{num (tokens .Usage)}}</td>
+    <td class="num">{{money .CostNanos}}{{if .UnpricedSpans}} <span class="muted">({{.UnpricedSpans}} unpriced)</span>{{end}}</td>
+    <td>{{template "status" .HasError}}</td>
+  </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}<p class="notice">No traces match these filters.</p>{{end}}
+{{if .NextHref}}<p class="pager"><a rel="next" href="{{.NextHref}}" hx-get="{{.NextHref}}" hx-target="#results" hx-swap="outerHTML" hx-push-url="true">Next</a></p>{{end}}
+</div>
+{{end}}

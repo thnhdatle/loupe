@@ -1,0 +1,74 @@
+{{define "content"}}
+<p class="crumbs"><a href="/traces">Traces</a> / <span class="mono">{{.Summary.TraceID}}</span></p>
+<h1>{{if .Summary.RootName}}{{.Summary.RootName}}{{else}}(unnamed){{end}}</h1>
+<dl class="meta">
+  <div><dt>Start</dt><dd>{{ts .Summary.StartNs}} UTC</dd></div>
+  <div><dt>Duration</dt><dd>{{dur .Summary.DurationNs}}</dd></div>
+  <div><dt>Spans</dt><dd>{{num (int64 .Summary.SpanCount)}}</dd></div>
+  <div><dt>Tokens</dt><dd>{{num (tokens .Summary.Usage)}}</dd></div>
+  <div><dt>Cost</dt><dd>{{money .Summary.CostNanos}}{{if .Summary.UnpricedSpans}} ({{.Summary.UnpricedSpans}} unpriced){{end}}</dd></div>
+  {{if .Summary.SessionID}}<div><dt>Session</dt><dd><a href="/sessions/{{.Summary.SessionID}}">{{.Summary.SessionID}}</a></dd></div>{{end}}
+  {{if .Summary.UserID}}<div><dt>User</dt><dd>{{.Summary.UserID}}</dd></div>{{end}}
+</dl>
+{{template "trace_body" .}}
+{{end}}
+
+{{define "trace_body"}}
+<div id="detail" class="detail">
+  <section class="waterfall" aria-label="Span waterfall">
+    <ol>
+    {{range .Rows}}
+      <li class="depth-{{.Depth}}">
+        <a class="wrow" href="{{.Href}}" hx-get="{{.Href}}" hx-target="#detail" hx-swap="outerHTML" hx-push-url="true"{{if .Selected}} aria-current="true"{{end}}>
+          <span class="wname"><span class="kind kind-{{.Kind}}" title="{{.Kind}}">{{badge .Kind}}</span> <span class="wtext">{{if .Name}}{{.Name}}{{else}}(unnamed){{end}}</span>{{if .Error}} <span class="status status-error">error</span>{{end}}</span>
+          <span class="wbar">{{template "bar" bar .X .W (printf "bar-%s" .Kind)}}</span>
+          <span class="wdur">{{dur .Duration}}</span>
+        </a>
+      </li>
+    {{end}}
+    </ol>
+  </section>
+  {{with .Panel}}
+  <aside class="panel" aria-label="Span details" id="span-panel">
+    <h2>{{if .Span.Name}}{{.Span.Name}}{{else}}(unnamed){{end}}</h2>
+    <dl class="meta">
+      <div><dt>Kind</dt><dd>{{.Span.Kind}}</dd></div>
+      <div><dt>Status</dt><dd>{{template "status" (eq (printf "%s" .Span.Status) "error")}}{{if .Span.ErrorType}} <span class="mono">{{.Span.ErrorType}}</span>{{end}}</dd></div>
+      <div><dt>Service</dt><dd>{{.Span.Service}}</dd></div>
+      <div><dt>Started at</dt><dd>+{{dur .Offset}}</dd></div>
+      <div><dt>Duration</dt><dd>{{dur .Span.DurationNs}}</dd></div>
+      {{if .Span.Model}}<div><dt>Model</dt><dd>{{.Span.Model}}</dd></div>{{end}}
+      {{if .Span.Provider}}<div><dt>Provider</dt><dd>{{.Span.Provider}}</dd></div>{{end}}
+      <div><dt>Cost</dt><dd>{{if .Unpriced}}unpriced{{else if .Span.CostNanos}}{{moneyPtr .Span.CostNanos}}{{else}}-{{end}}</dd></div>
+    </dl>
+    {{if .Span.UsageDuplicate}}<p class="notice">Duplicate usage: this span repeats token usage already counted on a related span, so it is excluded from totals and cost.</p>{{end}}
+    {{if .Span.UsageClamped}}<p class="notice">Reported token usage was clamped to a sane range.</p>{{end}}
+    {{if .Span.AttrTruncated}}<p class="notice">Some attributes were truncated at ingest.</p>{{end}}
+    {{if .HasTokens}}
+    <h3>Tokens</h3>
+    <table class="kv"><tbody>
+      {{range .Tokens}}<tr><th scope="row">{{.Label}}</th><td class="num">{{.Value}}</td></tr>{{end}}
+    </tbody></table>
+    {{end}}
+    <h3>Content</h3>
+    {{if .Stripped}}<p class="notice">{{.Message}}</p>{{end}}
+    {{if .Parts}}
+    <ul class="parts">
+      {{range .Parts}}
+      <li class="part part-{{.Role}}">
+        <div class="part-head"><span class="role">{{.Heading}}</span> <span class="muted">{{num (int64 .Bytes)}} bytes{{if .Truncated}}, truncated{{end}}</span></div>
+        {{if .HasBody}}<pre class="body">{{.Body}}</pre>{{end}}
+      </li>
+      {{end}}
+    </ul>
+    {{else if not .Stripped}}<p class="muted">No content captured for this span.</p>{{end}}
+    <h3>Attributes</h3>
+    {{if .Attrs}}
+    <table class="kv"><tbody>
+      {{range .Attrs}}<tr><th scope="row" class="mono">{{.Label}}</th><td class="mono wrap">{{.Value}}</td></tr>{{end}}
+    </tbody></table>
+    {{else}}<p class="muted">No attributes.</p>{{end}}
+  </aside>
+  {{end}}
+</div>
+{{end}}

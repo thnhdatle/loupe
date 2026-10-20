@@ -1,0 +1,277 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.45.1"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "9da92ca1-01d4-456b-bf59-f30c118d7d0f"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "example-agent-1792418270-47801"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0",
+          "scope": {
+            "name": "opentelemetry.util.genai.handler",
+            "version": "1.1b0"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tool_calls"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-2bc5c340aef6b1b8"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "6"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "7"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418270893120000",
+              "flags": 256,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "chat gpt-4o-mini",
+              "parentSpanId": "6b78bba696e0a843",
+              "spanId": "f01cce638a710ef5",
+              "startTimeUnixNano": "1792418270868542000",
+              "status": {},
+              "traceId": "901ae41348d35af0c9d3a67778e04394"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "stop"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-024189073f0e45f4"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "8"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "6"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418270897449000",
+              "flags": 256,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "chat gpt-4o-mini",
+              "parentSpanId": "6b78bba696e0a843",
+              "spanId": "b0d22f8be5cb7c7e",
+              "startTimeUnixNano": "1792418270893641000",
+              "status": {},
+              "traceId": "901ae41348d35af0c9d3a67778e04394"
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "example"
+          },
+          "spans": [
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "lookup_weather"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.call.id",
+                  "value": {
+                    "stringValue": "call_2bc5c340aef6b1b8"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.type",
+                  "value": {
+                    "stringValue": "function"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.call.arguments",
+                  "value": {
+                    "stringValue": "{\"input\": \"what is the weather in Paris\"}"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.call.result",
+                  "value": {
+                    "stringValue": "sunny, 21C"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418270893437000",
+              "flags": 256,
+              "kind": "SPAN_KIND_INTERNAL",
+              "name": "execute_tool lookup_weather",
+              "parentSpanId": "6b78bba696e0a843",
+              "spanId": "27347de74cfe7c1d",
+              "startTimeUnixNano": "1792418270893401000",
+              "status": {},
+              "traceId": "901ae41348d35af0c9d3a67778e04394"
+            },
+            {
+              "attributes": [
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "invoke_agent"
+                  }
+                },
+                {
+                  "key": "gen_ai.agent.name",
+                  "value": {
+                    "stringValue": "weather-agent"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "gen_ai.conversation.id",
+                  "value": {
+                    "stringValue": "example-agent-1792418270-47801"
+                  }
+                }
+              ],
+              "endTimeUnixNano": "1792418270897475000",
+              "flags": 256,
+              "kind": "SPAN_KIND_CLIENT",
+              "name": "invoke_agent weather-agent",
+              "spanId": "6b78bba696e0a843",
+              "startTimeUnixNano": "1792418270868333000",
+              "status": {},
+              "traceId": "901ae41348d35af0c9d3a67778e04394"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

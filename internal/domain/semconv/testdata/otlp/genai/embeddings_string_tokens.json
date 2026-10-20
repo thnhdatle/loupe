@@ -1,0 +1,19 @@
+{
+  "resource": {"service.name": "triage"},
+  "trace_id": "0102030405060708090a0b0c0d0e0f10",
+  "span_id": "3132333435363738",
+  "name": "route request",
+  "span_kind": 2,
+  "start_ns": 5000000000,
+  "end_ns": 5100000000,
+  "status_code": 2,
+  "attributes": {
+    "gen_ai.operation.name": "embeddings",
+    "gen_ai.system": "openai",
+    "gen_ai.request.model": "text-embedding-3-small",
+    "gen_ai.usage.prompt_tokens": "64",
+    "gen_ai.usage.cache_read_input_tokens": 16.0,
+    "gen_ai.usage.cache_creation_input_tokens": 8,
+    "error.type": "timeout"
+  }
+}
