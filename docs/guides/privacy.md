@@ -3,7 +3,7 @@
 Control which prompts and completions Loupe stores, mask them, and delete a user's data.
 
 Loupe stores nothing of the content unless you turn it on. It sends no telemetry and makes no
-external requests. It never writes content to its logs.
+external requests unless you configure [Analyze](#analyze). It never writes content to its logs.
 
 ## Content capture modes
 
@@ -105,6 +105,18 @@ It does **not** delete:
 - your own copies: volume snapshots, exports.
 
 Handle those by your own retention rules. New traces for the user can still arrive; stop them upstream.
+
+## Analyze
+
+The Analyze button on a trace page (or `POST /v1/traces/{trace_id}/analyze`) explains a failing or slow
+trace. Loupe lists findings from the stored spans (errors, rate limits, retries, slow spans, large
+prompts, cost share), then sends them with a span table (name, kind, model, status, timing, tokens,
+cost, error text) to the model at `analyze.base_url` and shows its causes and fixes, linked to spans.
+Nothing is sent until someone clicks, and Analyze is off while `analyze.base_url` is empty.
+
+Prompt and completion text is sent only with `content.capture: on` and `analyze.include_content: true`,
+as stored (already redacted). Use a local model, or point `analyze.base_url` at Triage to mask personal
+data first ([configuration.md](configuration.md#analyze)).
 
 ## Where the data lives
 
