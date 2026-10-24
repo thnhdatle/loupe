@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Runs the example against already running Loupe and fakellm, then prints the trace
-# Loupe stored, fetched from its REST API. See README.md for the environment.
-#   LOUPE_OTLP_ENDPOINT  OTLP/HTTP base URL   (default http://127.0.0.1:4318)
-#   LOUPE_API            REST API base URL    (default http://127.0.0.1:3000)
-#   FAKELLM_URL          OpenAI-compatible API (default http://127.0.0.1:8090/v1)
-#   OPENAI_V2_CONTENT_FORM=span  record content as span attributes instead of log events
-#   EXAMPLE_NO_SUMMARY=1 skip the summary (used when recording payloads)
+# Runs the example against a running Loupe and fakellm and prints the stored trace.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 root=../..
@@ -17,8 +11,6 @@ export OTEL_SERVICE_NAME
 export OTEL_EXPORTER_OTLP_ENDPOINT="${LOUPE_OTLP_ENDPOINT:-http://127.0.0.1:4318}"
 export OTEL_EXPORTER_OTLP_PROTOCOL="${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}"
 export OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp OTEL_LOGS_EXPORTER=otlp
-# Content opt-in: the latest GenAI conventions, with content as span attributes (span) or as
-# a gen_ai.client.inference.operation.details log event (event, the default here).
 export OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental
 if [[ "${OPENAI_V2_CONTENT_FORM:-event}" == span ]]; then
   export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=span_only
@@ -29,4 +21,4 @@ fi
 uv run --frozen --project "$root/tests/python" python app.py
 
 [[ -z "${EXAMPLE_NO_SUMMARY:-}" ]] || exit 0
-exec go run "$root/bench/cmd/exsummary" -min-spans 2 -content "$OTEL_SERVICE_NAME"
+exec go run "$root/scripts/exsummary" -min-spans 2 -content "$OTEL_SERVICE_NAME"

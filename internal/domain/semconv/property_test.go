@@ -86,7 +86,6 @@ func TestTranslate_AttributesProperty_OrderIndependent(t *testing.T) {
 	pool := genKeyPool()
 	rapid.Check(t, func(t *rapid.T) {
 		attrs := genAttrs(pool).Draw(t, "attrs")
-		// Keep one value per key so that duplicate-key precedence cannot differ.
 		seen := map[string]bool{}
 		uniq := attrs[:0:0]
 		for _, a := range attrs {

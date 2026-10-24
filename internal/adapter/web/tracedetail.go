@@ -13,17 +13,15 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// ContentStrippedMessage is shown when a span's content arrived but was not stored.
 const ContentStrippedMessage = "content not stored: set content.capture=on"
 
 const (
-	waterScale    = 1000 // bar coordinates are integers on a 0..1000 scale
+	waterScale    = 1000
 	minBarWidth   = 3
-	maxDepthClass = 12 // CSS has indent classes depth-0 .. depth-12
+	maxDepthClass = 12
 	maxAttrChars  = 4000
 )
 
-// waterRow is one span of the waterfall.
 type waterRow struct {
 	SpanID   string
 	Name     string
@@ -32,8 +30,8 @@ type waterRow struct {
 	Service  string
 	Model    string
 	Duration int64
-	Depth    int // capped at maxDepthClass
-	X, W     int // bar position on the 0..1000 scale
+	Depth    int
+	X, W     int
 	Selected bool
 	Href     string
 	Error    bool
@@ -44,7 +42,6 @@ type labelValue struct {
 	Value string
 }
 
-// partView is a content part prepared for display.
 type partView struct {
 	Heading   string
 	Role      string
@@ -54,7 +51,6 @@ type partView struct {
 	Truncated bool
 }
 
-// spanPanel is the side panel of the selected span.
 type spanPanel struct {
 	Span      query.SpanView
 	Offset    int64
@@ -67,7 +63,6 @@ type spanPanel struct {
 	Message   string
 }
 
-// traceDetailData is the data of the trace detail page and of its fragment.
 type traceDetailData struct {
 	base
 	Summary query.TraceSummary
@@ -118,7 +113,6 @@ func shortID(id string) string {
 	return id
 }
 
-// hasStoredContent reports whether any span has content bodies worth fetching.
 func hasStoredContent(d query.TraceDetail) bool {
 	for i := range d.Spans {
 		if len(d.Spans[i].Content) > 0 && !d.Spans[i].ContentStripped {
@@ -128,8 +122,6 @@ func hasStoredContent(d query.TraceDetail) bool {
 	return false
 }
 
-// orderSpans returns span indexes in tree order (parents before children,
-// siblings by start). Spans whose parent is missing are roots.
 func orderSpans(spans []query.SpanView) []int {
 	byID := make(map[string]int, len(spans))
 	for i := range spans {
@@ -166,7 +158,7 @@ func orderSpans(spans []query.SpanView) []int {
 	for _, r := range roots {
 		walk(r)
 	}
-	for i := range spans { // a parent cycle leaves spans unreachable from any root
+	for i := range spans {
 		walk(i)
 	}
 	return out
@@ -240,7 +232,6 @@ func newPanel(d query.TraceDetail, sel int) spanPanel {
 	return p
 }
 
-// attrRows flattens the attributes JSON object into sorted rows.
 func attrRows(raw json.RawMessage) []labelValue {
 	if len(raw) == 0 {
 		return nil

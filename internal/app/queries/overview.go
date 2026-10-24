@@ -14,26 +14,18 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// point is a (bucket, group) cell of the series.
 type point struct {
 	bucket int64
 	key    string
 }
 
-// plan is the effective, validated overview request.
 type plan struct {
 	req      query.OverviewRequest
 	rng      rollup.Range
 	rollPlan rollup.Plan
 }
 
-// Overview returns totals, per-group stats and a time series for the range.
-// Zero From and To mean the last 24 hours; the range is rounded outward to
-// whole hours and returned as the effective range. Interval day reads day rows
-// for whole UTC days and hour rows for the edge hours only; interval hour reads
-// hour rows. Ranges above MaxHourlyRange (hour) or MaxDailyRange (day) are
-// rejected with query.ErrInvalidRange. Kind is ignored for group_by=user
-// because user rollups have no kind dimension.
+// Overview returns totals, per-group stats and a time series for a range.
 func (s *Service) Overview(ctx context.Context, req query.OverviewRequest) (Overview, error) {
 	p, err := s.planOverview(req)
 	if err != nil {
@@ -51,8 +43,6 @@ func (s *Service) Overview(ctx context.Context, req query.OverviewRequest) (Over
 	return buildOverview(p, cells)
 }
 
-// ModelStats returns per-model totals of llm spans in the range (dashboard
-// Models page), ranked by cost descending.
 func (s *Service) ModelStats(ctx context.Context, from, to time.Time) ([]GroupStats, error) {
 	ov, err := s.Overview(ctx, query.OverviewRequest{
 		From: from, To: to, GroupBy: query.GroupModel, Interval: query.IntervalDay, Kind: trace.KindLLM,
@@ -60,8 +50,6 @@ func (s *Service) ModelStats(ctx context.Context, from, to time.Time) ([]GroupSt
 	return ov.Groups, err
 }
 
-// UserStats returns per-user totals for the range: the top 50 users by cost
-// plus an "other" entry.
 func (s *Service) UserStats(ctx context.Context, from, to time.Time) ([]GroupStats, error) {
 	ov, err := s.Overview(ctx, query.OverviewRequest{
 		From: from, To: to, GroupBy: query.GroupUser, Interval: query.IntervalDay,
@@ -220,9 +208,6 @@ func plainGroups(totals map[string]*rollup.Aggregate) ([]GroupStats, map[string]
 	return groups, rank, nil
 }
 
-// userGroups splits users into the top 50 and "other" and folds the series
-// cells of the other users into one "other" cell per bucket. The empty "other"
-// key cannot clash with a user because it is marked by the Other flag only.
 func userGroups(
 	totals map[string]*rollup.Aggregate, cells map[point]*rollup.Aggregate,
 ) ([]GroupStats, map[point]*rollup.Aggregate, map[string]int, error) {
@@ -260,9 +245,6 @@ func userGroups(
 	return groups, folded, rank, nil
 }
 
-// otherKey marks the folded cells of users outside the top list; user ids are
-// never empty strings in rank, and the empty id is a real user ("(none)"), so
-// a NUL-prefixed sentinel keeps the two apart.
 const otherKey = "\x00other"
 
 func userLabel(id string) string {
@@ -293,7 +275,7 @@ func buildSeries(cells map[point]*rollup.Aggregate, rank map[string]int, users b
 		if r, ok := rank[k]; ok {
 			return r
 		}
-		return len(rank) // other
+		return len(rank)
 	}
 	slices.SortFunc(pts, func(a, b point) int {
 		return cmp.Or(cmp.Compare(a.bucket, b.bucket), cmp.Compare(order(a.key), order(b.key)))

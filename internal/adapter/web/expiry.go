@@ -10,12 +10,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// maxEntries bounds an expiringSet: when it is full and holds no expired
-// entry, the entry closest to expiry is evicted.
 const maxEntries = 1024
 
-// expiringSet is a bounded in-memory set of secrets with an expiry each. It
-// stores only SHA-256 digests, so a memory dump does not reveal live secrets.
 type expiringSet struct {
 	mu  sync.Mutex
 	clk clock.Clock
@@ -26,7 +22,6 @@ func newExpiringSet(clk clock.Clock) *expiringSet {
 	return &expiringSet{clk: clk, m: make(map[[sha256.Size]byte]time.Time)}
 }
 
-// add stores secret until now+ttl and returns the expiry.
 func (s *expiringSet) add(secret string, ttl time.Duration) time.Time {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -57,14 +52,12 @@ func (s *expiringSet) evictLocked(now time.Time) {
 	}
 }
 
-// has reports whether secret is present and unexpired.
 func (s *expiringSet) has(secret string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.liveLocked(sha256.Sum256([]byte(secret)))
 }
 
-// take removes secret and reports whether it was present and unexpired.
 func (s *expiringSet) take(secret string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -74,7 +67,6 @@ func (s *expiringSet) take(secret string) bool {
 	return ok
 }
 
-// remove deletes secret.
 func (s *expiringSet) remove(secret string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

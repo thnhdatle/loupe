@@ -15,8 +15,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// cspFormat is the Content-Security-Policy of every response; %s is
-// the per-response nonce.
 const cspFormat = "default-src 'self'; script-src 'self' 'nonce-%s'; style-src 'self'; img-src 'self' data:; " +
 	"connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 
@@ -24,7 +22,6 @@ const nonceBytes = 16
 
 type nonceKey struct{}
 
-// secure sets the security headers and a fresh CSP nonce on every response.
 func (h *Handler) secure(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		raw, err := h.rnd.read(nonceBytes)
@@ -47,11 +44,6 @@ func nonceOf(ctx context.Context) string {
 	return n
 }
 
-// sameOrigin rejects a request whose Origin header is present and names
-// another host. Requests without Origin pass; SameSite=Strict covers them.
-// Browsers send "Origin: null" on form posts under Referrer-Policy
-// no-referrer; that passes only when Sec-Fetch-Site says the request came
-// from this origin.
 func sameOrigin(r *http.Request) bool {
 	o := r.Header.Get("Origin")
 	if o == "" {

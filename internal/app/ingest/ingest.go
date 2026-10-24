@@ -17,10 +17,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// DefaultMaxAttributeBytes is receiver.max_attribute_bytes.
 const DefaultMaxAttributeBytes = 64 << 10
 
-// Messages returned in trace.IngestResult.Message (OTLP partial_success.error_message).
 const (
 	msgQueueFullRejected = "ingest queue full; retry later"
 	msgQueueFullDropped  = "ingest queue full; spans dropped"
@@ -29,25 +27,17 @@ const (
 )
 
 var (
-	// ErrInvalidConfig reports an invalid option or a missing dependency.
-	ErrInvalidConfig = errors.New("ingest: invalid configuration")
-	// ErrInvalidOverflow reports an unknown ingest.overflow value.
+	ErrInvalidConfig   = errors.New("ingest: invalid configuration")
 	ErrInvalidOverflow = errors.New("ingest: invalid overflow mode")
 )
 
-// Overflow is the ingest.overflow setting: what happens when the queue is full.
 type Overflow string
 
-// Overflow modes.
 const (
-	// OverflowReject fails the request with trace.ErrOverloaded (HTTP 429, gRPC RESOURCE_EXHAUSTED).
 	OverflowReject Overflow = "reject"
-	// OverflowDrop accepts the request, drops its spans and reports them in
-	// IngestResult.Dropped (OTLP partial_success).
-	OverflowDrop Overflow = "drop"
+	OverflowDrop   Overflow = "drop"
 )
 
-// ParseOverflow converts a configuration string into an Overflow.
 func ParseOverflow(s string) (Overflow, error) {
 	switch o := Overflow(s); o {
 	case OverflowReject, OverflowDrop:
@@ -57,22 +47,9 @@ func ParseOverflow(s string) (Overflow, error) {
 	}
 }
 
-// Queue is the bounded writer queue the Ingestor feeds; app/writer implements
-// it (see writer.Writer.Enqueue for the full contract).
 type Queue interface {
-	// Enqueue adds one request's batch taking slots queue slots and bytes
-	// estimated bytes. It returns trace.ErrOverloaded when full and
-	// trace.ErrShuttingDown during shutdown. With wait, the channel receives
-	// nil at commit, an error wrapping trace.ErrShuttingDown when abandoned at
-	// shutdown, or another error when dropped after store errors.
 	Enqueue(b *trace.Batch, slots int, bytes int64, wait bool) (<-chan error, error)
-	// AddCount records an ingest counter, stored with a later batch.
 	AddCount(c trace.IngestCount)
-	// HasRoom reports whether an item of slots slots could be admitted now,
-	// ignoring its bytes. It is a hint taken before the request is
-	// translated: false lets the Ingestor apply the overflow policy without
-	// the translation work (the queue would refuse the item anyway); true
-	// promises nothing, Enqueue decides.
 	HasRoom(slots int) bool
 }
 
@@ -85,34 +62,23 @@ type config struct {
 	onUnpriced   func(model string, n int64)
 }
 
-// Option configures an Ingestor.
 type Option func(*config)
 
-// WithOverflow sets ingest.overflow (default OverflowReject).
 func WithOverflow(o Overflow) Option { return func(c *config) { c.overflow = o } }
 
-// WithSyncAck sets ingest.sync_ack: IngestSpans and IngestLogs return only
-// once the request's batch has committed or been dropped (default false).
 func WithSyncAck(on bool) Option { return func(c *config) { c.syncAck = on } }
 
-// WithContentPolicy sets content capture, size limit and redaction (default:
-// capture off). The policy's Redactor also applies to non-content attribute values.
 func WithContentPolicy(p content.Policy) Option { return func(c *config) { c.policy = p } }
 
-// WithMaxAttributeBytes sets receiver.max_attribute_bytes; 0 means unlimited.
 func WithMaxAttributeBytes(n int) Option { return func(c *config) { c.maxAttrBytes = n } }
 
-// WithLogger sets the logger; the default discards.
 func WithLogger(l *slog.Logger) Option { return func(c *config) { c.logger = l } }
 
-// WithUnpricedHook sets a callback receiving, per request, the number of
-// unpriced spans (tokens but no price) of each model; it feeds
-// loupe_unpriced_spans_total{model}. The default does nothing.
 func WithUnpricedHook(f func(model string, n int64)) Option {
 	return func(c *config) { c.onUnpriced = f }
 }
 
-// Ingestor implements trace.Ingestor. It is safe for concurrent use.
+// Ingestor translates, filters, prices and enqueues ingest requests.
 type Ingestor struct {
 	q     Queue
 	calc  *cost.Calculator
@@ -124,7 +90,7 @@ type Ingestor struct {
 
 var _ trace.Ingestor = (*Ingestor)(nil)
 
-// New returns an Ingestor feeding q and pricing with calc.
+// New returns an Ingestor that feeds q and prices with calc.
 func New(q Queue, calc *cost.Calculator, clk clock.Clock, opts ...Option) (*Ingestor, error) {
 	if q == nil || calc == nil || clk == nil {
 		return nil, fmt.Errorf("%w: queue, calculator and clock are required", ErrInvalidConfig)
@@ -162,8 +128,7 @@ func New(q Queue, calc *cost.Calculator, clk clock.Clock, opts ...Option) (*Inge
 	return in, nil
 }
 
-// IngestSpans translates, filters content, prices and enqueues the spans of
-// one request, all or nothing.
+// IngestSpans translates, filters, prices and enqueues the spans of one request.
 func (in *Ingestor) IngestSpans(ctx context.Context, raws []trace.RawSpan) (trace.IngestResult, error) {
 	if len(raws) == 0 {
 		return trace.IngestResult{}, nil
@@ -173,8 +138,6 @@ func (in *Ingestor) IngestSpans(ctx context.Context, raws []trace.RawSpan) (trac
 	}
 	now := in.clk.Now().UnixNano()
 	if !in.q.HasRoom(len(raws)) {
-		// Overloaded: apply the overflow policy before translating, so that
-		// excess load costs neither the translation CPU nor its garbage.
 		in.add(now, trace.SignalTraces, trace.ResultReceived, "", int64(len(raws)))
 		return in.overflow(now, trace.SignalTraces, len(raws))
 	}
@@ -215,8 +178,6 @@ func (in *Ingestor) IngestSpans(ctx context.Context, raws []trace.RawSpan) (trac
 	return in.enqueue(ctx, request{batch: b, n: len(raws), bytes: bytes, signal: trace.SignalTraces, now: now})
 }
 
-// tallyUnpriced counts one unpriced span of model in by, allocating it only
-// when an unpriced hook is set.
 func (in *Ingestor) tallyUnpriced(by map[string]int64, model string) map[string]int64 {
 	if in.cfg.onUnpriced == nil {
 		return by
@@ -235,18 +196,16 @@ func appendResource(rs []trace.Resource, r trace.Resource) []trace.Resource {
 	return append(rs, r)
 }
 
-// span runs the per-span pipeline: translate, content policy, cost.
 func (in *Ingestor) span(raw *trace.RawSpan) trace.Span {
 	s := semconv.Translate(raw, in.trOpt)
 	s.Content, s.ContentStripped = content.Apply(in.cfg.policy, s.Content)
 	res, err := in.calc.Cost(cost.Input{
 		Provider:      s.Provider,
-		ResponseModel: s.Model, // Translate already chose response, else request model
+		ResponseModel: s.Model,
 		Start:         time.Unix(0, s.StartNs).UTC(),
 		Usage:         s.Usage,
 	})
 	if err != nil {
-		// Negative or overflowing usage: stored unpriced, never rejected.
 		in.log.Debug("span not priced", "trace_id", s.TraceID.String(), "span_id", s.SpanID.String(), "error", err)
 		return s
 	}
@@ -255,8 +214,7 @@ func (in *Ingestor) span(raw *trace.RawSpan) trace.Span {
 	return s
 }
 
-// IngestLogs turns GenAI log events into content parts and enqueues them; other
-// records are discarded, counted and reported as accepted.
+// IngestLogs turns GenAI log events into content parts and enqueues them.
 func (in *Ingestor) IngestLogs(ctx context.Context, recs []trace.RawLogRecord) (trace.IngestResult, error) {
 	if len(recs) == 0 {
 		return trace.IngestResult{}, nil
@@ -306,8 +264,6 @@ func (in *Ingestor) IngestLogs(ctx context.Context, recs []trace.RawLogRecord) (
 	return res, err
 }
 
-// Count implements trace.Ingestor: a receiver-side outcome, stored in
-// ingest_stats with a later batch. A zero AtNs means now.
 func (in *Ingestor) Count(c trace.IngestCount) {
 	if c.AtNs == 0 {
 		c.AtNs = in.clk.Now().UnixNano()
@@ -321,17 +277,14 @@ func (in *Ingestor) add(now int64, sig trace.Signal, res trace.Result, reason st
 	}
 }
 
-// request is one translated ingest request ready for the queue.
 type request struct {
 	batch  *trace.Batch
-	n      int // spans or kept log records: the queue slots it takes
+	n      int
 	bytes  int64
 	signal trace.Signal
 	now    int64
 }
 
-// enqueue hands one request to the queue and applies the overflow and
-// sync_ack policies.
 func (in *Ingestor) enqueue(ctx context.Context, r request) (trace.IngestResult, error) {
 	n, sig, now := r.n, r.signal, r.now
 	ack, err := in.q.Enqueue(r.batch, n, r.bytes, in.cfg.syncAck)
@@ -354,17 +307,13 @@ func (in *Ingestor) enqueue(ctx context.Context, r request) (trace.IngestResult,
 		case errors.Is(err, trace.ErrShuttingDown):
 			return trace.IngestResult{Rejected: n, Message: msgShuttingDown}, trace.ErrShuttingDown
 		default:
-			// The writer has counted the drop (store_error).
 			return trace.IngestResult{Dropped: n, Message: msgStoreError}, nil
 		}
 	case <-ctx.Done():
-		// The item stays queued and will most likely commit; a client retry is
-		// harmless because inserts are idempotent.
 		return trace.IngestResult{}, fmt.Errorf("ingest: wait for commit: %w", ctx.Err())
 	}
 }
 
-// overflow applies ingest.overflow to n items the queue has no room for.
 func (in *Ingestor) overflow(now int64, sig trace.Signal, n int) (trace.IngestResult, error) {
 	if in.cfg.overflow == OverflowDrop {
 		in.add(now, sig, trace.ResultDropped, trace.ReasonQueueFull, int64(n))

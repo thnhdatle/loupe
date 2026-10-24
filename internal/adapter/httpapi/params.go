@@ -15,14 +15,11 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// params reads and validates the query string of one request. The first
-// malformed value is kept in err; later reads become no-ops.
 type params struct {
 	v   url.Values
 	err error
 }
 
-// newParams checks that the query holds only allowed names and no repeats.
 func newParams(v url.Values, allowed ...string) (*params, error) {
 	for name, vals := range v {
 		if !slices.Contains(allowed, name) {
@@ -75,7 +72,6 @@ func (p *params) hasError() *bool {
 	return nil
 }
 
-// limit reads the page limit; range checks are left to the use case.
 func (p *params) limit() int {
 	s := p.v.Get("limit")
 	if s == "" {
@@ -83,7 +79,7 @@ func (p *params) limit() int {
 	}
 	n, err := strconv.Atoi(s)
 	if err != nil {
-		return -1 // reported as query.ErrInvalidLimit by the use case
+		return -1
 	}
 	return n
 }
@@ -92,7 +88,6 @@ func (p *params) page() query.Page {
 	return query.Page{Limit: p.limit(), Cursor: p.v.Get("cursor")}
 }
 
-// minCost parses min_cost in USD into nano-USD.
 func (p *params) minCost() *int64 {
 	s := p.v.Get("min_cost")
 	if s == "" {
@@ -106,7 +101,6 @@ func (p *params) minCost() *int64 {
 	return &n
 }
 
-// minDuration parses min_duration_ms into nanoseconds.
 func (p *params) minDuration() int64 {
 	s := p.v.Get("min_duration_ms")
 	if s == "" {

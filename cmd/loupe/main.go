@@ -8,13 +8,13 @@ import (
 	"os"
 )
 
-// Set at build time with -ldflags "-X main.version=... -X main.commit=... -X main.buildDate=...".
 var (
 	version   = "dev"
 	commit    = "unknown"
 	buildDate = "unknown"
 )
 
+// main runs the root command and exits with its status code.
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "loupe:", err)

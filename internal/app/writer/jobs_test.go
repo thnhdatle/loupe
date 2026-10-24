@@ -49,7 +49,6 @@ func TestWriter_Submit_RunsJobAndReturnsItsError(t *testing.T) {
 			default:
 				require.NoError(t, err)
 			}
-			// The writer survives a failing or panicking job.
 			f.enqueue(4, false)
 			testutil.Eventually(t, func() bool { return len(f.store.Batches()) == 1 }, wait)
 			st := f.w.Stats()
@@ -91,7 +90,7 @@ func TestWriter_Submit_QueuedJobSkippedWhenSubmitterGivesUp(t *testing.T) {
 	f := newFixture(t)
 	release := f.store.Hold()
 	f.run()
-	f.enqueue(4, false) // the writer is now blocked in WriteBatch
+	f.enqueue(4, false)
 	testutil.Eventually(t, func() bool { return f.store.Calls() == 1 }, wait)
 
 	var ran atomic.Bool
@@ -104,7 +103,6 @@ func TestWriter_Submit_QueuedJobSkippedWhenSubmitterGivesUp(t *testing.T) {
 	cancel()
 	require.ErrorIs(t, receive(t, errc), context.Canceled)
 	release()
-	// A later job runs after the abandoned one was dequeued and skipped.
 	require.NoError(t, f.w.Submit(t.Context(), job("next", func(context.Context) error { return nil })))
 	assert.False(t, ran.Load())
 	assert.Equal(t, int64(1), f.w.Stats().Jobs)
@@ -140,22 +138,18 @@ func TestWriter_Submit_ShutdownFailsQueuedAndLateJobs(t *testing.T) {
 	}()
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	require.NoError(t, f.w.Run(ctx)) // shutdown wins over a ready job
+	require.NoError(t, f.w.Run(ctx))
 	require.ErrorIs(t, receive(t, errc), trace.ErrShuttingDown)
 	assert.False(t, ran.Load())
 	err := f.w.Submit(t.Context(), job("late", func(context.Context) error { return nil }))
 	require.ErrorIs(t, err, trace.ErrShuttingDown)
 }
 
-// TestWriter_Concurrent runs producers, job submitters and the writer together
-// under -race and checks the single-writer invariants: every accepted span is
-// committed exactly once, every slot is released, jobs and batch writes never
-// overlap, and jobs are not starved by sustained ingest.
 func TestWriter_Concurrent(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, writer.WithBatchSpans(16), writer.WithQueueLimits(200, 1<<30))
 	var (
-		active   atomic.Int32 // jobs plus writes in progress
+		active   atomic.Int32
 		overlaps atomic.Int32
 	)
 	enter := func() {
@@ -184,7 +178,6 @@ func TestWriter_Concurrent(t *testing.T) {
 			}
 		})
 	}
-	// Small batches wait for a tick; keep time moving until producers finish.
 	done := make(chan struct{})
 	go func() { wg.Wait(); close(done) }()
 	f.advanceUntil(interval, func() bool {
@@ -207,7 +200,6 @@ func TestWriter_Concurrent(t *testing.T) {
 	t.Logf("accepted=%d rejected=%d batches=%d", accepted.Load(), rejected.Load(), st.Batches)
 }
 
-// produce enqueues 60 items of 1 to 3 spans, waiting for every fifth to commit.
 func produce(t *testing.T, w *writer.Writer, p int, accepted, rejected *atomic.Int64) {
 	t.Helper()
 	for i := range 60 {

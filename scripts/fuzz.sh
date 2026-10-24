@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-# Runs every Fuzz target for FUZZTIME (default 30s).
+# Runs every Fuzz target.
 FUZZTIME="${FUZZTIME:-30s}"
 found=0
 while IFS= read -r file; do

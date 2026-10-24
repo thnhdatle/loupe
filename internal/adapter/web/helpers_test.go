@@ -30,7 +30,6 @@ const (
 
 var epoch = time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
 
-// seqReader is a deterministic, non-repeating randomness source.
 type seqReader struct{ n uint64 }
 
 func (s *seqReader) Read(p []byte) (int, error) {
@@ -45,7 +44,6 @@ func (s *seqReader) Read(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// fakeQueries returns canned results and records what it was asked.
 type fakeQueries struct {
 	traceReq   queries.TraceListRequest
 	tracePage  query.TracePage
@@ -108,7 +106,6 @@ func i64(v int64) *int64 { return &v }
 
 func str(s string) *string { return &s }
 
-// fixtures returns fake queries filled with data for every page.
 func fixtures() *fakeQueries {
 	sum := query.TraceSummary{
 		TraceID: traceID, RootName: "chat-request", Service: "api", StartNs: epoch.UnixNano(),
@@ -148,7 +145,6 @@ func fixtures() *fakeQueries {
 		{Role: "user", Bytes: 18, Body: str(secretMsg + " <b>x</b>")},
 		{Role: "assistant", Bytes: 5, Body: str("hello"), Truncated: true},
 	}
-	// The first fetch carries markers only (bodies not requested).
 	stored := query.TraceDetail{Summary: sum, Spans: append([]query.SpanView(nil), spans...)}
 	stored.Spans[2].ContentStripped = true
 	series := []queries.SeriesPoint{
@@ -266,7 +262,6 @@ func sessionCookie(t *testing.T, rec *httptest.ResponseRecorder) *http.Cookie {
 	return nil
 }
 
-// login signs in with the API token and returns the session cookie.
 func (e *env) login(t *testing.T) *http.Cookie {
 	t.Helper()
 	rec := e.post("/login", url.Values{"token": {testToken}})

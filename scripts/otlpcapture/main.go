@@ -32,11 +32,8 @@ import (
 
 const maxBody = 32 << 20
 
-// idKeys are the OTLP/JSON object keys whose values are ids: hex on the wire, base64 in protojson.
 var idKeys = map[string]bool{"traceId": true, "spanId": true, "parentSpanId": true}
 
-// scrubbed holds resource attributes that identify the recording machine, with the value
-// recorded instead.
 var scrubbed = map[string]string{
 	"host.name":               "host",
 	"host.id":                 "host-id",
@@ -53,7 +50,6 @@ type capture struct {
 	seq         map[string]int
 }
 
-// objects calls fn on every JSON object inside v, parents first.
 func objects(v any, fn func(map[string]any) error) error {
 	switch x := v.(type) {
 	case map[string]any:
@@ -75,7 +71,6 @@ func objects(v any, fn func(map[string]any) error) error {
 	return nil
 }
 
-// convertIDs re-encodes every id value with enc.
 func convertIDs(doc any, enc func(string) (string, error)) error {
 	return objects(doc, func(m map[string]any) error {
 		for k := range idKeys {
@@ -103,8 +98,6 @@ func hexToBase64(s string) (string, error) {
 	return base64.StdEncoding.EncodeToString(b), err
 }
 
-// scrub replaces machine specific attribute values and rewrites the working directory
-// (the repository root) and the home directory inside every string.
 func scrub(doc any) {
 	wd, _ := os.Getwd()
 	home, _ := os.UserHomeDir()
@@ -133,7 +126,6 @@ func scrub(doc any) {
 	})
 }
 
-// normalise turns a decoded request into indented OTLP/JSON with hex ids.
 func normalise(m proto.Message) ([]byte, error) {
 	raw, err := protojson.Marshal(m)
 	if err != nil {
@@ -154,7 +146,6 @@ func normalise(m proto.Message) ([]byte, error) {
 	return append(out, '\n'), nil
 }
 
-// save writes one normalised request as <prefix><signal>-<n>.json.
 func (c *capture) save(signal string, m proto.Message) error {
 	out, err := normalise(m)
 	if err != nil {
@@ -167,7 +158,6 @@ func (c *capture) save(signal string, m proto.Message) error {
 	return os.WriteFile(name, out, 0o600)
 }
 
-// decode reads a protobuf or JSON request body into m.
 func decode(r *http.Request, m proto.Message) error {
 	var body io.Reader = http.MaxBytesReader(nil, r.Body, maxBody)
 	if r.Header.Get("Content-Encoding") == "gzip" {
@@ -197,7 +187,6 @@ func decode(r *http.Request, m proto.Message) error {
 	return protojson.UnmarshalOptions{DiscardUnknown: true}.Unmarshal(data, m)
 }
 
-// handler decodes one export request, stores it when keep is set and answers with resp.
 func (c *capture) handler(signal string, newReq func() proto.Message, resp proto.Message, keep bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := newReq()

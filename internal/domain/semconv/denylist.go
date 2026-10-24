@@ -4,7 +4,6 @@ package semconv
 
 import "slices"
 
-// Part roles used by the denylist and event names.
 const (
 	roleInput     = "input"
 	roleOutput    = "output"
@@ -15,16 +14,13 @@ const (
 	keyRole       = "role"
 )
 
-// ContentKeyRule is one entry of the content-key denylist. Pattern is an exact
-// key or a glob in which `*` matches any run of characters (dots included).
 type ContentKeyRule struct {
 	Family  Family
 	Pattern string
-	Sample  string // a concrete key that matches Pattern
-	Role    string // default part role for keys matching the rule; may be empty
+	Sample  string
+	Role    string
 }
 
-// contentRules is the content-key denylist (listed in docs/guides/privacy.md).
 var contentRules = []ContentKeyRule{
 	{FamilyGenAI, "gen_ai.input.messages", "gen_ai.input.messages", roleInput},
 	{FamilyGenAI, "gen_ai.output.messages", "gen_ai.output.messages", roleOutput},
@@ -49,17 +45,13 @@ var contentRules = []ContentKeyRule{
 	{FamilyOpenInference, "embedding.embeddings.*.text", "embedding.embeddings.0.embedding.text", ""},
 }
 
-// ContentKeyRules returns a copy of the content-key denylist.
 func ContentKeyRules() []ContentKeyRule { return slices.Clone(contentRules) }
 
-// IsContentKey reports whether the attribute key carries content (prompts,
-// responses, tool arguments or results, documents) that the content policy handles.
 func IsContentKey(key string) bool {
 	_, ok := ruleFor(key)
 	return ok
 }
 
-// ruleFor returns the first rule matching key.
 func ruleFor(key string) (ContentKeyRule, bool) {
 	for _, r := range contentRules {
 		if globMatch(r.Pattern, key) {
@@ -69,7 +61,6 @@ func ruleFor(key string) (ContentKeyRule, bool) {
 	return ContentKeyRule{}, false
 }
 
-// globMatch matches s against pattern, where `*` matches any run of characters.
 func globMatch(pattern, s string) bool {
 	star := -1
 	p, i, mark := 0, 0, 0

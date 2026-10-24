@@ -2,19 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-# Records the raw OTLP requests each examples/<name> run sends into
-# testdata/otlp/<family>/recorded-<variant>-<signal>-N.json, using the tiny capture
-# server in bench/cmd/otlpcapture instead of Loupe. Payloads are normalised to OTLP/JSON
-# (hex ids); the Node example exports OTLP/JSON, the others protobuf. Hand-written payloads
-# (handwritten-*.json) are never touched.
-# Needs fakellm (FAKELLM_URL, default http://127.0.0.1:8090/v1), uv, and node with
-# `npm ci` run in tests/node. Afterwards refresh the expected output with
-#   go test ./internal/adapter/otlp -run Golden -update
-#   RECORD_ADDR  capture listen address (default 127.0.0.1:14399)
+# Records the raw OTLP requests of each example with the capture server.
 export FAKELLM_URL="${FAKELLM_URL:-http://127.0.0.1:8090/v1}"
 addr="${RECORD_ADDR:-127.0.0.1:14399}"
 tmp="$(mktemp -d)"
-go build -o "$tmp/otlpcapture" ./bench/cmd/otlpcapture
+go build -o "$tmp/otlpcapture" ./scripts/otlpcapture
 pid=""
 cleanup() {
   [[ -z "$pid" ]] || kill "$pid" 2>/dev/null || true
@@ -22,7 +14,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# record <family> <variant> <example dir> [VAR=value ...]
 record() {
   local family="$1" variant="$2" example="$3"
   shift 3

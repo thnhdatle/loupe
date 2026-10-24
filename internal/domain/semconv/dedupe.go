@@ -9,38 +9,24 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// UsageSpan is the view of a stored span that the usage-duplicate rule needs.
 type UsageSpan struct {
 	SpanID       trace.SpanID
 	ParentSpanID trace.SpanID
 	Kind         trace.Kind
 	Usage        trace.Usage
-	Cost         trace.Cost // the span's own cost, computed at ingest
+	Cost         trace.Cost
 }
 
-// Contribution is what one span adds to trace, session and rollup aggregates.
-// A duplicate contributes nothing except its latency (histograms include it).
 type Contribution struct {
 	Duplicate bool
-	Usage     trace.Usage // tokens of the call, for kept spans
-	Cost      trace.Cost  // own cost, or the cost taken from its duplicates
-	Unpriced  bool        // kept span with tokens and no effective price
+	Usage     trace.Usage
+	Cost      trace.Cost
+	Unpriced  bool
 }
 
-// Counted reports whether the span counts as a request or call.
 func (c Contribution) Counted() bool { return !c.Duplicate }
 
-// Dedupe applies the usage-duplicate rule to the
-// stored spans of one trace and returns one Contribution per input span, in input
-// order. The result depends only on the set of spans, not on their order.
-//
-// For an llm or embedding span S, the nearest same-kind ancestor A is found by
-// walking parent ids through the given spans, skipping other kinds; the walk
-// stops at a root or at a parent that is not in spans. With A's input + output
-// > 0, a member S of A's group is a duplicate when its input and output equal
-// A's (rule 1), and every member is a duplicate when the group's input and
-// output sum to A's (rule 2). Cache and reasoning counts and, for an unpriced
-// kept span, the cost are taken from the duplicates, bottom-up.
+// Dedupe marks usage that nested spans count twice and returns each span's contribution.
 func Dedupe(spans []UsageSpan) []Contribution {
 	g := newUsageGraph(spans)
 	out := make([]Contribution, len(spans))
@@ -50,18 +36,17 @@ func Dedupe(spans []UsageSpan) []Contribution {
 	return out
 }
 
-// effective is a span's call totals after taking values from its duplicates.
 type effective struct {
-	extras trace.Usage // only CacheRead, CacheWrite, Reasoning are used
+	extras trace.Usage
 	cost   trace.Cost
 }
 
 type usageGraph struct {
 	spans    []UsageSpan
-	ancestor []int   // index of the nearest same-kind ancestor, or -1
-	group    [][]int // members of each span's group, sorted by span id
+	ancestor []int
+	group    [][]int
 	dup      []bool
-	rule2    []bool // the span's group was flagged by rule 2
+	rule2    []bool
 	eff      []*effective
 }
 
@@ -93,8 +78,6 @@ func newUsageGraph(spans []UsageSpan) *usageGraph {
 func (g *usageGraph) findAncestors() {
 	index := make(map[trace.SpanID]int, len(g.spans))
 	for i := range g.spans {
-		// On a duplicate span id the first occurrence wins; the store never
-		// holds two, so this only guards against malformed input.
 		if _, ok := index[g.spans[i].SpanID]; !ok {
 			index[g.spans[i].SpanID] = i
 		}
@@ -120,9 +103,6 @@ func (g *usageGraph) findAncestors() {
 	}
 }
 
-// breakCycles removes ancestor edges that form a cycle (only possible with
-// malformed parent ids). In each cycle the span with the lowest span id loses
-// its ancestor, so the result does not depend on input order.
 func (g *usageGraph) breakCycles() {
 	const (
 		unseen = iota
@@ -197,8 +177,6 @@ func (g *usageGraph) contribution(i int) Contribution {
 	}
 }
 
-// effective computes span i's totals bottom-up; the ancestor graph is acyclic
-// after breakCycles, so the recursion terminates.
 func (g *usageGraph) effective(i int) effective {
 	if g.eff[i] != nil {
 		return *g.eff[i]
@@ -242,8 +220,6 @@ func (g *usageGraph) takeFromDuplicates(i int, dups []int, e effective) effectiv
 		}
 		return e
 	}
-	// Rule 1: values come from the equal duplicate with the lowest span id; the
-	// cost from the lowest-id equal duplicate that is priced.
 	e.extras = fillExtras(e.extras, g.effective(dups[0]).extras)
 	if !e.cost.Priced {
 		for _, m := range dups {
@@ -256,7 +232,6 @@ func (g *usageGraph) takeFromDuplicates(i int, dups []int, e effective) effectiv
 	return e
 }
 
-// fillExtras takes each cache and reasoning count from src when own has none.
 func fillExtras(own, src trace.Usage) trace.Usage {
 	if own.CacheRead == 0 {
 		own.CacheRead = src.CacheRead

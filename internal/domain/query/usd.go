@@ -10,8 +10,6 @@ import (
 
 const usdFracDigits = 9
 
-// ParseUSD converts a non-negative decimal USD string such as "0.25" into
-// nano-USD without floating point. At most nine fractional digits are accepted.
 func ParseUSD(s string) (int64, error) {
 	whole, frac, _ := strings.Cut(s, ".")
 	hasFrac := strings.Contains(s, ".")

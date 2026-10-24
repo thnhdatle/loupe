@@ -11,18 +11,13 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// NoUser is the key shown for spans attributed to no user.
 const NoUser = "(none)"
 
-// Range limits of Overview, measured on the range rounded outward to whole hours.
 const (
 	MaxHourlyRange = 31 * 24 * time.Hour
 	MaxDailyRange  = 366 * 24 * time.Hour
 )
 
-// Stats are the aggregate measures of a set of spans. Requests, Errors, tokens
-// and cost exclude spans flagged usage_duplicate; latency percentiles (in
-// nanoseconds) cover every span and are zero when there are none.
 type Stats struct {
 	Requests  int64
 	Errors    int64
@@ -34,9 +29,6 @@ type Stats struct {
 	P99Ns     int64
 }
 
-// GroupStats is the total of one group over the range. For group_by=user,
-// Other marks the merge of every user outside the top 50 (Key is empty) and
-// Users counts the users merged into it.
 type GroupStats struct {
 	Key   string
 	Other bool
@@ -44,8 +36,6 @@ type GroupStats struct {
 	Stats Stats
 }
 
-// SeriesPoint is the total of one group in one time bucket (UTC, start of the
-// hour or day depending on the interval). Empty buckets are omitted.
 type SeriesPoint struct {
 	Bucket time.Time
 	Key    string
@@ -53,9 +43,6 @@ type SeriesPoint struct {
 	Stats  Stats
 }
 
-// Overview is the result of Service.Overview. From and To are the effective
-// range, rounded outward to whole hours. Groups are ranked by cost descending;
-// Series is ordered by bucket, then group rank.
 type Overview struct {
 	From     time.Time
 	To       time.Time

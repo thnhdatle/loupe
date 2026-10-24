@@ -13,8 +13,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/rollup/rolluptest"
 )
 
-// durationGen draws durations across every bucket kind: underflow, the whole
-// regular range (log-uniform) and overflow.
 func durationGen() *rapid.Generator[int64] {
 	return rapid.OneOf(
 		rapid.Int64Range(-10, rollup.MinValueNs-1),
@@ -99,8 +97,6 @@ func TestHistogram_MarshalBinary_RoundTripProperty(t *testing.T) {
 	})
 }
 
-// Inside the regular range the estimate and the exact value share a bucket, so
-// the relative error is below the bucket's relative width 1/64.
 func TestHistogram_Quantile_ErrorBoundProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

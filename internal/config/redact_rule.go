@@ -8,8 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// RedactRule is one content.redact entry: a preset name ("email") or a custom
-// rule {name, pattern, replacement}.
 type RedactRule struct {
 	Preset      string
 	Name        string
@@ -23,7 +21,6 @@ type redactRuleYAML struct {
 	Replacement string `yaml:"replacement"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler; unknown keys in a custom rule are errors.
 func (r *RedactRule) UnmarshalYAML(n *yaml.Node) error {
 	switch n.Kind { //nolint:exhaustive // other node kinds fall to the default error.
 	case yaml.ScalarNode:
@@ -48,7 +45,6 @@ func (r *RedactRule) UnmarshalYAML(n *yaml.Node) error {
 	}
 }
 
-// MarshalYAML implements yaml.Marshaler.
 func (r RedactRule) MarshalYAML() (any, error) {
 	if r.Preset != "" {
 		return r.Preset, nil

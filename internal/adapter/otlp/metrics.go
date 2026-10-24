@@ -4,8 +4,6 @@ package otlp
 
 import metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 
-// countDataPoints returns the number of data points in a metrics request. Metrics
-// are never stored; the count only feeds the discarded counter.
 func countDataPoints(rms []*metricspb.ResourceMetrics) int64 {
 	var n int64
 	for _, rm := range rms {

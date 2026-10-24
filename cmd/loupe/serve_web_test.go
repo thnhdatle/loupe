@@ -27,7 +27,6 @@ import (
 
 const dashToken = "dash-test-token"
 
-// failingAdmin fails the test when an admin operation is reached.
 type failingAdmin struct{ t *testing.T }
 
 func (f failingAdmin) Recompute(*cost.Calculator, admin.Range) (string, error) {

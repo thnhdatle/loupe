@@ -13,10 +13,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/httpmw"
 )
 
-// maxChartSeries caps the models drawn in a chart; the rest stay in the table.
 const maxChartSeries = 8
 
-// overviewData is the data of the Overview page.
 type overviewData struct {
 	base
 	Range  rangeView
@@ -26,22 +24,19 @@ type overviewData struct {
 	Banner *ingestBanner
 }
 
-// ingestBanner warns about spans rejected or dropped by the receiver.
 type ingestBanner struct {
 	Rejected int64
 	Dropped  int64
-	From, To time.Time // the effective range
+	From, To time.Time
 	Reasons  []string
 }
 
-// chartData is the JSON document app.js turns into uPlot charts. Each metric
-// holds one array per model, aligned to X, with null where a bucket is empty.
 type chartData struct {
-	X        []int64      `json:"x"` // bucket starts, unix seconds
+	X        []int64      `json:"x"`
 	Models   []string     `json:"models"`
-	Cost     [][]*float64 `json:"cost"`   // USD
-	Tokens   [][]*float64 `json:"tokens"` // input + output
-	P95      [][]*float64 `json:"p95"`    // milliseconds
+	Cost     [][]*float64 `json:"cost"`
+	Tokens   [][]*float64 `json:"tokens"`
+	P95      [][]*float64 `json:"p95"`
 	Interval string       `json:"interval"`
 }
 
@@ -94,7 +89,6 @@ func newBanner(st query.IngestStats, rv rangeView) *ingestBanner {
 	return b
 }
 
-// buildChart turns the overview series into per-model aligned arrays.
 func buildChart(ov queries.Overview) chartData {
 	cd := chartData{Interval: string(ov.Interval), X: []int64{}, Models: []string{}}
 	idx := make(map[string]int)
@@ -142,7 +136,6 @@ func nullGrid(rows, cols int) [][]*float64 {
 
 func ptr(v float64) *float64 { return &v }
 
-// modelsData is the data of the Models page.
 type modelsData struct {
 	base
 	Range  rangeView

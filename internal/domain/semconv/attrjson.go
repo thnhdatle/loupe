@@ -14,8 +14,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// encoder serialises OTLP values to canonical JSON: keys sorted, first
-// occurrence of a duplicate key wins, OTLP types mapped to JSON types.
 type encoder struct {
 	redact    func(string) string
 	maxBytes  int
@@ -23,8 +21,6 @@ type encoder struct {
 	buf       []byte
 }
 
-// sortedAttrs returns attrs ordered by cmp on the key, keeping the first
-// occurrence of a duplicate key and only keys for which keep (if non-nil) is true.
 func sortedAttrs(attrs []trace.Attr, keep func(string) bool, cmp func(a, b string) int) []trace.Attr {
 	out := make([]trace.Attr, 0, len(attrs))
 	for _, a := range attrs {
@@ -91,8 +87,6 @@ func (e *encoder) array(vs []trace.Value) {
 	e.buf = append(e.buf, ']')
 }
 
-// limit applies the redact hook (when redactIt) and then truncates s to the
-// maximum attribute size at a UTF-8 boundary, recording a truncation.
 func (e *encoder) limit(s string, redactIt bool) string {
 	if redactIt && e.redact != nil {
 		s = e.redact(s)
@@ -108,7 +102,6 @@ func (e *encoder) limit(s string, redactIt bool) string {
 	return s[:n]
 }
 
-// appendQuoted appends s as a JSON string; invalid UTF-8 becomes U+FFFD.
 func appendQuoted(buf []byte, s string) []byte {
 	const hexDigits = "0123456789abcdef"
 	buf = append(buf, '"')
@@ -135,8 +128,6 @@ func appendQuoted(buf []byte, s string) []byte {
 	return append(buf, '"')
 }
 
-// valueText renders a content value: strings as-is, everything else as JSON.
-// It never redacts or truncates.
 func valueText(v trace.Value) []byte {
 	if v.Type == trace.ValueString {
 		return []byte(v.Str)
@@ -146,8 +137,6 @@ func valueText(v trace.Value) []byte {
 	return e.buf
 }
 
-// objectText renders attrs as a canonical JSON object, without redaction or
-// truncation; no attributes give an empty (non-nil) text.
 func objectText(attrs []trace.Attr) []byte {
 	if len(attrs) == 0 {
 		return []byte{}
@@ -157,7 +146,6 @@ func objectText(attrs []trace.Attr) []byte {
 	return e.buf
 }
 
-// canonicalResourceJSON serialises the resource attributes as sorted JSON.
 func canonicalResourceJSON(res *trace.RawResource) []byte {
 	e := encoder{}
 	var attrs []trace.Attr
@@ -168,8 +156,6 @@ func canonicalResourceJSON(res *trace.RawResource) []byte {
 	return e.buf
 }
 
-// ResourceID is the stable id of a resource: FNV-1a 64 over its canonical
-// attributes JSON. A nil resource has id 0.
 func ResourceID(res *trace.RawResource) uint64 {
 	if res == nil {
 		return 0
@@ -179,7 +165,6 @@ func ResourceID(res *trace.RawResource) uint64 {
 	return h.Sum64()
 }
 
-// CanonicalResource returns the stored form of a raw resource.
 func CanonicalResource(res *trace.RawResource) trace.Resource {
 	return trace.Resource{ID: ResourceID(res), Attributes: canonicalResourceJSON(res)}
 }

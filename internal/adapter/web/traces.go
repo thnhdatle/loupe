@@ -14,7 +14,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// filterForm holds the raw filter values so the form shows what was submitted.
 type filterForm struct {
 	From, To, Service, Model, Provider, Kind, Status, Name string
 	MinCost, MinDurationMs, SessionID, UserID              string
@@ -39,8 +38,6 @@ func newFilterForm(q url.Values) filterForm {
 
 func isTrue(s string) bool { return s == "1" || s == trueValue || s == "on" }
 
-// request converts the form into a trace list request; every problem wraps a
-// query.ErrInvalid* sentinel so the caller answers 400.
 func (f filterForm) request(cursor string) (queries.TraceListRequest, error) {
 	req := queries.TraceListRequest{
 		Filter: query.TraceFilter{
@@ -81,7 +78,6 @@ func (f filterForm) request(cursor string) (queries.TraceListRequest, error) {
 	return req, nil
 }
 
-// tracesData is the data of the Traces page and of its results fragment.
 type tracesData struct {
 	base
 	Form     filterForm
@@ -89,7 +85,6 @@ type tracesData struct {
 	NextHref string
 }
 
-// nextHref keeps every filter of q and sets the cursor; empty when there is none.
 func nextHref(path string, q url.Values, cursor string) string {
 	if cursor == "" {
 		return ""

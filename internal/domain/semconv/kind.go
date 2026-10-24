@@ -9,7 +9,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// OperationKinds is the gen_ai.operation.name rule table.
 func OperationKinds() map[string]trace.Kind { return maps.Clone(operationKinds) }
 
 var operationKinds = map[string]trace.Kind{
@@ -24,7 +23,6 @@ var operationKinds = map[string]trace.Kind{
 	"retrieval":        trace.KindRetrieval,
 }
 
-// OpenInferenceKinds is the openinference.span.kind rule table.
 func OpenInferenceKinds() map[string]trace.Kind { return maps.Clone(openInferenceKinds) }
 
 var openInferenceKinds = map[string]trace.Kind{
@@ -38,9 +36,8 @@ var openInferenceKinds = map[string]trace.Kind{
 	"GUARDRAIL": trace.KindGuardrail,
 }
 
-// ResolveKind applies the kind rules: gen_ai.operation.name decides first
-// (regardless of span name or OTLP SpanKind), then openinference.span.kind;
-// without either, a span with a model and usage is llm, else other.
+// ResolveKind picks the span kind from the operation name, the OpenInference kind, and model and
+// usage presence.
 func ResolveKind(operation, oiKind string, hasModel, hasUsage bool) trace.Kind {
 	if k, ok := operationKinds[operation]; ok {
 		return k

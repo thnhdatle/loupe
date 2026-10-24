@@ -30,8 +30,6 @@ func (nopAdmin) Vacuum() (string, error)                                 { retur
 func (nopAdmin) Backup(string) (string, error)                           { return "", nil }
 func (nopAdmin) JobStatus(string) (admin.JobStatus, error)               { return admin.JobStatus{}, nil }
 
-// TestOpenAPI_RoutesMatchSpec fails when a registered route is missing from
-// api/openapi.yaml or the spec documents a route no handler serves.
 func TestOpenAPI_RoutesMatchSpec(t *testing.T) {
 	t.Parallel()
 	api := newHandler(t, &fakeQueries{}, &fakeDeleter{}, httpapi.Options{})
@@ -50,8 +48,6 @@ func TestOpenAPI_RoutesMatchSpec(t *testing.T) {
 	assert.Equal(t, registered, documented)
 }
 
-// TestOpenAPI_OperationsComplete checks every operation has an id, a success
-// example and an error example (the contract tests below rely on them).
 func TestOpenAPI_OperationsComplete(t *testing.T) {
 	t.Parallel()
 	for _, op := range openapispec.Load(t).Operations() {
@@ -85,7 +81,6 @@ func keys(m map[string]any) []string {
 	return out
 }
 
-// decodeExample converts an example into T, rejecting fields T does not have.
 func decodeExample[T any](t *testing.T, ex any) T {
 	t.Helper()
 	b, err := json.Marshal(ex)
@@ -105,8 +100,6 @@ func (e exampleExporter) ExportTraces(
 	return fn(e.batch)
 }
 
-// contractCase sets up fakes so that the handler must answer with the example;
-// shapeOnly compares key sets instead of the whole body.
 type contractCase struct {
 	setup     func(t *testing.T, ex any, f *fakeQueries, d *fakeDeleter, o *httpapi.Options)
 	shapeOnly bool
@@ -163,14 +156,12 @@ func contractCases() map[string]contractCase {
 	}
 }
 
-// TestOpenAPI_Contract drives every httpapi operation with the parameter
-// examples of the spec and checks the response against the success example.
 func TestOpenAPI_Contract(t *testing.T) {
 	t.Parallel()
 	cases := contractCases()
 	for _, op := range openapispec.Load(t).Operations() {
 		if strings.HasPrefix(op.Path, "/v1/admin/") {
-			continue // adminhttp contract test
+			continue
 		}
 		t.Run(op.ID, func(t *testing.T) {
 			t.Parallel()
@@ -211,7 +202,6 @@ func atoi(s string) int {
 	return n
 }
 
-// TestOpenAPI_ErrorExamples checks the documented error codes against live responses.
 func TestOpenAPI_ErrorExamples(t *testing.T) {
 	t.Parallel()
 	h := newHandler(t, &fakeQueries{}, nil, httpapi.Options{Exporter: &exampleExporter{}})

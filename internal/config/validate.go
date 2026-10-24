@@ -12,15 +12,12 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/content"
 )
 
-// ErrInvalid is wrapped by every configuration problem; the CLI maps it to exit code 2.
 var ErrInvalid = errors.New("invalid configuration")
 
-// Error lists every problem found, so one run reports them all.
 type Error struct {
 	errs []error
 }
 
-// Error implements error: one problem per line.
 func (e *Error) Error() string {
 	lines := make([]string, 0, len(e.errs))
 	for _, err := range e.errs {
@@ -29,10 +26,8 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("invalid configuration (%d problems):\n%s", len(e.errs), strings.Join(lines, "\n"))
 }
 
-// Unwrap exposes ErrInvalid and the individual problems to errors.Is and errors.As.
 func (e *Error) Unwrap() []error { return append([]error{ErrInvalid}, e.errs...) }
 
-// Problems returns the individual problems.
 func (e *Error) Problems() []error { return append([]error(nil), e.errs...) }
 
 type validator struct{ errs []error }
@@ -41,7 +36,7 @@ func (v *validator) bad(format string, args ...any) {
 	v.errs = append(v.errs, fmt.Errorf(format, args...))
 }
 
-// Validate reports every problem at once as an *Error (wrapping ErrInvalid), or nil.
+// Validate reports every problem in the configuration at once.
 func (c *Config) Validate() error {
 	v := &validator{}
 	v.listeners(c)
@@ -191,8 +186,6 @@ func (v *validator) redact(c *Config) {
 	}
 }
 
-// Warnings lists non-fatal startup findings: a non-loopback listener without TLS
-// (a reverse proxy is recommended, operations.md).
 func (c *Config) Warnings() []string {
 	var out []string
 	for _, l := range []struct {
@@ -235,8 +228,6 @@ func isWildcard(host string) bool {
 	return ip != nil && ip.IsUnspecified()
 }
 
-// nonLoopback is true for wildcard hosts and anything that is not localhost or a
-// loopback IP; unparsable addresses are reported elsewhere and count as loopback here.
 func nonLoopback(addr string) bool {
 	host, _, err := splitListen(addr)
 	if err != nil {

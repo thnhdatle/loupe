@@ -12,8 +12,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// ListSessions implements query.SessionReader: sessions whose last activity
-// lies in [From, To), most recent first, keyset-paged on (last_ns, id).
 func (s *Store) ListSessions(ctx context.Context, f query.SessionFilter, p query.Page) (query.SessionPage, error) {
 	q, args, limit, err := listSessionsSQL(f, p)
 	if err != nil {
@@ -45,7 +43,6 @@ func (s *Store) ListSessions(ctx context.Context, f query.SessionFilter, p query
 	return page, nil
 }
 
-// listSessionsSQL builds the session-list query (limit+1 rows).
 func listSessionsSQL(f query.SessionFilter, p query.Page) (string, []any, int, error) {
 	if !f.From.IsZero() && !f.To.IsZero() && !f.From.Before(f.To) {
 		return "", nil, 0, fmt.Errorf("%w: from is not before to", query.ErrInvalidRange)
@@ -76,10 +73,8 @@ func listSessionsSQL(f query.SessionFilter, p query.Page) (string, []any, int, e
 	return q, append(w.args, limit+1), limit, nil
 }
 
-// getSessionSQL reads one session row.
 const getSessionSQL = "SELECT " + sessionCols + " FROM sessions WHERE id = ?"
 
-// sessionTracesSQL builds the query of one page of a session's traces.
 func sessionTracesSQL(id string, p query.Page) (string, []any, int, error) {
 	limit, err := query.NormalizeLimit(p.Limit)
 	if err != nil {
@@ -97,8 +92,6 @@ func sessionTracesSQL(id string, p query.Page) (string, []any, int, error) {
 	return q, append(w.args, limit+1), limit, nil
 }
 
-// GetSession implements query.SessionReader: the session and one page of its
-// traces by start ascending, read in one read transaction.
 func (s *Store) GetSession(ctx context.Context, id string, p query.Page) (query.SessionDetail, error) {
 	q, args, limit, err := sessionTracesSQL(id, p)
 	if err != nil {

@@ -68,7 +68,6 @@ func TestAggregate_Apply_NegativeDelta(t *testing.T) {
 	s := trace.Span{EndNs: 1e6, Usage: trace.Usage{Input: 7, Output: 3}, HasUsage: true, Cost: trace.Priced(9)}
 	var a rollup.Aggregate
 	a.AddSpan(&s)
-	// The span becomes a duplicate: its contribution leaves, its latency stays.
 	a.Apply(rollup.Measures{}.Sub(rollup.SpanMeasures(&s)))
 	assert.True(t, a.Measures.IsZero())
 	assert.Equal(t, uint64(1), a.Histogram.Count())

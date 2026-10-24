@@ -7,14 +7,8 @@ import (
 	"fmt"
 )
 
-// EncodingVersion is the first byte of every histogram blob.
-//
-// Version 1 layout: version byte, uvarint number of non-empty buckets, then per
-// bucket in ascending index order a uvarint gap (index − previous index − 1,
-// the previous index of the first bucket being −1) and a uvarint count > 0.
 const EncodingVersion byte = 1
 
-// AppendBinary appends the encoded histogram to b (encoding.BinaryAppender).
 func (h *Histogram) AppendBinary(b []byte) ([]byte, error) {
 	b = append(b, EncodingVersion)
 	b = binary.AppendUvarint(b, uint64(len(h.buckets)))
@@ -27,14 +21,10 @@ func (h *Histogram) AppendBinary(b []byte) ([]byte, error) {
 	return b, nil
 }
 
-// MarshalBinary encodes the histogram (encoding.BinaryMarshaler). It never fails.
 func (h *Histogram) MarshalBinary() ([]byte, error) {
 	return h.AppendBinary(make([]byte, 0, 2+4*len(h.buckets)))
 }
 
-// UnmarshalBinary replaces h with the decoded blob, reusing h's storage. It
-// returns ErrUnsupportedVersion or ErrCorruptHistogram (wrapped) for a bad
-// blob; h is then empty.
 func (h *Histogram) UnmarshalBinary(data []byte) error {
 	if err := h.decode(data); err != nil {
 		h.Reset()
@@ -76,7 +66,6 @@ func (h *Histogram) decode(data []byte) error {
 		if cnt == 0 || h.total+cnt < h.total {
 			return fmt.Errorf("%w: zero or overflowing bucket count", ErrCorruptHistogram)
 		}
-		// gap < NumBuckets − 1 − prev was checked, so prev stays below NumBuckets.
 		prev += int(gap) + 1                                             //nolint:gosec // G115: bounded above.
 		h.buckets = append(h.buckets, bucket{idx: uint16(prev), n: cnt}) //nolint:gosec // G115: bounded above.
 		h.total += cnt
@@ -87,7 +76,6 @@ func (h *Histogram) decode(data []byte) error {
 	return nil
 }
 
-// reader consumes uvarints from a byte slice.
 type reader struct {
 	buf []byte
 }

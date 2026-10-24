@@ -12,8 +12,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// spanRow is the view of a stored span that usage dedupe and the aggregate
-// deltas need, including its stored contribution (flags and eff_* columns).
 type spanRow struct {
 	id         int64
 	spanID     trace.SpanID
@@ -29,7 +27,7 @@ type spanRow struct {
 	usage      trace.Usage
 	cost       trace.Cost
 	flags      trace.Flags
-	effExtras  trace.Usage // CacheRead, CacheWrite, Reasoning only
+	effExtras  trace.Usage
 	effCost    trace.Cost
 }
 
@@ -58,7 +56,6 @@ func scanSpanRow(sc scanner) (spanRow, error) {
 	return r, nil
 }
 
-// stored returns the contribution the span currently has in the aggregates.
 func (r *spanRow) stored() semconv.Contribution {
 	if r.flags.Has(trace.FlagUsageDuplicate) {
 		return semconv.Contribution{Duplicate: true}
@@ -68,7 +65,6 @@ func (r *spanRow) stored() semconv.Contribution {
 	return semconv.Contribution{Usage: u, Cost: r.effCost, Unpriced: !r.effCost.Priced && !r.usage.IsZero()}
 }
 
-// measuresOf returns what a contribution adds to rollup, trace and session rows.
 func measuresOf(c semconv.Contribution, status trace.Status) rollup.Measures {
 	if c.Duplicate {
 		return rollup.Measures{}
@@ -106,10 +102,6 @@ func (w *txWriter) loadSpans(ctx context.Context, id trace.ID) ([]spanRow, error
 	return out, nil
 }
 
-// settleTraces re-runs the usage-duplicate rule over every stored span of each
-// trace marked for settling and applies the differences between each span's
-// new and stored contribution (zero for spans inserted in this transaction)
-// to its rollup rows, the trace and, through the trace, its session.
 func (w *txWriter) settleTraces(ctx context.Context) error {
 	for _, id := range w.order {
 		st := w.traces[id]
@@ -169,8 +161,6 @@ func (w *txWriter) applyContribution(ctx context.Context, st *traceState, r *spa
 	return nil
 }
 
-// rollupDeltas accumulates, per rollup row, the measure deltas and the
-// latency histogram of inserted spans of one transaction.
 type rollupDeltas struct {
 	hour, day         map[rollup.Key]*rollup.Aggregate
 	userHour, userDay map[rollup.UserKey]*rollup.Aggregate

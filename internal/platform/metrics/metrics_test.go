@@ -33,8 +33,6 @@ func gather(t *testing.T, m *metrics.Metrics) snapshot {
 	return s
 }
 
-// value returns the counter or gauge value of the series with exactly the given
-// label pairs ("name", "value", ...), and whether it exists.
 func (s snapshot) value(name string, labels ...string) (float64, bool) {
 	f, ok := s[name]
 	if !ok {
@@ -130,7 +128,7 @@ func TestSnapshotsBecomeMetrics(t *testing.T) {
 	s.want(t, 100, "loupe_ingest_spans_total", "result", "stored")
 	s.want(t, 4, "loupe_ingest_spans_total", "result", "duplicate")
 	s.want(t, 10, "loupe_ingest_spans_total", "result", "rejected")
-	s.want(t, 13, "loupe_ingest_spans_total", "result", "dropped") // 2 queue_full + 5 store_error + 6 shutdown
+	s.want(t, 13, "loupe_ingest_spans_total", "result", "dropped")
 	s.want(t, 10, "loupe_ingest_rejected_total", "reason", "queue_full")
 	s.want(t, 3, "loupe_ingest_rejected_total", "reason", "too_many_spans")
 	s.want(t, 0, "loupe_ingest_rejected_total", "reason", "inflight_limit")
@@ -208,7 +206,7 @@ func TestLabelCardinalityIsBounded(t *testing.T) {
 		})
 		m.AddUsageDuplicate(fmt.Sprint("kind", i), 1)
 	}
-	m.AddUnpriced("model-0", 4) // a known model keeps its own series
+	m.AddUnpriced("model-0", 4)
 	s := gather(t, m)
 	assert.Equal(t, metrics.MaxModelLabels+1, s.series("loupe_unpriced_spans_total"))
 	s.want(t, 5, "loupe_unpriced_spans_total", "model", "model-0")

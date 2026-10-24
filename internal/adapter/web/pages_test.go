@@ -161,7 +161,6 @@ func TestHandler_TraceDetail(t *testing.T) {
 	}
 	assert.Equal(t, []bool{false, true}, e.q.getCalls[:2], "content is fetched because it is stored")
 
-	// Select the llm span: error, tokens, content by role, no stripped note.
 	rec = e.get("/traces/"+traceID+"?span=a000000000000002", withHeader("HX-Request", "true"))
 	require.Equal(t, http.StatusOK, rec.Code)
 	b = body(rec)
@@ -181,7 +180,7 @@ func TestHandler_TraceDetail(t *testing.T) {
 func TestHandler_TraceDetail_StrippedAndDuplicate(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t, web.Options{})
-	e.q.detail.Spans[1].Content = nil // nothing stored: no second fetch
+	e.q.detail.Spans[1].Content = nil
 	rec := e.get("/traces/" + traceID + "?span=a000000000000003")
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, body(rec), "content not stored: set content.capture=on")

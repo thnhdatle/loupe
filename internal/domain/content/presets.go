@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-// Preset names accepted by NewRedactor.
 const (
 	PresetEmail      = "email"
 	PresetPhone      = "phone"
@@ -31,7 +30,6 @@ var (
 	bearerRE = regexp.MustCompile(`(\b[Bb]earer[ \t]+)[A-Za-z0-9._~+/\-]{20,}=*`)
 )
 
-// presetRules returns the compiled rules of a preset.
 func presetRules(name string) ([]compiledRule, bool) {
 	switch name {
 	case PresetEmail:
@@ -50,19 +48,12 @@ func presetRules(name string) ([]compiledRule, bool) {
 	}
 }
 
-// Fewest digits a phone number (acceptPhone) and a card number (acceptCard) can have.
 const (
 	phoneMinDigits = 7
 	cardMinDigits  = 13
 )
 
-// apiKeyLiterals holds, for each alternative of apiKeyRE, a literal every
-// match of that alternative contains.
 var apiKeyLiterals = []string{"sk-", "ghp_", "gho_", "ghs_", "github_pat_", "AKIA", "xox", "AIza"}
-
-// Prefilters (compiledRule.need): each is a necessary condition for its
-// preset's regexp to produce a replacement, so skipping the regexp when it is
-// false never changes the output.
 
 func needEmail(s string) bool { return strings.IndexByte(s, '@') >= 0 }
 
@@ -75,10 +66,8 @@ func needAPIKey(s string) bool {
 	return false
 }
 
-// needBearer: bearerRE starts with [Bb]earer.
 func needBearer(s string) bool { return strings.Contains(s, "earer") }
 
-// needDigits reports whether s has at least n ASCII digits.
 func needDigits(n int) func(string) bool {
 	return func(s string) bool {
 		c := 0
@@ -99,14 +88,11 @@ func isWordByte(c byte) bool {
 	return isDigit(c) || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_'
 }
 
-// dashJoined reports whether s[start:end] is part of a dash-joined identifier such as a UUID.
 func dashJoined(s string, start, end int) bool {
 	return start > 1 && s[start-1] == '-' && isWordByte(s[start-2]) ||
 		end+1 < len(s) && s[end] == '-' && isWordByte(s[end+1])
 }
 
-// acceptPhone keeps matches with 7-15 digits that are delimited by non-word
-// characters and are not ISO dates (or date-times) or IPv4 addresses.
 func acceptPhone(s string, start, end int) (int, bool) {
 	if start > 0 && isWordByte(s[start-1]) || end < len(s) && isWordByte(s[end]) {
 		return end, false
@@ -127,12 +113,11 @@ func acceptPhone(s string, start, end int) (int, bool) {
 	return end, digits >= phoneMinDigits && digits <= 15
 }
 
-// acceptCard keeps the longest digit prefix of 13-19 digits that passes the Luhn check.
 func acceptCard(s string, start, end int) (int, bool) {
 	if start > 0 && isDigit(s[start-1]) {
 		return end, false
 	}
-	var ends []int // offset just past each digit
+	var ends []int
 	for i := start; i < end; i++ {
 		if isDigit(s[i]) {
 			ends = append(ends, i+1)
@@ -150,7 +135,6 @@ func acceptCard(s string, start, end int) (int, bool) {
 	return end, false
 }
 
-// luhnValid reports whether the digits of s (other characters ignored) pass the Luhn check.
 func luhnValid(s string) bool {
 	sum, double := 0, false
 	for i := len(s) - 1; i >= 0; i-- {

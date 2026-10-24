@@ -21,8 +21,6 @@ import (
 
 var update = flag.Bool("update", false, "rewrite the testdata/otlp golden files")
 
-// otlpDir holds the recorded and hand-written OTLP/JSON payloads, one directory per
-// instrumentation family; <name>.golden.json beside <name>.json is the expected output.
 const otlpDir = "../../../testdata/otlp"
 
 var families = []string{"openai-v2", "openinference", "node-openai", "go-manual", "agent"}
@@ -81,13 +79,11 @@ func partsOf(parts []trace.ContentPart) []goldenPart {
 	return out
 }
 
-// decoded is one payload as the OTLP/HTTP receiver hands it to the ingestor.
 type decoded struct {
 	spans []trace.RawSpan
 	logs  []trace.RawLogRecord
 }
 
-// decodePayload posts the OTLP/JSON file to the receiver and returns what it ingested.
 func decodePayload(t *testing.T, path string) decoded {
 	t.Helper()
 	body, err := os.ReadFile(path)
@@ -137,7 +133,6 @@ func translate(d decoded) golden {
 	return g
 }
 
-// globPayloads lists the payload files of one family matching pattern, golden files excepted.
 func globPayloads(t *testing.T, fam, pattern string) []string {
 	t.Helper()
 	matches, err := filepath.Glob(filepath.Join(otlpDir, fam, pattern))
@@ -177,8 +172,6 @@ func TestGolden_RecordedPayloads(t *testing.T) {
 	}
 }
 
-// TestGolden_NoUnmappedUsageKeys fails when a payload carries a gen_ai.usage.* or
-// llm.token_count.* key (on a span or a log record) that the alias table does not map.
 func TestGolden_NoUnmappedUsageKeys(t *testing.T) {
 	t.Parallel()
 	for _, path := range payloadPaths(t) {
@@ -195,8 +188,6 @@ func TestGolden_NoUnmappedUsageKeys(t *testing.T) {
 	}
 }
 
-// TestGolden_FamiliesCoverCacheAndReasoning checks that every family has a
-// hand-written payload whose spans carry cache read, cache write and reasoning tokens.
 func TestGolden_FamiliesCoverCacheAndReasoning(t *testing.T) {
 	t.Parallel()
 	for _, fam := range families {
@@ -218,8 +209,6 @@ func TestGolden_FamiliesCoverCacheAndReasoning(t *testing.T) {
 	}
 }
 
-// TestGolden_RecordedFamiliesTranslate checks what every recording must show: an llm span
-// with a model and token usage, and no content key left in the stored attributes.
 func TestGolden_RecordedFamiliesTranslate(t *testing.T) {
 	t.Parallel()
 	for _, fam := range families {

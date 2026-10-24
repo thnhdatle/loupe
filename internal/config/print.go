@@ -10,13 +10,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Redacted is the placeholder that replaces sensitive values in Redact.
 const Redacted = "***"
 
-// Redact returns a copy that is safe to share: secret-bearing paths (token and
-// key files) and credentials inside self_tracing.endpoint are masked when set.
-// Secrets themselves never live in the config (only *_file paths do), so this is
-// defence in depth for pasted bug reports.
 func (c *Config) Redact() Config {
 	out := *c
 	out.Content.Redact = append([]RedactRule(nil), c.Content.Redact...)
@@ -49,7 +44,6 @@ func redactEndpoint(s string) string {
 	return u.String()
 }
 
-// WriteYAML renders the configuration as YAML in the layout of config.example.yaml.
 func (c *Config) WriteYAML(w io.Writer) error {
 	enc := yaml.NewEncoder(w)
 	enc.SetIndent(2)

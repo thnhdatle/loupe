@@ -11,14 +11,11 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/metrics"
 )
 
-// observedStore reports every committed batch to the metrics: duration, span
-// count and the usage-duplicate flags the store set.
 type observedStore struct {
 	trace.SpanStore
 	m *metrics.Metrics
 }
 
-// WriteBatch implements trace.SpanStore.
 func (o observedStore) WriteBatch(ctx context.Context, b *trace.Batch) (trace.BatchResult, error) {
 	start := time.Now()
 	res, err := o.SpanStore.WriteBatch(ctx, b)

@@ -19,13 +19,11 @@ import (
 //go:embed migrations/*.sql
 var migrationFiles embed.FS
 
-// versionTable is goose's bookkeeping table.
 const versionTable = "goose_db_version"
 
 func embeddedMigrations() fs.FS {
 	sub, err := fs.Sub(migrationFiles, "migrations")
 	if err != nil {
-		// Unreachable: the directory is embedded at build time.
 		panic(fmt.Sprintf("sqlite: embedded migrations: %v", err))
 	}
 	return sub
@@ -40,12 +38,8 @@ func newProvider(db *sql.DB, fsys fs.FS) (*goose.Provider, error) {
 	return p, nil
 }
 
-// BackupPath returns the pre-migration backup path for target version n.
 func BackupPath(dbPath string, n int64) string { return fmt.Sprintf("%s.pre-v%d", dbPath, n) }
 
-// migrate applies pending migrations on the writer. With backups enabled and a
-// schema version above 0 it first writes VACUUM INTO <path>.pre-v<target>,
-// failing when free disk is below the database size.
 func migrate(ctx context.Context, db *sql.DB, path string, cfg config) error {
 	p, err := newProvider(db, cfg.migrations)
 	if err != nil {
@@ -91,7 +85,6 @@ func backupBeforeMigrate(ctx context.Context, db *sql.DB, path string, target in
 	return nil
 }
 
-// vacuumInto writes a consistent copy of the database to dst, which must not exist.
 func vacuumInto(ctx context.Context, db *sql.DB, dst string) error {
 	if _, err := os.Stat(dst); err == nil {
 		return fmt.Errorf("%w: %s", ErrBackupExists, dst)
@@ -115,17 +108,12 @@ func fileSize(path string) (int64, error) {
 	return st.Size(), nil
 }
 
-// MigrationStatus reports the schema version of a database and the embedded
-// migrations not yet applied to it.
 type MigrationStatus struct {
 	Current int64
 	Target  int64
 	Pending []int64
 }
 
-// Migrations reports the migration status of the database at path without
-// writing to it and without taking the lock, so it is safe while a server
-// runs (`loupe db migrate --dry-run`). A missing file has version 0.
 func Migrations(ctx context.Context, path string) (MigrationStatus, error) {
 	return migrationStatus(ctx, path, embeddedMigrations())
 }

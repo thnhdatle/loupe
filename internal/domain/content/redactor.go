@@ -9,35 +9,27 @@ import (
 	"strings"
 )
 
-// Rule is a custom redaction rule. Replacement may use regexp expansions such as $1.
 type Rule struct {
 	Name        string
 	Pattern     string
 	Replacement string
 }
 
-// matcher validates a regexp match at s[start:end] and may shrink it; it
-// returns the final end offset and whether the match is to be replaced.
 type matcher func(s string, start, end int) (int, bool)
 
 type compiledRule struct {
 	re     *regexp.Regexp
 	repl   string
-	accept matcher // nil: plain regexp replacement with expansion
-	// need is a cheap necessary condition for a replacement in s (for example
-	// "contains @" for e-mail addresses); when it is false the regexp, whose
-	// unanchored scan dominates ingest CPU, is not run. nil: always run.
-	need func(s string) bool
+	accept matcher
+	need   func(s string) bool
 }
 
-// Redactor applies compiled redaction rules in order. The zero value and a nil
-// pointer are valid and leave input unchanged. It is safe for concurrent use.
+// Redactor applies compiled redaction rules in order.
 type Redactor struct {
 	rules []compiledRule
 }
 
-// NewRedactor compiles the named presets (in order) and then the custom rules.
-// It reports every configuration problem at once, joined, each wrapping ErrInvalidRule.
+// NewRedactor compiles the named presets and then the custom rules.
 func NewRedactor(presets []string, custom []Rule) (*Redactor, error) {
 	var (
 		errs  []error
@@ -73,7 +65,7 @@ func NewRedactor(presets []string, custom []Rule) (*Redactor, error) {
 	return &Redactor{rules: rules}, nil
 }
 
-// Redact returns s with every rule applied in order.
+// Redact returns s with every rule applied.
 func (r *Redactor) Redact(s string) string {
 	if r == nil {
 		return s
@@ -84,7 +76,6 @@ func (r *Redactor) Redact(s string) string {
 	return s
 }
 
-// RedactBytes is Redact for byte slices. When nothing changes it returns b itself.
 func (r *Redactor) RedactBytes(b []byte) []byte {
 	if r == nil || len(r.rules) == 0 || len(b) == 0 {
 		return b

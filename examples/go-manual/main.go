@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Command go-manual records an LLM call with hand-written OpenTelemetry spans that
-// carry gen_ai attributes, and exports them to Loupe over OTLP/HTTP.
+// Command go-manual sends one LLM call to Loupe with hand-written OpenTelemetry spans.
 package main
 
 import (
@@ -48,11 +47,10 @@ func main() {
 	}
 }
 
+// run records one chat call as spans and exports them.
 func run() error {
 	ctx := context.Background()
 
-	// autoexport reads OTEL_TRACES_EXPORTER, OTEL_METRICS_EXPORTER, OTEL_LOGS_EXPORTER and the
-	// OTEL_EXPORTER_OTLP_* variables; "otlp" with http/protobuf (or http/json) is used here.
 	spanExp, err := autoexport.NewSpanExporter(ctx)
 	if err != nil {
 		return err
@@ -73,7 +71,6 @@ func run() error {
 
 	callErr := chat(ctx, tp.Tracer("example"), mp.Meter("example"))
 
-	// Flush everything before exit so the spans reach Loupe.
 	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	for _, shutdown := range []func(context.Context) error{tp.Shutdown, mp.Shutdown, lp.Shutdown} {
@@ -95,7 +92,6 @@ func chat(ctx context.Context, tracer trace.Tracer, meter metric.Meter) error {
 		attribute.String("gen_ai.operation.name", "chat"),
 		attribute.String("gen_ai.provider.name", "openai"),
 		attribute.String("gen_ai.request.model", model),
-		// Content opt-in: prompt and completion as span attributes.
 		attribute.String("gen_ai.input.messages",
 			fmt.Sprintf(`[{"role":"user","parts":[{"type":"text","content":%q}]}]`, prompt)),
 	)
@@ -141,7 +137,6 @@ func chat(ctx context.Context, tracer trace.Tracer, meter metric.Meter) error {
 				out.Choices[0].FinishReason, completion)),
 	)
 
-	// The default metrics exporter stays on; Loupe accepts and discards these.
 	tokens, err := meter.Int64Histogram("gen_ai.client.token.usage", metric.WithUnit("{token}"))
 	if err != nil {
 		return err

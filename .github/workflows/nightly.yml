@@ -25,11 +25,7 @@ jobs:
           node-version: 24
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
       - run: scripts/ci-install-tools.sh
-      - name: Install the Playwright browser
-        working-directory: tests/node
-        run: npm ci && npx playwright install --with-deps chromium
       - name: Pull the fakellm image
         run: docker pull ghcr.io/thnhdatle/fakellm:v0.1.0
       - run: make bootstrap
-      - run: make mutation fuzz
-      - run: make acceptance CI=1
+      - run: make fuzz

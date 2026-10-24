@@ -10,7 +10,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// SpanFilter holds span-level conditions. Every set field must match the same span.
 type SpanFilter struct {
 	Service       string
 	Model         string
@@ -18,15 +17,11 @@ type SpanFilter struct {
 	Kind          trace.Kind
 	Status        trace.Status
 	MinDurationNs int64
-	// NamePrefix is a case-sensitive prefix of the span name.
-	NamePrefix string
+	NamePrefix    string
 }
 
-// IsEmpty reports whether no span-level condition is set.
 func (f SpanFilter) IsEmpty() bool { return f == SpanFilter{} }
 
-// TraceFilter selects traces. The range [From, To) applies to the trace start;
-// a zero bound is open. Pointer fields are unset when nil.
 type TraceFilter struct {
 	From         time.Time
 	To           time.Time
@@ -37,7 +32,6 @@ type TraceFilter struct {
 	Span         SpanFilter
 }
 
-// Validate returns every problem found in the filter, joined; nil when valid.
 func (f TraceFilter) Validate() error {
 	var errs []error
 	if !f.From.IsZero() && !f.To.IsZero() && !f.From.Before(f.To) {
@@ -60,7 +54,6 @@ func (f TraceFilter) Validate() error {
 	return errors.Join(errs...)
 }
 
-// SessionFilter selects sessions by last activity in [From, To) and user.
 type SessionFilter struct {
 	From   time.Time
 	To     time.Time

@@ -2,14 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-# Records the OTLP/JSON traces that examples/triage sends (the app's spans and the spans of the
-# real Triage image) into testdata/contracts/triage/<scenario>.json, one file per trace, using
-# the capture server in bench/cmd/otlpcapture instead of Loupe. The other fixtures in that
-# directory are hand-written (see its README.md) and never touched.
-# Needs fakellm (FAKELLM_URL, default http://127.0.0.1:8090/v1), the Triage image
-# (RAYLD_TRIAGE_IMAGE, default ghcr.io/thnhdatle/triage:v0.1.0), docker, uv and python3.
-#   RECORD_ADDR  capture listen address (default 127.0.0.1:14399)
-#   TRIAGE_PORT  host port of Triage    (default 8080)
+# Records the OTLP/JSON traces of the triage example with the capture server.
 export FAKELLM_URL="${FAKELLM_URL:-http://127.0.0.1:8090/v1}"
 addr="${RECORD_ADDR:-127.0.0.1:14399}"
 dir="testdata/contracts/triage"
@@ -22,7 +15,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-go build -o "$tmp/otlpcapture" ./bench/cmd/otlpcapture
+go build -o "$tmp/otlpcapture" ./scripts/otlpcapture
 "$tmp/otlpcapture" -dir "$tmp" -prefix "r-" -addr "$addr" 2>"$tmp/capture.log" &
 pid=$!
 for _ in $(seq 50); do

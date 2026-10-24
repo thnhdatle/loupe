@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Starts Triage in a container in front of the already running fakellm, runs the app against
-# it (the app and Triage both export to Loupe), then prints the traces Loupe stored, fetched
-# from its REST API. See README.md for the environment.
-#   LOUPE_OTLP_ENDPOINT   OTLP/HTTP base URL   (default http://127.0.0.1:4318)
-#   LOUPE_API             REST API base URL    (default http://127.0.0.1:3000)
-#   FAKELLM_URL           OpenAI-compatible API (default http://127.0.0.1:8090/v1)
-#   TRIAGE_PORT           host port of Triage  (default 8080)
-#   RAYLD_TRIAGE_IMAGE    Triage image         (default ghcr.io/thnhdatle/triage:v0.1.0)
-#   EXAMPLE_NO_SUMMARY=1  skip the summary (used when recording payloads)
+# Runs the example with Triage in front of fakellm and prints the stored traces.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 root=../..
@@ -18,13 +10,11 @@ otlp="${LOUPE_OTLP_ENDPOINT:-http://127.0.0.1:4318}"
 port="${TRIAGE_PORT:-8080}"
 image="${RAYLD_TRIAGE_IMAGE:-ghcr.io/thnhdatle/triage:v0.1.0}"
 
-# What a container sees as the host: loopback addresses become host.docker.internal.
 from_container() { sed -E 's#//(127\.0\.0\.1|localhost)([:/]|$)#//host.docker.internal\2#' <<<"$1"; }
 
 tmp="$(mktemp -d)"
 name="loupe-example-triage-$$"
 cleanup() {
-  # Triage flushes its spans on SIGTERM, so stop it (not kill) before the summary is read.
   docker stop -t 10 "$name" >/dev/null 2>&1 || true
   rm -f "$tmp/config.yaml"
   rmdir "$tmp"
@@ -52,8 +42,6 @@ export OTEL_SERVICE_NAME
 export OTEL_EXPORTER_OTLP_ENDPOINT="$otlp"
 export OTEL_EXPORTER_OTLP_PROTOCOL="${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}"
 export OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp OTEL_LOGS_EXPORTER=otlp
-# Content opt-in: the latest GenAI conventions, content as gen_ai.client.inference.operation.details
-# log events.
 export OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental
 export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=event_only
 export TRIAGE_URL="http://127.0.0.1:$port/v1"
@@ -62,6 +50,6 @@ export FAKELLM_CONTROL_URL="${FAKELLM_URL%/v1}"
 uv run --frozen --project "$root/tests/python" python app.py
 
 if [[ -n "${EXAMPLE_NO_SUMMARY:-}" ]]; then
-  exit 0 # the cleanup trap stops Triage, which flushes its spans
+  exit 0
 fi
-go run "$root/bench/cmd/exsummary" -min-spans 4 -traces 4 "$OTEL_SERVICE_NAME"
+go run "$root/scripts/exsummary" -min-spans 4 -traces 4 "$OTEL_SERVICE_NAME"

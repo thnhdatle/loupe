@@ -51,7 +51,6 @@ func TestExampleFileMatchesDefaults(t *testing.T) {
 	def := config.Default()
 	assert.Equal(t, &def, cfg)
 
-	// Every struct field has a key in the example file (prevents drift).
 	var doc map[string]any
 	require.NoError(t, yaml.Unmarshal(data, &doc))
 	assertKeys(t, reflect.TypeOf(def), doc, "")
@@ -179,7 +178,7 @@ func TestValidate(t *testing.T) {
 	tests := []struct {
 		name string
 		mod  func(c *config.Config)
-		want []string // substrings, one per expected problem
+		want []string
 	}{
 		{name: "defaults ok", mod: func(*config.Config) {}},
 		{

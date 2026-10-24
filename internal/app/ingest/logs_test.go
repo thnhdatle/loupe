@@ -67,7 +67,7 @@ func TestIngestor_IngestLogs_CaptureOffStoresMarker(t *testing.T) {
 func TestIngestor_IngestLogs_AllDiscardedSkipsQueue(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, []writer.Option{writer.WithQueueLimits(1, 1)})
-	_, err := f.in.IngestSpans(t.Context(), []trace.RawSpan{chatSpan()}) // fills the queue
+	_, err := f.in.IngestSpans(t.Context(), []trace.RawSpan{chatSpan()})
 	require.NoError(t, err)
 	res, err := f.in.IngestLogs(t.Context(), []trace.RawLogRecord{genAILog("app.event", "x")})
 	require.NoError(t, err, "discarded records never meet a full queue")

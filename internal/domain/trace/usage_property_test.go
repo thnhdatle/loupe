@@ -19,7 +19,6 @@ func genUsage(t *rapid.T, label string) trace.Usage {
 	}
 }
 
-// Usage deltas applied to aggregates must be exactly reversible.
 func TestUsage_AddSubInverseProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

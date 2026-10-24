@@ -7,7 +7,7 @@
 #   count*price(term) in nano-USD per Mtok, numerator, numerator/1e6, half-up result.
 # Span starts are RFC 3339 UTC; an effective_from is inclusive.
 # kind: span  -> one span priced by the cost formula (checked by internal/domain/cost).
-# kind: trace -> trace totals after the usage-duplicate rule (checked by acceptance LPE-05).
+# kind: trace -> trace totals after the usage-duplicate rule.
 #   cost_nanos sums counted (non-duplicate) spans, null when none is priced; unpriced_spans
 #   counts counted spans with tokens and no cost; calls counts counted llm/embedding spans.
 prices:

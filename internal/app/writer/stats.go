@@ -8,23 +8,19 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// Stats is a snapshot of the writer's queue and counters, for metrics and
-// readiness. Counters are cumulative since New.
 type Stats struct {
-	QueuedSlots int   // slots held by queued items and the batch being written
-	QueuedBytes int64 // estimated bytes held by the same items
-	QueuedJobs  int   // submitted jobs waiting for the writer
-	Batches     int64 // committed batches, including counter-only ones
-	Committed   int64 // slots (spans and log records) in committed batches
-	Inserted    int64 // spans the store reported as inserted
-	Duplicates  int64 // spans the store ignored as already stored
-	Retries     int64 // WriteBatch attempts after the first, over all batches
-	// DroppedStoreError counts slots dropped after the retry budget (store_error).
+	QueuedSlots       int
+	QueuedBytes       int64
+	QueuedJobs        int
+	Batches           int64
+	Committed         int64
+	Inserted          int64
+	Duplicates        int64
+	Retries           int64
 	DroppedStoreError int64
-	// DroppedShutdown counts slots abandoned at the shutdown deadline (shutdown).
-	DroppedShutdown int64
-	Jobs            int64 // jobs run
-	JobErrors       int64 // jobs that returned an error or panicked
+	DroppedShutdown   int64
+	Jobs              int64
+	JobErrors         int64
 }
 
 type counters struct {
@@ -44,7 +40,6 @@ func (c *counters) recordCommit(entries []*entry, res trace.BatchResult) {
 	c.duplicates.Add(int64(res.Duplicates))
 }
 
-// Stats returns a snapshot of the queue and counters.
 func (w *Writer) Stats() Stats {
 	w.mu.Lock()
 	slots, bytes := w.usedSlots, w.usedBytes

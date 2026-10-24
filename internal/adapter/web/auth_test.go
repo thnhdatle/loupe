@@ -122,15 +122,12 @@ func TestAuth_RateLimit(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, e.post("/login", bad).Code, "attempt %d", i+1)
 		e.clk.Advance(5 * time.Second)
 	}
-	// 25 s into the window: blocked, even with the right token.
 	rec := e.post("/login", url.Values{"token": {testToken}})
 	assert.Equal(t, http.StatusTooManyRequests, rec.Code)
 	assert.Equal(t, "35", rec.Header().Get("Retry-After"))
 	assert.Empty(t, rec.Result().Cookies())
-	// Another client is unaffected.
 	assert.Equal(t, http.StatusSeeOther,
 		e.post("/login", url.Values{"token": {testToken}}, withAddr("198.51.100.7:4000")).Code)
-	// The port does not matter, the address does.
 	assert.Equal(t, http.StatusTooManyRequests,
 		e.post("/login", url.Values{"token": {testToken}}, withAddr("192.0.2.1:9999")).Code)
 
@@ -171,7 +168,6 @@ func TestAuth_OriginCheck(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, rec.Code, origin)
 		assert.Empty(t, rec.Result().Cookies(), origin)
 	}
-	// Browsers send "Origin: null" on same-origin form posts under Referrer-Policy no-referrer.
 	assert.Equal(t, http.StatusForbidden,
 		e.post("/login", form, withHeader("Origin", "null"), withHeader("Sec-Fetch-Site", "cross-site")).Code)
 	assert.Equal(t, http.StatusSeeOther,
@@ -181,7 +177,6 @@ func TestAuth_OriginCheck(t *testing.T) {
 		e.post("/logout", url.Values{}, withCookie(c), withHeader("Origin", "https://evil.example")).Code)
 	assert.True(t, e.h.SessionAuth(newGet("/", c)), "a rejected logout keeps the session")
 
-	// httptest requests use Host example.com.
 	assert.Equal(t, http.StatusSeeOther, e.post("/login", form, withHeader("Origin", "http://example.com")).Code)
 	assert.Equal(t, http.StatusSeeOther,
 		e.post("/logout", url.Values{}, withCookie(c), withHeader("Origin", "http://EXAMPLE.com")).Code)
@@ -267,7 +262,6 @@ func TestAuth_CodeAttemptsCountTowardLimit(t *testing.T) {
 	e.clk.Advance(time.Minute)
 	assert.Equal(t, http.StatusSeeOther, e.get("/login?code="+code).Code)
 
-	// Token and code failures share one budget.
 	for range 3 {
 		e.post("/login", url.Values{"token": {"x"}})
 	}

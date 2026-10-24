@@ -34,8 +34,7 @@ const (
 	maxHeaderBytes   = 64 << 10
 )
 
-// HTTPHandler returns the OTLP/HTTP handler serving POST /v1/traces, /v1/logs and
-// /v1/metrics.
+// HTTPHandler returns the OTLP/HTTP handler.
 func (s *Server) HTTPHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/traces", exportHandler(s, trace.SignalTraces,
@@ -73,8 +72,6 @@ const (
 	encodingJSON
 )
 
-// exportHandler builds the handler of one signal. The checks run in this order:
-// shutdown, auth, content negotiation, size and in-flight limits, decode, ingest.
 func exportHandler[Req, Resp proto.Message](
 	s *Server, sig trace.Signal, newReq func() Req, call func(context.Context, Req) (Resp, error),
 ) http.HandlerFunc {
@@ -120,7 +117,6 @@ type httpError struct {
 	msg    string
 }
 
-// negotiate picks the response encoding from Content-Type and checks Content-Encoding.
 func negotiate(r *http.Request) (enc encoding, gz bool, herr *httpError) {
 	mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	switch {
@@ -188,8 +184,6 @@ func writeOverloaded(w http.ResponseWriter, enc encoding, msg string) {
 	writeStatus(w, enc, http.StatusTooManyRequests, codes.ResourceExhausted, msg)
 }
 
-// writeStatus writes a google.rpc.Status body, as the OTLP specification requires
-// for failed requests.
 func writeStatus(w http.ResponseWriter, enc encoding, httpStatus int, code codes.Code, msg string) {
 	writeMessage(w, enc, httpStatus, status.New(code, msg).Proto())
 }
@@ -215,9 +209,7 @@ func writeMessage(w http.ResponseWriter, enc encoding, httpStatus int, m proto.M
 	_, _ = w.Write(b)
 }
 
-// RunHTTP serves OTLP/HTTP on ln until ctx ends, then stops accepting, drains
-// in-flight requests for at most Config.ShutdownTimeout and returns nil on a clean
-// stop. TLS is used when Config.HTTPTLS is set.
+// RunHTTP serves OTLP/HTTP on ln until ctx ends.
 func (s *Server) RunHTTP(ctx context.Context, ln net.Listener) error {
 	srv := &http.Server{
 		Handler:           s.HTTPHandler(),

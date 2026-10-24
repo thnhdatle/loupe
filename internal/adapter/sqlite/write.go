@@ -13,12 +13,7 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// WriteBatch implements trace.SpanStore: one IMMEDIATE transaction that
-// inserts resources, spans and content idempotently, applies trace, session
-// and rollup aggregates for inserted spans and the usage-dedupe deltas of
-// every touched trace, and folds the batch counters into ingest_stats. It
-// returns success exactly when COMMIT succeeded; nothing that can fail runs
-// after the commit.
+// WriteBatch writes one batch of spans in a single transaction.
 func (s *Store) WriteBatch(ctx context.Context, b *trace.Batch) (trace.BatchResult, error) {
 	if b == nil {
 		return trace.BatchResult{}, nil
@@ -37,7 +32,6 @@ func (s *Store) WriteBatch(ctx context.Context, b *trace.Batch) (trace.BatchResu
 	return res, nil
 }
 
-// inTx runs fn in a writer transaction and commits it.
 func (s *Store) inTx(ctx context.Context, fn func(w *txWriter) error) error {
 	return s.rawTx(ctx, func(tx *sql.Tx) error {
 		return fn(newTxWriter(s, s.stmts.bind(ctx, tx), tx))
@@ -51,35 +45,31 @@ func rollback(tx *sql.Tx) error {
 	return nil
 }
 
-// traceState is a trace row loaded at the start of a transaction (before) and
-// its updated values (row).
 type traceState struct {
 	id     trace.ID
 	exists bool
 	before traceRow
 	row    traceRow
-	added  bool // spans were inserted
-	dirty  bool // row must be written
-	settle bool // usage dedupe must be re-evaluated
+	added  bool
+	dirty  bool
+	settle bool
 }
 
-// txWriter holds the state of one writer transaction.
 type txWriter struct {
 	s        *Store
 	tx       *sql.Tx
 	st       *writeStmts
 	now      int64
 	traces   map[trace.ID]*traceState
-	order    []trace.ID // traces in first-touch order, for deterministic writes
+	order    []trace.ID
 	newRows  map[int64]struct{}
 	deltas   rollupDeltas
 	sessions map[string]*sessionState
 	sessOrd  []string
-	budgets  map[spanKey]*content.Budget // content.max_bytes per span, loaded on first use
+	budgets  map[spanKey]*content.Budget
 	res      trace.BatchResult
 }
 
-// spanKey identifies a span.
 type spanKey struct {
 	tid trace.ID
 	sid trace.SpanID
@@ -117,8 +107,6 @@ func (w *txWriter) writeBatch(ctx context.Context, b *trace.Batch) error {
 	return w.foldCounts(ctx, b.Counts)
 }
 
-// finish settles usage dedupe for touched traces and writes the trace,
-// session and rollup rows.
 func (w *txWriter) finish(ctx context.Context) error {
 	if err := w.settleTraces(ctx); err != nil {
 		return err
@@ -141,7 +129,6 @@ func (w *txWriter) insertResources(ctx context.Context, rs []trace.Resource) err
 	return nil
 }
 
-// traceState returns the state of trace id, loading its row on first use.
 func (w *txWriter) traceState(ctx context.Context, id trace.ID) (*traceState, error) {
 	if st, ok := w.traces[id]; ok {
 		return st, nil
@@ -160,8 +147,6 @@ func (w *txWriter) traceState(ctx context.Context, id trace.ID) (*traceState, er
 	return st, nil
 }
 
-// batchUsers returns, per trace, the first non-empty user id among the
-// batch's spans: the trace's user for attribution when it has none yet.
 func batchUsers(spans []trace.Span) map[trace.ID]string {
 	out := make(map[trace.ID]string)
 	for i := range spans {
@@ -234,8 +219,6 @@ func (w *txWriter) insertSpan(ctx context.Context, sp *trace.Span, rollupUser st
 	return id, true, nil
 }
 
-// spanContent marks earlier log-event content of the span as attached and
-// stores the span's own parts.
 func (w *txWriter) spanContent(ctx context.Context, sp *trace.Span) error {
 	if _, err := w.stmt(stMarkContent).exec(ctx, sp.TraceID[:], sp.SpanID[:]); err != nil {
 		return fmt.Errorf("sqlite: attach content: %w", err)
@@ -248,10 +231,6 @@ func (w *txWriter) spanContent(ctx context.Context, sp *trace.Span) error {
 	return nil
 }
 
-// insertContent stores one part; a part without time (span attributes) takes
-// the span start, so retention ages it with its span. A body is first fitted
-// into the span's content.max_bytes budget; only an inserted row consumes it,
-// so a re-sent part is not counted twice.
 func (w *txWriter) insertContent(
 	ctx context.Context, p *trace.ContentPart, tid trace.ID, sid trace.SpanID, spanStart int64,
 ) error {
@@ -294,8 +273,6 @@ func (w *txWriter) insertContent(
 	return nil
 }
 
-// budget returns the content.max_bytes budget of a span, loading the body
-// bytes it already stores on first use in the transaction.
 func (w *txWriter) budget(ctx context.Context, tid trace.ID, sid trace.SpanID) (*content.Budget, error) {
 	k := spanKey{tid: tid, sid: sid}
 	if b, ok := w.budgets[k]; ok {
@@ -330,7 +307,6 @@ func (w *txWriter) budget(ctx context.Context, tid trace.ID, sid trace.SpanID) (
 	return &b, nil
 }
 
-// addSpan folds the structural fields of an inserted span into the trace row.
 func (st *traceState) addSpan(sp *trace.Span) {
 	r := &st.row
 	end := sp.StartNs + sp.DurationNs()
@@ -344,7 +320,6 @@ func (st *traceState) addSpan(sp *trace.Span) {
 	case sp.IsRoot() && !r.rootName.Valid:
 		r.rootName, r.rootService = sql.NullString{String: sp.Name, Valid: true}, sp.Service
 	case !r.rootName.Valid && r.rootService == "":
-		// Until the root arrives, show the service of the first stored span.
 		r.rootService = sp.Service
 	}
 	r.models = addModel(r.models, sp.Model)
@@ -358,7 +333,6 @@ func (st *traceState) addSpan(sp *trace.Span) {
 	st.added, st.dirty, st.settle = true, true, true
 }
 
-// countKey groups ingest counters per UTC hour.
 type countKey struct {
 	hour   int64
 	signal trace.Signal
@@ -366,8 +340,6 @@ type countKey struct {
 	reason string
 }
 
-// foldCounts adds the batch counters and the stored and duplicate span
-// counts of this transaction to ingest_stats.
 func (w *txWriter) foldCounts(ctx context.Context, counts []trace.IngestCount) error {
 	sums := make(map[countKey]int64)
 	var keys []countKey

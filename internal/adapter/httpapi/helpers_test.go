@@ -17,7 +17,6 @@ import (
 
 const testToken = "s3cret"
 
-// fakeQueries records the last request of each use case and returns canned results.
 type fakeQueries struct {
 	traceReq   queries.TraceListRequest
 	tracePage  query.TracePage

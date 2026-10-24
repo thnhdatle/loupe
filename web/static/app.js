@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// Renders the Overview charts with uPlot from the JSON document in
-// #chart-data. No inline scripts or styles, no network access, no eval.
 (function () {
   'use strict';
 
@@ -57,6 +55,7 @@
     };
   }
 
+  // render draws the Overview charts with uPlot from the JSON in #chart-data.
   function render() {
     var el = document.getElementById('chart-data');
     if (!el || typeof uPlot === 'undefined') { return; }

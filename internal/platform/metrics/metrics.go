@@ -16,18 +16,12 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// Caps on labels that come from user data or route tables.
 const (
-	// MaxModelLabels is the number of distinct model label values of
-	// loupe_unpriced_spans_total; later models are counted as "other".
-	MaxModelLabels = 50
-	// MaxEndpointLabels bounds loupe_query_duration_seconds{endpoint}.
+	MaxModelLabels    = 50
 	MaxEndpointLabels = 64
-	// OtherLabel replaces label values beyond a cap or outside a fixed set.
-	OtherLabel = "other"
+	OtherLabel        = "other"
 )
 
-// Fixed label sets. Anything else is reported as OtherLabel.
 var (
 	rejectReasons = []string{
 		trace.ReasonTooManySpans, trace.ReasonRequestTooBig, trace.ReasonInflight,
@@ -41,22 +35,19 @@ var (
 	kinds   = []string{"llm", "embedding"}
 )
 
-// Sources are the snapshots read at scrape time. A nil function is skipped.
 type Sources struct {
-	Writer    func() writer.Stats
-	Retention func() retention.Stats
-	// InflightBytes reports the receivers' in-flight decompressed bytes.
+	Writer        func() writer.Stats
+	Retention     func() retention.Stats
 	InflightBytes func() int64
 }
 
-// BuildInfo labels loupe_build_info.
 type BuildInfo struct {
 	Version   string
 	Commit    string
 	GoVersion string
 }
 
-// Metrics owns the registry and the recorded counters. It is safe for concurrent use.
+// Metrics owns the registry and the recorded counters.
 type Metrics struct {
 	reg *prometheus.Registry
 	src Sources
@@ -69,10 +60,10 @@ type Metrics struct {
 	stripped      prometheus.Counter
 
 	mu        sync.Mutex
-	rejected  map[reasonKey]int64 // traces and logs, by reason
+	rejected  map[reasonKey]int64
 	dropped   map[reasonKey]int64
 	discarded map[reasonKey]int64
-	spansRej  int64 // traces only
+	spansRej  int64
 	spansDrop int64
 	models    map[string]struct{}
 	endpoints map[string]struct{}
@@ -130,26 +121,21 @@ func New(src Sources, build BuildInfo) (*Metrics, error) {
 	return m, nil
 }
 
-// Handler serves the Prometheus text exposition for /metrics.
 func (m *Metrics) Handler() http.Handler {
 	return promhttp.HandlerFor(m.reg, promhttp.HandlerOpts{})
 }
 
-// Gatherer returns the registry, for tests and for merging with other registries.
 func (m *Metrics) Gatherer() prometheus.Gatherer { return m.reg }
 
-// ObserveBatch records one committed writer batch.
 func (m *Metrics) ObserveBatch(d time.Duration, spans int) {
 	m.batchDuration.Observe(d.Seconds())
 	m.batchSpans.Observe(float64(spans))
 }
 
-// ObserveQuery records one query of an endpoint (a route pattern, never a raw URL).
 func (m *Metrics) ObserveQuery(endpoint string, d time.Duration) {
 	m.queryDuration.WithLabelValues(m.cap(m.endpoints, endpoint, MaxEndpointLabels)).Observe(d.Seconds())
 }
 
-// AddUnpriced counts n spans of model that carry tokens but no price.
 func (m *Metrics) AddUnpriced(model string, n int64) {
 	if n <= 0 {
 		return
@@ -157,7 +143,6 @@ func (m *Metrics) AddUnpriced(model string, n int64) {
 	m.unpriced.WithLabelValues(m.cap(m.models, model, MaxModelLabels)).Add(float64(n))
 }
 
-// AddUsageDuplicate counts n spans flagged usage_duplicate; kind is "llm" or "embedding".
 func (m *Metrics) AddUsageDuplicate(kind string, n int64) {
 	if n <= 0 {
 		return
@@ -165,10 +150,6 @@ func (m *Metrics) AddUsageDuplicate(kind string, n int64) {
 	m.usageDup.WithLabelValues(oneOf(kind, kinds)).Add(float64(n))
 }
 
-// Count folds one receiver- or ingest-side counter into the ingest metrics. It
-// handles rejected, dropped, discarded and content_stripped results; stored and
-// duplicate come from writer.Stats, and unpriced from AddUnpriced, so received,
-// stored, duplicate and unpriced results are ignored here.
 func (m *Metrics) Count(c trace.IngestCount) {
 	if c.N <= 0 {
 		return
@@ -199,7 +180,6 @@ func (m *Metrics) add(dst map[reasonKey]int64, spans *int64, c trace.IngestCount
 	}
 }
 
-// cap returns v while fewer than limit distinct values were seen, else OtherLabel.
 func (m *Metrics) cap(seen map[string]struct{}, v string, limit int) string {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""OpenAI chat calls traced with the OpenTelemetry GenAI openai-v2 instrumentation.
-
-Providers use the SDK defaults: traces, metrics and logs all export OTLP/HTTP to
-OTEL_EXPORTER_OTLP_ENDPOINT. Loupe stores the spans and log events and discards metrics.
-"""
+"""OpenAI chat calls traced with the OpenTelemetry GenAI openai-v2 instrumentation."""
 
 import os
 
@@ -23,7 +19,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 def main() -> None:
-    resource = Resource.create()  # service.name comes from OTEL_SERVICE_NAME
+    resource = Resource.create()
 
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
@@ -48,7 +44,6 @@ def main() -> None:
         )
         print("reply:", reply.choices[0].message.content)
 
-    # Flush everything before exit: spans, log events and one final metrics export.
     tracer_provider.shutdown()
     logger_provider.shutdown()
     meter_provider.shutdown()

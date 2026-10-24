@@ -198,7 +198,7 @@ func TestService_Registry_FullOfUnfinished(t *testing.T) {
 func TestService_Close_CancelsAndWaits(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t, &fakeStore{})
-	e.runner.gate = make(chan struct{}) // never opened: the job blocks until Close
+	e.runner.gate = make(chan struct{})
 	id, err := e.svc.Vacuum()
 	require.NoError(t, err)
 	require.NoError(t, e.svc.Close())

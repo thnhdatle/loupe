@@ -18,8 +18,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// payload is a set of spans and log-event content parts; items index spans
-// first, then content parts.
 type payload struct {
 	spans   []trace.Span
 	content []trace.ContentPart
@@ -39,9 +37,6 @@ func (p *payload) batch(idx []int) *trace.Batch {
 	return b
 }
 
-// embeddingTrace is a routed embeddings call: caller embedding → HTTP span → route
-// request (embedding) → one priced attempt, with an llm span under the route
-// that is not compared across kinds.
 func embeddingTrace(tr int) []trace.Span {
 	return []trace.Span{
 		mkSpan(tr, 1, 0, trace.KindEmbedding, model("embed-auto"), usage(30, 0)),
@@ -129,7 +124,6 @@ func genPayload(t *rapid.T) payload {
 	return p
 }
 
-// split cuts order into consecutive batches of random sizes.
 func split(t *rapid.T, order []int) [][]int {
 	var out [][]int
 	for len(order) > 0 {
@@ -148,8 +142,6 @@ func indices(n int) []int {
 	return out
 }
 
-// templateDB returns the path of an empty migrated database to copy, so each
-// property iteration skips the schema creation.
 func templateDB(t *testing.T) string {
 	t.Helper()
 	path := dbPath(t)
@@ -159,8 +151,6 @@ func templateDB(t *testing.T) string {
 	return path
 }
 
-// propStore opens a copy of the template that the property closes itself, so
-// iterations do not accumulate open files.
 func propStore(t *testing.T, tpl string) *sqlite.Store {
 	t.Helper()
 	data, err := os.ReadFile(tpl)
@@ -193,9 +183,6 @@ func diffSnapshots(t *rapid.T, want, got map[string][]string) {
 	}
 }
 
-// For any arrival order of a trace's spans, split into any
-// batches, every stored row and aggregate is identical; each duplicated call
-// is counted once (checked by the fixtures in dedupe_test.go).
 func TestStore_ArrivalOrderProperty(t *testing.T) {
 	t.Parallel()
 	tpl := templateDB(t)
@@ -214,8 +201,6 @@ func TestStore_ArrivalOrderProperty(t *testing.T) {
 	})
 }
 
-// Re-sending any subset of any payload leaves every stored row
-// and aggregate unchanged.
 func TestStore_ResendProperty(t *testing.T) {
 	t.Parallel()
 	tpl := templateDB(t)

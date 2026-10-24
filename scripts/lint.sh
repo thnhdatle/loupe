@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-# All linters run; the script fails if any of them reports a problem.
+# Runs all linters.
 rc=0
 step() { echo "== $*"; }
 

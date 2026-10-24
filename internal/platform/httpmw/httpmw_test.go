@@ -211,7 +211,6 @@ func TestObserve_UnmatchedAndDisabled(t *testing.T) {
 	serve(t, h, http.MethodGet, "/", nil)
 	assert.Equal(t, "unmatched", ep)
 
-	// With nothing to report the middleware is a pass-through.
 	off := httpmw.Observe(clock.System{}, nil, nil)(next)
 	assert.Equal(t, http.StatusOK, serve(t, off, http.MethodGet, "/", nil).Code)
 }
@@ -232,7 +231,7 @@ func TestStatusRecorder_ImplicitAndUnwrap(t *testing.T) {
 	rec := &httpmw.StatusRecorder{ResponseWriter: inner}
 	_, err := rec.Write([]byte("x"))
 	require.NoError(t, err)
-	rec.WriteHeader(http.StatusTeapot) // first status wins
+	rec.WriteHeader(http.StatusTeapot)
 	assert.Equal(t, http.StatusOK, rec.Status)
 	assert.Same(t, inner, rec.Unwrap())
 }

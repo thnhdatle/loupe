@@ -10,13 +10,10 @@ import (
 )
 
 const (
-	genAIPrefix = "gen_ai."
-	// OperationDetailsEvent is the GenAI log event that carries whole
-	// conversations in its body.
+	genAIPrefix           = "gen_ai."
 	OperationDetailsEvent = "gen_ai.client.inference.operation.details"
 )
 
-// eventRole returns the message role a per-message event name implies.
 func eventRole(name string) string {
 	switch name {
 	case "gen_ai.system.message":
@@ -32,8 +29,6 @@ func eventRole(name string) string {
 	}
 }
 
-// EventName returns the event name of a log record: the EventName field when
-// non-empty, else the event.name attribute, else the otel.event.name attribute.
 func EventName(rec *trace.RawLogRecord) string {
 	if rec.EventName != "" {
 		return rec.EventName
@@ -45,11 +40,6 @@ func EventName(rec *trace.RawLogRecord) string {
 	return ix.str("otel.event.name")
 }
 
-// attrsParts turns the attributes of an event into parts of base: a `content`
-// attribute becomes a text part of its own, a `role` attribute sets the role
-// (unless the event name already implies one), provider keys are dropped and
-// every other attribute goes into one JSON part. An event without any
-// attribute yields one empty part, so that its arrival is recorded.
 func attrsParts(base trace.ContentPart, attrs []trace.Attr) []trace.ContentPart {
 	var content *trace.Value
 	var rest []trace.Attr
@@ -76,8 +66,6 @@ func attrsParts(base trace.ContentPart, attrs []trace.Attr) []trace.ContentPart 
 	return parts
 }
 
-// isEventMetadata reports whether an event attribute only names the event or its
-// provider and so carries no content.
 func isEventMetadata(key string) bool {
 	return key == "event.name" || key == "otel.event.name" || slices.Contains(keysOf(FieldProvider), key)
 }
@@ -93,15 +81,7 @@ func withBody(base trace.ContentPart, body []byte) trace.ContentPart {
 	return base
 }
 
-// TranslateLog turns a GenAI log event into content parts of the span named by
-// its trace and span ids. Records whose event name does not start with gen_ai.
-// are dropped (trace.ReasonNotGenAI), as are kept-name records without a span
-// context (trace.ReasonNoSpanContext). The role comes from the event name, else
-// from a role attribute or body field. Body and attributes of a kept record are
-// content: a map body of OperationDetailsEvent gives one part per field (Key is
-// the field name), any other map body is read like attributes, other bodies
-// give one text part, and the remaining attributes (event name keys excepted)
-// one JSON part (provider keys excepted). Parts are numbered 0..n-1 within the record.
+// TranslateLog converts an OTLP log record into content parts and reports whether to keep it.
 func TranslateLog(rec *trace.RawLogRecord) (parts []trace.ContentPart, reason string, keep bool) {
 	name := EventName(rec)
 	if !strings.HasPrefix(name, genAIPrefix) {

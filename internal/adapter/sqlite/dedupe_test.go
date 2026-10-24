@@ -17,9 +17,6 @@ import (
 
 func cacheRead(n int64) spanOpt { return func(s *trace.Span) { s.Usage.CacheRead = n } }
 
-// triageTrace is a routed chat call: caller llm span (unpriced router alias) → HTTP
-// client span → Triage "route request" (llm, unpriced route name) → a failed
-// attempt without usage and a successful priced attempt.
 func triageTrace(tr int) []trace.Span {
 	return []trace.Span{
 		mkSpan(tr, 1, 0, trace.KindLLM, named("chat triage-auto"), model("triage-auto"), usage(100, 50)),

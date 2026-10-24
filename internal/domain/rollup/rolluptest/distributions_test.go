@@ -14,8 +14,6 @@ import (
 
 func TestDistributions_Samples_MediansMatchDefinition(t *testing.T) {
 	t.Parallel()
-	// Theoretical medians: lognormal 500 ms; bimodal the 0.5/0.7 quantile of
-	// lognormal(200 ms, 0.3); uniform 5.0005 s; exponential ln 2 s; Pareto 100 ms · 2^(1/1.5).
 	want := map[string]float64{
 		"lognormal":   500e6,
 		"bimodal":     200e6 * math.Exp(0.3*0.5659),

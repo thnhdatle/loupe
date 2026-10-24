@@ -22,7 +22,6 @@ import (
 
 var exportDay = time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC)
 
-// seedTraces writes one single-span trace per offset (days from exportDay).
 func seedTraces(t *testing.T, st *sqlite.Store, days ...int) {
 	t.Helper()
 	spans := make([]trace.Span, 0, len(days))
@@ -56,7 +55,7 @@ func countLines(s string) int {
 func TestExport_OnlineRangeFilter(t *testing.T) {
 	t.Parallel()
 	cfg, dbPath := newDB(t)
-	st, err := sqlite.Open(context.Background(), dbPath) // holds the flock like a running server
+	st, err := sqlite.Open(context.Background(), dbPath)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = st.Close() })
 	seedTraces(t, st, -2, 0, 2)
@@ -101,7 +100,7 @@ func TestExport_PendingMigrationRejected(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "loupe.db")
 	_, err := sqlite.OpenReadOnly(context.Background(), dbPath)
-	require.Error(t, err) // no database yet: schema v0 is behind
+	require.Error(t, err)
 
 	cfg := writeCfgYAML(t, "storage:\n  path: \""+dbPath+"\"\n")
 	_, err = runCmd(t, "--config", cfg, "export")

@@ -85,8 +85,6 @@ func TestWriter_Run_FlushBySize(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, writer.WithBatchInterval(time.Hour))
 	f.run()
-	// Three items stay below batch_spans = 4: nothing is written until the
-	// fourth arrives, and then all four go in one batch without any tick.
 	for range 3 {
 		f.enqueue(1, false)
 	}
@@ -99,8 +97,6 @@ func TestWriter_Run_FlushBySize(t *testing.T) {
 func TestWriter_Run_SplitsBatchesAtWholeItems(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, writer.WithBatchInterval(time.Hour))
-	// Queued before Run: 3 + 3 + 1 + 6 slots with batch_spans 4 form batches
-	// of whole items: [3], [3 1], [6].
 	for _, n := range []int{3, 3, 1, 6} {
 		f.enqueue(n, false)
 	}
@@ -177,7 +173,6 @@ func TestWriter_Run_StoreErrorDropsAndCountsAfterRetries(t *testing.T) {
 	assert.Zero(t, st.QueuedSlots, "slots are released at the final drop")
 	assert.Zero(t, st.QueuedBytes)
 
-	// Once the store recovers, the drop is stored in ingest_stats with the next batch.
 	f.store.FailAlways(nil)
 	f.enqueue(4, false)
 	testutil.Eventually(t, func() bool { return len(f.store.Batches()) == 1 }, wait)
@@ -213,7 +208,7 @@ func TestWriter_Run_SlotsReleasedOnlyAtCommit(t *testing.T) {
 	f := newFixture(t, writer.WithQueueLimits(6, 1<<20))
 	release := f.store.Hold()
 	f.run()
-	ack := f.enqueue(4, true) // forms a full batch: the write starts and blocks
+	ack := f.enqueue(4, true)
 	testutil.Eventually(t, func() bool { return f.store.Calls() == 1 }, wait)
 
 	st := f.w.Stats()
@@ -247,12 +242,10 @@ func TestWriter_Enqueue_QueueLimits(t *testing.T) {
 		name   string
 		spans  int
 		bytes  int64
-		first  [2]int64 // slots, bytes of the item already queued
+		first  [2]int64
 		second [2]int64
 		want   error
-		// room is HasRoom(second slots) before the second Enqueue: it ignores
-		// the item's bytes.
-		room bool
+		room   bool
 	}{
 		{name: "fits", spans: 10, bytes: 1000, first: [2]int64{5, 500}, second: [2]int64{5, 500}, room: true},
 		{
@@ -308,7 +301,7 @@ func TestWriter_Run_SyncAckWaitsForCommit(t *testing.T) {
 func TestWriter_Run_ShutdownDeadlineAbandonsQueue(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, writer.WithShutdownTimeout(5*time.Second), writer.WithBatchSpans(2))
-	f.store.Hold() // never released: the store hangs
+	f.store.Hold()
 	stop := f.run()
 	inflight := f.enqueue(2, true)
 	testutil.Eventually(t, func() bool { return f.store.Calls() == 1 }, wait)
@@ -341,7 +334,7 @@ func TestWriter_Run_RetryWaitEndsAtShutdownDeadline(t *testing.T) {
 	f.store.FailAlways(errDisk)
 	var (
 		mu       sync.Mutex
-		attempts []int // spans per WriteBatch call
+		attempts []int
 	)
 	f.store.OnWrite(func(b *trace.Batch) {
 		mu.Lock()
@@ -372,15 +365,13 @@ func TestWriter_Run_RetryWaitEndsAtShutdownDeadline(t *testing.T) {
 		"no retry of the batch after the deadline, only the final counters write: %v", attempts)
 }
 
-// Items abandoned at the drain deadline are counted dropped{shutdown} in
-// ingest_stats by a final counters write within the shutdown timeout.
 func TestWriter_Run_ShutdownDeadlineCountsAbandoned(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, writer.WithShutdownTimeout(5*time.Second), writer.WithBatchSpans(2))
-	release := f.store.Hold() // the in-flight batch hangs until the drain deadline
+	release := f.store.Hold()
 	f.store.OnWrite(func(b *trace.Batch) {
 		if len(b.Spans) == 0 {
-			release() // the final counters write goes through
+			release()
 		}
 	})
 	stop := f.run()
@@ -410,7 +401,7 @@ func TestWriter_Run_ShutdownDeadlineCountsAbandoned(t *testing.T) {
 func TestWriter_Run_WriteTimeout(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, writer.WithWriteTimeout(time.Second))
-	release := f.store.Hold() // the first attempt hangs until its timeout
+	release := f.store.Hold()
 	f.run()
 	ack := f.enqueue(4, true)
 	testutil.Eventually(t, func() bool { return f.store.Calls() == 1 }, wait)
@@ -424,7 +415,7 @@ func TestWriter_Run_TwiceFails(t *testing.T) {
 	f := newFixture(t)
 	f.run()
 	f.enqueue(4, false)
-	testutil.Eventually(t, func() bool { return f.store.Calls() == 1 }, wait) // the first Run is active
+	testutil.Eventually(t, func() bool { return f.store.Calls() == 1 }, wait)
 	require.ErrorIs(t, f.w.Run(t.Context()), writer.ErrAlreadyRunning)
 }
 

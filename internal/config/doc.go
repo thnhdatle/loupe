@@ -1,8 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package config loads, merges and validates configuration from flags, environment and file.
-//
-// Usage:
-//
-//	cfg, err := config.Load(path)
+// Package config loads, merges and validates the Loupe configuration.
 package config

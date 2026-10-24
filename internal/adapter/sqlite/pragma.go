@@ -12,16 +12,13 @@ import (
 	"strings"
 )
 
-// Pragma values of the store (WAL, durability, vacuum and checkpoint policy).
 const (
 	busyTimeoutMs     = 5000
-	journalSizeLimit  = 64 << 20 // 67108864
-	writerCacheSizeKB = -65536   // negative: KiB, i.e. 64 MiB
-	walAutocheckpoint = 1000     // pages
+	journalSizeLimit  = 64 << 20
+	writerCacheSizeKB = -65536
+	walAutocheckpoint = 1000
 )
 
-// pragma is one per-connection setting: the value set through the DSN and
-// the value PRAGMA name reports back.
 type pragma struct {
 	name string
 	set  string
@@ -54,11 +51,8 @@ func readerPragmas() []pragma {
 	return append(commonPragmas(), pragma{name: "query_only", set: "1", want: "1"})
 }
 
-// readOnly returns the URI parameters of a read-only connection.
 func readOnly() url.Values { return url.Values{"mode": {"ro"}} }
 
-// dsn builds a file: URI for path with SQLite URI parameters and the driver's
-// _pragma and _txlock parameters.
 func dsn(path string, params url.Values, pragmas []pragma) string {
 	q := url.Values{}
 	for k, v := range params {
@@ -71,9 +65,6 @@ func dsn(path string, params url.Values, pragmas []pragma) string {
 	return u.String()
 }
 
-// openWriter opens the single writer connection, makes a new database
-// auto_vacuum=INCREMENTAL before any table exists, switches it to WAL and
-// verifies every writer pragma.
 func openWriter(ctx context.Context, path, synchronous string) (*sql.DB, error) {
 	pragmas := writerPragmas(synchronous)
 	db, err := sql.Open(driverName, dsn(path, url.Values{"_txlock": {"immediate"}}, pragmas))
@@ -91,8 +82,6 @@ func openWriter(ctx context.Context, path, synchronous string) (*sql.DB, error) 
 }
 
 func initWriter(ctx context.Context, db *sql.DB, pragmas []pragma) error {
-	// auto_vacuum takes effect only before the first table is created; on an
-	// existing database this statement is a no-op and verification decides.
 	if _, err := db.ExecContext(ctx, "PRAGMA auto_vacuum = INCREMENTAL"); err != nil {
 		return fmt.Errorf("sqlite: set auto_vacuum: %w", err)
 	}
@@ -107,7 +96,6 @@ func initWriter(ctx context.Context, db *sql.DB, pragmas []pragma) error {
 	return verifyPragmas(ctx, db, all)
 }
 
-// openReaders opens the read-only pool (mode=ro, query_only=ON) and verifies its pragmas.
 func openReaders(ctx context.Context, path string, size int) (*sql.DB, error) {
 	pragmas := readerPragmas()
 	db, err := sql.Open(driverName, dsn(path, readOnly(), pragmas))
@@ -123,8 +111,6 @@ func openReaders(ctx context.Context, path string, size int) (*sql.DB, error) {
 	return db, nil
 }
 
-// verifyPragmas checks every pragma on one connection of db; all
-// connections of a pool are opened from the same DSN.
 func verifyPragmas(ctx context.Context, db *sql.DB, pragmas []pragma) error {
 	conn, err := db.Conn(ctx)
 	if err != nil {

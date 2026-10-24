@@ -38,12 +38,9 @@ var (
 	day2 = day1.Add(24 * time.Hour)
 )
 
-// fixture: model m1 and m2 over 3 days; day rows summarise the whole day
-// rows of the hour data for days 9/29 and 9/30 so both paths agree.
 func fixtureRollups() *fakeRollups {
 	f := &fakeRollups{}
 	h := time.Hour
-	// hour rows: 9/28 22:00 (edge), 9/29 03:00, 9/30 05:00, 10/01 01:00 (edge)
 	f.hour = []rollup.Row{
 		hourRow(day1.Add(-2*h), "m1", trace.KindLLM, agg(1, 0, 100, 1e6)),
 		hourRow(day1.Add(3*h), "m1", trace.KindLLM, agg(2, 1, 200, 2e6, 3e6)),
@@ -87,14 +84,12 @@ func TestService_Overview_DayAssemblyMatchesPureHourMerge(t *testing.T) {
 	assert.Equal(t, int64(700), day.Groups[0].Stats.CostNanos)
 	assert.Equal(t, "m2", day.Groups[1].Key)
 
-	// day interval buckets by UTC day; hour interval by hour.
 	assert.Len(t, hour.Series, 4)
 	require.Len(t, day.Series, 4)
 	assert.Equal(t, day1.Add(-24*time.Hour), day.Series[0].Bucket)
 	assert.Equal(t, "m1", day.Series[0].Key)
 	assert.Equal(t, day1, day.Series[1].Bucket)
 
-	// day interval reads day rows for whole days and hour rows for edges only.
 	var dayReads, hourReads int
 	for _, c := range ro.calls[:3] {
 		if c.Res == rollup.ResolutionDay {
@@ -166,7 +161,7 @@ func TestService_Overview_Users(t *testing.T) {
 		wantGroups int
 		wantOther  int
 	}{
-		{name: "few users no other", users: 3, wantGroups: 4}, // 3 + (none)
+		{name: "few users no other", users: 3, wantGroups: 4},
 		{name: "top 50 plus other", users: 60, wantGroups: 51, wantOther: 11},
 	}
 	for _, tc := range tests {

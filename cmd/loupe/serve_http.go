@@ -11,11 +11,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// readyProbeTimeout bounds the writer round trip of /readyz.
 const readyProbeTimeout = 2 * time.Second
 
-// adminMux serves the admin listener: /healthz, /readyz, /metrics and, with
-// debug.pprof, /debug/pprof/*. It has no mutating endpoints.
 func (s *server) adminMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -34,9 +31,6 @@ func (s *server) adminMux() *http.ServeMux {
 	return mux
 }
 
-// readyz answers 200 once migrations are applied (the store opened), the writer
-// runs and shutdown has not begun. The writer is probed with a no-op job, which
-// proves its goroutine takes work.
 func (s *server) readyz(w http.ResponseWriter, r *http.Request) {
 	if err := s.checkReady(r.Context()); err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)

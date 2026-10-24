@@ -11,17 +11,13 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// entry is one queued item: the data of one ingest request.
 type entry struct {
 	batch *trace.Batch
 	slots int
 	bytes int64
-	ack   chan error // capacity 1; nil unless the producer waits for the outcome
+	ack   chan error
 }
 
-// countKey groups ingest counters by UTC hour (AtNs floored to the hour),
-// signal, result and reason, so pending counters stay small however many
-// requests add to them.
 type countKey struct {
 	hour   int64
 	signal trace.Signal
@@ -29,19 +25,7 @@ type countKey struct {
 	reason string
 }
 
-// Enqueue adds one item to the queue: b holds the spans, batch-level content
-// and counters of one ingest request; it must not be modified afterwards.
-// slots is the number of queue slots it takes (its spans plus its log records)
-// and bytes its estimated in-memory size. The slots and bytes stay held until
-// the batch containing the item commits or is finally dropped.
-//
-// It returns trace.ErrOverloaded when the item does not fit within the queue
-// limits (an item is always admitted into an empty queue, so a single item
-// larger than the limits cannot wedge ingest), and trace.ErrShuttingDown once
-// shutdown has started. With wait, the returned channel receives exactly one
-// value: nil when the item has committed, an error wrapping
-// trace.ErrShuttingDown when shutdown abandoned it, or another error when it
-// was dropped after the retry budget.
+// Enqueue adds the items of one ingest request to the queue.
 func (w *Writer) Enqueue(b *trace.Batch, slots int, bytes int64, wait bool) (<-chan error, error) {
 	if b == nil || slots < 1 || bytes < 0 {
 		return nil, fmt.Errorf("%w: need a batch, slots >= 1 and bytes >= 0", ErrInvalidItem)
@@ -68,23 +52,18 @@ func (w *Writer) Enqueue(b *trace.Batch, slots int, bytes int64, wait bool) (<-c
 	if full {
 		select {
 		case w.wake <- struct{}{}:
-		default: // a wake-up is already pending
+		default:
 		}
 	}
 	return e.ack, nil
 }
 
-// HasRoom reports whether an item of slots slots and no bytes would be
-// admitted now: the queue is empty, or the slots fit and the byte limit is not
-// yet reached. It is the ingest pre-check before translation (ingest.Queue);
-// only Enqueue admits.
 func (w *Writer) HasRoom(slots int) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.fits(slots, 0)
 }
 
-// fits reports whether an item may be admitted. Callers hold w.mu.
 func (w *Writer) fits(slots int, bytes int64) bool {
 	if w.usedSlots == 0 && w.usedBytes == 0 {
 		return true
@@ -92,8 +71,6 @@ func (w *Writer) fits(slots int, bytes int64) bool {
 	return w.usedSlots+slots <= w.cfg.queueSpans && w.usedBytes+bytes <= w.cfg.queueBytes
 }
 
-// AddCount records an ingest counter; it is written with the next batch and
-// survives failed batches. Counters with N == 0 are ignored.
 func (w *Writer) AddCount(c trace.IngestCount) {
 	if c.N == 0 {
 		return
@@ -109,29 +86,24 @@ func floorHour(ns int64) int64 {
 	return ns - ((ns%h)+h)%h
 }
 
-// batchReady reports whether enough slots are queued for a size-triggered flush.
 func (w *Writer) batchReady() bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.pendingSlots >= w.cfg.batchSpans
 }
 
-// hasPending reports whether items are queued.
 func (w *Writer) hasPending() bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return len(w.pending) > 0
 }
 
-// hasCounts reports whether ingest counters are pending.
 func (w *Writer) hasCounts() bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return len(w.counts) > 0
 }
 
-// take removes the next batch worth of items (whole items, at least one, up to
-// batch_spans slots) and every pending counter.
 func (w *Writer) take() ([]*entry, []trace.IngestCount) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -170,15 +142,12 @@ func compareCounts(a, b trace.IngestCount) int {
 	)
 }
 
-// restoreCounts puts counters of a batch that did not commit back into the pending set.
 func (w *Writer) restoreCounts(counts []trace.IngestCount) {
 	for _, c := range counts {
 		w.AddCount(c)
 	}
 }
 
-// settle releases the slots of entries and delivers outcome to their waiters.
-// This is the only place slots are released.
 func (w *Writer) settle(entries []*entry, outcome error) {
 	slots, bytes := 0, int64(0)
 	for _, e := range entries {
@@ -196,8 +165,6 @@ func (w *Writer) settle(entries []*entry, outcome error) {
 	}
 }
 
-// merge builds the store batch for entries and counts. Resources are
-// deduplicated by id; spans and content keep queue order.
 func merge(entries []*entry, counts []trace.IngestCount) *trace.Batch {
 	nSpans, nContent := 0, 0
 	for _, e := range entries {
@@ -224,7 +191,6 @@ func merge(entries []*entry, counts []trace.IngestCount) *trace.Batch {
 	return b
 }
 
-// spanAndLogSlots splits the slots of entries into spans and log records.
 func spanAndLogSlots(entries []*entry) (spans, logs int64) {
 	for _, e := range entries {
 		spans += int64(len(e.batch.Spans))

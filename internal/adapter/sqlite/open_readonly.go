@@ -10,11 +10,7 @@ import (
 	"path/filepath"
 )
 
-// OpenReadOnly opens the database at path for reading only. It takes no lock,
-// never migrates and opens only the read pool (mode=ro, query_only), so it is
-// safe while a server owns the database. It fails with ErrPendingMigrations
-// when the schema is behind this binary and with ErrDowngrade when it is
-// ahead. Write methods of the returned Store fail with an error.
+// OpenReadOnly opens the database at path for reading only.
 func OpenReadOnly(ctx context.Context, path string, opts ...Option) (*Store, error) {
 	cfg := defaultConfig()
 	for _, o := range opts {
@@ -53,9 +49,6 @@ func OpenReadOnly(ctx context.Context, path string, opts ...Option) (*Store, err
 	return s, nil
 }
 
-// closedWriter returns a closed handle standing in for the writer of a
-// read-only Store, so write paths return "database is closed" instead of
-// dereferencing nil.
 func closedWriter() (*sql.DB, error) {
 	db, err := sql.Open(driverName, "file::memory:")
 	if err != nil {

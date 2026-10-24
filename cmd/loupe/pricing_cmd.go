@@ -20,7 +20,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// staleAfterDays marks a price whose as_of is older than this many days.
 const staleAfterDays = 90
 
 func newPricingCmd() *cobra.Command {
@@ -29,7 +28,6 @@ func newPricingCmd() *cobra.Command {
 	return g
 }
 
-// priceRow is one effective price entry as printed by `pricing list`.
 type priceRow struct {
 	Origin        string  `json:"origin"`
 	Match         string  `json:"match"`
@@ -131,7 +129,6 @@ func writePriceRows(w io.Writer, rows []priceRow) error {
 	return nil
 }
 
-// parseDate parses an RFC 3339 timestamp or a YYYY-MM-DD date (UTC midnight).
 func parseDate(s string) (time.Time, error) {
 	if t, err := time.Parse(time.RFC3339, s); err == nil {
 		return t.UTC(), nil

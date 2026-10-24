@@ -14,7 +14,7 @@ type Bearer struct {
 	digests [][sha256.Size]byte
 }
 
-// NewBearer returns a Bearer accepting any of tokens; empty tokens are ignored.
+// NewBearer returns a Bearer accepting any of tokens.
 func NewBearer(tokens []string) *Bearer {
 	b := &Bearer{}
 	for _, t := range tokens {
@@ -25,13 +25,8 @@ func NewBearer(tokens []string) *Bearer {
 	return b
 }
 
-// Enabled reports whether any token is configured.
 func (b *Bearer) Enabled() bool { return len(b.digests) > 0 }
 
-// Check reports whether the Authorization header carries a configured token.
-// Tokens are hashed first so timing does not depend on length, and every
-// configured token is compared so it does not depend on which one matched.
-// With no token configured it returns false.
 func (b *Bearer) Check(authorization string) bool {
 	scheme, tok, ok := strings.Cut(authorization, " ")
 	if !ok || !strings.EqualFold(scheme, "bearer") {
@@ -45,7 +40,6 @@ func (b *Bearer) Check(authorization string) bool {
 	return match == 1
 }
 
-// Unauthorized writes the 401 envelope with a Bearer challenge.
 func Unauthorized(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", `Bearer realm="loupe"`)
 	WriteError(w, r, http.StatusUnauthorized, "unauthorized", "missing or invalid bearer token")

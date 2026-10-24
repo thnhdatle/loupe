@@ -16,16 +16,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// LookupEnv has the signature of os.LookupEnv; tests inject their own.
 type LookupEnv func(key string) (string, bool)
 
-// Load reads the YAML file at path (or the file named by LOUPE_CONFIG when path
-// is empty; no file means defaults), applies environment overrides and
-// validates. Unknown keys are errors. Precedence is env > file > defaults;
-// command-line flags are applied by the caller on top.
+// Load reads the configuration from the file at path and the environment.
 func Load(path string) (*Config, error) { return LoadWith(path, os.LookupEnv) }
 
-// LoadWith is Load with an injected environment.
 func LoadWith(path string, env LookupEnv) (*Config, error) {
 	cfg, err := LoadUnvalidated(path, env)
 	if err != nil {
@@ -37,8 +32,6 @@ func LoadWith(path string, env LookupEnv) (*Config, error) {
 	return cfg, nil
 }
 
-// LoadUnvalidated parses the file and environment like LoadWith but skips
-// Validate; it still fails on syntax errors, unknown keys and unparsable env values.
 func LoadUnvalidated(path string, env LookupEnv) (*Config, error) {
 	if path == "" {
 		path, _ = env(ConfigEnv)
@@ -59,7 +52,6 @@ func LoadUnvalidated(path string, env LookupEnv) (*Config, error) {
 	return &cfg, nil
 }
 
-// Parse decodes YAML text over the defaults and validates it, without environment.
 func Parse(data []byte) (*Config, error) {
 	cfg := Default()
 	if err := decode(data, &cfg); err != nil {
@@ -80,14 +72,10 @@ func decode(data []byte, cfg *Config) error {
 	return nil
 }
 
-// EnvName returns the environment variable for a dotted config path
-// ("receiver.grpc.listen" gives LOUPE_RECEIVER_GRPC_LISTEN).
 func EnvName(path string) string {
 	return EnvPrefix + strings.ToUpper(strings.ReplaceAll(path, ".", "_"))
 }
 
-// applyEnv overrides every scalar option from LOUPE_<PATH>. content.redact takes
-// a comma-separated preset list. Problems are collected and returned together.
 func applyEnv(cfg *Config, env LookupEnv) error {
 	var errs []error
 	walk(reflect.ValueOf(cfg).Elem(), "", func(path string, v reflect.Value) {
@@ -107,7 +95,6 @@ func applyEnv(cfg *Config, env LookupEnv) error {
 
 var textUnmarshaler = reflect.TypeFor[encoding.TextUnmarshaler]()
 
-// walk calls fn for every leaf (scalar, text-marshalled or slice) field with its yaml path.
 func walk(v reflect.Value, prefix string, fn func(path string, v reflect.Value)) {
 	t := v.Type()
 	for i := range t.NumField() {

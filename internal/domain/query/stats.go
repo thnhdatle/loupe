@@ -10,10 +10,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// GroupBy is the overview grouping dimension.
 type GroupBy string
 
-// Overview groupings.
 const (
 	GroupNone     GroupBy = ""
 	GroupModel    GroupBy = "model"
@@ -23,25 +21,20 @@ const (
 	GroupUser     GroupBy = "user"
 )
 
-// Interval is the overview time bucket.
 type Interval string
 
-// Overview intervals.
 const (
 	IntervalHour Interval = "hour"
 	IntervalDay  Interval = "day"
 )
 
-// TopBy is the ranking of top spans.
 type TopBy string
 
-// Top-span rankings.
 const (
 	TopByCost     TopBy = "cost"
 	TopByDuration TopBy = "duration"
 )
 
-// ParseGroupBy parses a group_by value; empty means no grouping.
 func ParseGroupBy(s string) (GroupBy, error) {
 	switch g := GroupBy(s); g {
 	case GroupNone, GroupModel, GroupProvider, GroupService, GroupKind, GroupUser:
@@ -51,7 +44,6 @@ func ParseGroupBy(s string) (GroupBy, error) {
 	}
 }
 
-// ParseInterval parses an interval; empty means IntervalHour.
 func ParseInterval(s string) (Interval, error) {
 	switch i := Interval(s); i {
 	case "":
@@ -63,7 +55,6 @@ func ParseInterval(s string) (Interval, error) {
 	}
 }
 
-// ParseTopBy parses a by value; empty means TopByCost.
 func ParseTopBy(s string) (TopBy, error) {
 	switch b := TopBy(s); b {
 	case "":
@@ -75,8 +66,6 @@ func ParseTopBy(s string) (TopBy, error) {
 	}
 }
 
-// OverviewRequest asks for aggregate statistics over [From, To). An empty Kind
-// is valid here; the API layer decides whether that means llm or all kinds.
 type OverviewRequest struct {
 	From     time.Time
 	To       time.Time
@@ -85,7 +74,6 @@ type OverviewRequest struct {
 	Kind     trace.Kind
 }
 
-// Validate returns every problem found in the request, joined; nil when valid.
 func (r OverviewRequest) Validate() error {
 	var errs []error
 	if !r.From.Before(r.To) {
@@ -103,7 +91,6 @@ func (r OverviewRequest) Validate() error {
 	return errors.Join(errs...)
 }
 
-// TopSpansRequest asks for the most expensive or slowest llm spans in [From, To).
 type TopSpansRequest struct {
 	From  time.Time
 	To    time.Time
@@ -111,7 +98,6 @@ type TopSpansRequest struct {
 	Limit int
 }
 
-// Validate returns every problem found in the request, joined; nil when valid.
 func (r TopSpansRequest) Validate() error {
 	var errs []error
 	if !r.From.Before(r.To) {

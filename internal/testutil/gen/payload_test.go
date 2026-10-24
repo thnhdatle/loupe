@@ -12,7 +12,7 @@ import (
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/thnhdatle/loupe/bench/gen"
+	"github.com/thnhdatle/loupe/internal/testutil/gen"
 )
 
 var plNow = time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)

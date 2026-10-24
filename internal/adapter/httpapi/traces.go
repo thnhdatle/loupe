@@ -65,7 +65,6 @@ func (h *Handler) getTrace(w http.ResponseWriter, r *http.Request) {
 	httpmw.WriteJSON(w, http.StatusOK, d)
 }
 
-// normalizeTraces replaces nil slices by empty ones so they encode as [].
 func normalizeTraces(rows []query.TraceSummary) {
 	for i := range rows {
 		if rows[i].Models == nil {

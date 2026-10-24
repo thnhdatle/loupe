@@ -12,12 +12,9 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// exportPageTraces is the number of traces read per export transaction.
 const exportPageTraces = 100
 
-// ExportTraces implements query.TraceExporter. It pages through the traces
-// starting in [From, To) by keyset (start_ns, trace_id); every page is read in
-// its own read transaction, closed before fn runs.
+// ExportTraces streams the traces in a time range to fn in pages.
 func (s *Store) ExportTraces(ctx context.Context, r query.ExportRequest, fn func([]query.TraceDetail) error) error {
 	var after *tracedRow
 	for {
@@ -38,8 +35,6 @@ func (s *Store) ExportTraces(ctx context.Context, r query.ExportRequest, fn func
 	}
 }
 
-// exportPage reads one page of traces after the keyset position (nil for the
-// first page), with their spans, in one read transaction.
 func (s *Store) exportPage(ctx context.Context, r query.ExportRequest, after *tracedRow) (
 	[]query.TraceDetail, *tracedRow, error,
 ) {
@@ -76,7 +71,6 @@ func (s *Store) exportPage(ctx context.Context, r query.ExportRequest, after *tr
 	return out, &rows[len(rows)-1], nil
 }
 
-// exportSpans reads the spans of the given traces, ordered by start within each trace.
 func (s *Store) exportSpans(ctx context.Context, db queryer, rows []tracedRow) (map[trace.ID][]storedSpan, error) {
 	marks := make([]string, len(rows))
 	args := make([]any, len(rows))

@@ -9,7 +9,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// Login rate limit: failed attempts per client IP per window.
 const (
 	loginFailLimit  = 5
 	loginFailWindow = time.Minute
@@ -21,9 +20,6 @@ type attempts struct {
 	fails int
 }
 
-// loginLimiter counts failed logins per client IP in a fixed window that
-// starts at the first failure; once the limit is hit the IP is blocked until
-// the window ends.
 type loginLimiter struct {
 	mu  sync.Mutex
 	clk clock.Clock
@@ -34,7 +30,6 @@ func newLoginLimiter(clk clock.Clock) *loginLimiter {
 	return &loginLimiter{clk: clk, m: make(map[string]*attempts)}
 }
 
-// blocked reports whether ip may not try and how long until the window ends.
 func (l *loginLimiter) blocked(ip string) (time.Duration, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -50,7 +45,6 @@ func (l *loginLimiter) blocked(ip string) (time.Duration, bool) {
 	return left, a.fails >= loginFailLimit
 }
 
-// fail records one failed attempt of ip.
 func (l *loginLimiter) fail(ip string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -66,8 +60,6 @@ func (l *loginLimiter) fail(ip string) {
 	a.fails++
 }
 
-// evictLocked drops expired windows and, if the table is still full, one
-// arbitrary entry so memory stays bounded.
 func (l *loginLimiter) evictLocked(now time.Time) {
 	for ip, a := range l.m {
 		if !now.Before(a.start.Add(loginFailWindow)) {

@@ -9,15 +9,11 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// messagePrefixes are the indexed message families: the key is
-// <prefix><N>.<rest>, and rest is a role key when it is in roleSuffixes.
 var (
 	messagePrefixes = []string{"llm.input_messages.", "llm.output_messages.", "gen_ai.prompt.", "gen_ai.completion."}
 	roleSuffixes    = []string{"message.role", keyRole}
 )
 
-// messageGroup splits an indexed message key into its group (prefix and index)
-// and reports whether the key is the role of that message.
 func messageGroup(key string) (group string, isRole, ok bool) {
 	for _, p := range messagePrefixes {
 		rest, found := strings.CutPrefix(key, p)
@@ -38,8 +34,6 @@ func messageGroup(key string) (group string, isRole, ok bool) {
 	return "", false, false
 }
 
-// compareKeys orders keys segment by segment, comparing all-digit segments as
-// numbers so that message 2 sorts before message 10.
 func compareKeys(a, b string) int {
 	for a != "" && b != "" {
 		sa, ra, _ := strings.Cut(a, ".")
@@ -64,10 +58,6 @@ func compareSegments(a, b string) int {
 	return strings.Compare(a, b)
 }
 
-// attrContentParts turns every denylisted attribute into content parts, one
-// per key, in natural key order. The role key of an indexed message is not a
-// part of its own: its value is the Role of the message's other parts (a
-// message that has only a role keeps the role key as its part).
 func attrContentParts(attrs []trace.Attr) []trace.ContentPart {
 	content := sortedAttrs(attrs, IsContentKey, compareKeys)
 	roles := make(map[string]string)
@@ -103,7 +93,6 @@ func attrContentParts(attrs []trace.Attr) []trace.ContentPart {
 	return parts
 }
 
-// number assigns Part 0..n-1 and the span identity to parts.
 func number(parts []trace.ContentPart, tid trace.ID, sid trace.SpanID) []trace.ContentPart {
 	for i := range parts {
 		parts[i].Part = i
@@ -113,8 +102,6 @@ func number(parts []trace.ContentPart, tid trace.ID, sid trace.SpanID) []trace.C
 	return parts
 }
 
-// spanContent collects the content parts of a raw span: denylisted attributes
-// first (natural key order), then gen_ai.* span events in event order.
 func spanContent(raw *trace.RawSpan) []trace.ContentPart {
 	parts := attrContentParts(raw.Attributes)
 	for _, ev := range raw.Events {

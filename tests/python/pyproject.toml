@@ -1,7 +1,7 @@
 [project]
 name = "loupe-sdk-tests"
 version = "0.0.0"
-description = "Pinned SDKs used by the Loupe examples and acceptance tests"
+description = "Pinned SDKs used by the Loupe examples"
 requires-python = "==3.12.*"
 dependencies = [
   "openai==3.35.1",

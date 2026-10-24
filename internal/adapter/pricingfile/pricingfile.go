@@ -16,14 +16,12 @@ import (
 	"github.com/thnhdatle/loupe/pricing"
 )
 
-// ErrInvalidFile reports a pricing file that cannot be parsed or holds an invalid entry.
 var ErrInvalidFile = errors.New("pricingfile: invalid pricing file")
 
 type file struct {
 	Prices []entry `yaml:"prices"`
 }
 
-// entry is one YAML entry; id is an optional human label that is ignored.
 type entry struct {
 	ID            string `yaml:"id"`
 	Match         string `yaml:"match"`
@@ -39,7 +37,6 @@ type entry struct {
 	Source        string `yaml:"source"`
 }
 
-// scalar keeps the source text of a YAML scalar and whether the key was present.
 type scalar struct {
 	text string
 	set  bool
@@ -53,10 +50,7 @@ func (s *scalar) UnmarshalYAML(n *yaml.Node) error {
 	return nil
 }
 
-// Parse decodes a pricing file into entries. All problems are reported together,
-// wrapping ErrInvalidFile (price syntax errors also wrap the cost errors).
-// Table-level rules (match kind, provenance, duplicate versions) are checked by
-// cost.NewPriceTable; Load runs both.
+// Parse decodes a pricing file into entries.
 func Parse(r io.Reader) ([]cost.Price, error) {
 	dec := yaml.NewDecoder(r)
 	dec.KnownFields(true)
@@ -121,7 +115,7 @@ func (e *entry) price() (cost.Price, error) {
 		dst  *time.Time
 	}{{"effective_from", e.EffectiveFrom, &p.EffectiveFrom}, {"as_of", e.AsOf, &p.AsOf}} {
 		if !t.src.set {
-			continue // required-ness is decided by the table (effective_from, default provenance)
+			continue
 		}
 		v, err := parseTime(t.src.text)
 		if err != nil {
@@ -167,8 +161,7 @@ func LoadUser(path string) ([]cost.Price, error) {
 	return p, nil
 }
 
-// Load builds the price table from the embedded default and, when path is not
-// empty, the user file merged on top (user wins, per series).
+// Load builds the price table from the embedded default and the optional user file.
 func Load(path string) (*cost.PriceTable, error) {
 	defaults, err := Defaults()
 	if err != nil {

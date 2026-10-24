@@ -114,8 +114,8 @@ SDK setup, pricing, privacy, retention and operations are covered in the [guides
 
 ## Performance
 
-MacBook Pro M3 Pro, native binary, default config. Method and full results in
-[bench/RESULTS.md](bench/RESULTS.md).
+MacBook Pro M3 Pro 36 GB, Loupe v0.1.0, native binary, default config, fresh database per run.
+Load is OTLP/HTTP protobuf at a constant arrival rate.
 
 | Scenario | Result |
 |---|---|

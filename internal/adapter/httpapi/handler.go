@@ -16,19 +16,13 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/httpmw"
 )
 
-// Request limits.
 const (
-	// DefaultMaxQueryBytes caps the raw query string of a request.
 	DefaultMaxQueryBytes = 8 << 10
-	// DefaultMaxBodyBytes caps a request body; the read API takes none, so this
-	// only bounds what a client can make the server read before it answers.
-	DefaultMaxBodyBytes = 4 << 10
+	DefaultMaxBodyBytes  = 4 << 10
 )
 
-// ErrInvalidOptions reports unusable Options or a missing dependency.
 var ErrInvalidOptions = errors.New("httpapi: invalid options")
 
-// Queries is the read side of the API, implemented by *queries.Service.
 type Queries interface {
 	ListTraces(ctx context.Context, req queries.TraceListRequest) (query.TracePage, error)
 	GetTrace(ctx context.Context, id string, includeContent bool) (query.TraceDetail, error)
@@ -39,13 +33,10 @@ type Queries interface {
 	IngestStats(ctx context.Context) (query.IngestStats, error)
 }
 
-// UserDeleter starts deletion of a user's data and returns the job id. It is
-// implemented by *admin.Service.
 type UserDeleter interface {
 	DeleteUser(userID string) (jobID string, err error)
 }
 
-// VersionInfo is the body of GET /v1/version.
 type VersionInfo struct {
 	Version   string `json:"version"`
 	Commit    string `json:"commit"`
@@ -53,33 +44,21 @@ type VersionInfo struct {
 	GoVersion string `json:"go_version"`
 }
 
-// Options configures the handler.
 type Options struct {
-	// Tokens are the accepted API bearer tokens (api.token_file).
-	Tokens []string
-	// AllowUnauthenticated serves every request without a token. The caller sets
-	// it when the listener is loopback or ui.allow_unauthenticated is true.
+	Tokens               []string
 	AllowUnauthenticated bool
-	// SessionAuth, when set, authorises GET and HEAD requests that carry a valid
-	// dashboard session. It never authorises DELETE.
-	SessionAuth func(r *http.Request) bool
-	// Exporter streams GET /v1/export/traces; nil answers it with 404.
-	Exporter query.TraceExporter
-	// Version is served by GET /v1/version; an empty GoVersion defaults to the runtime's.
-	Version VersionInfo
-	// MaxQueryBytes and MaxBodyBytes override the request limits when positive.
-	MaxQueryBytes int
-	MaxBodyBytes  int64
-	// Clock supplies request-id timestamps; nil uses the system clock.
-	Clock clock.Clock
-	// Logger receives internal errors and, with AccessLog, one line per request.
-	Logger    *slog.Logger
-	AccessLog bool
-	// Observe is called once per request with the route pattern, status and duration.
-	Observe httpmw.Observer
+	SessionAuth          func(r *http.Request) bool
+	Exporter             query.TraceExporter
+	Version              VersionInfo
+	MaxQueryBytes        int
+	MaxBodyBytes         int64
+	Clock                clock.Clock
+	Logger               *slog.Logger
+	AccessLog            bool
+	Observe              httpmw.Observer
 }
 
-// Handler is the REST /v1 handler.
+// Handler serves the REST /v1 API.
 type Handler struct {
 	q        Queries
 	deleter  UserDeleter
@@ -92,9 +71,7 @@ type Handler struct {
 	maxBody  int64
 }
 
-// NewHandler returns the handler for q. deleter may be nil, which answers
-// DELETE /v1/users/{user_id}/data with 404. It fails when no token is
-// configured and AllowUnauthenticated is false.
+// NewHandler returns the REST /v1 handler.
 func NewHandler(q Queries, deleter UserDeleter, opts Options) (*Handler, error) {
 	if q == nil {
 		return nil, fmt.Errorf("%w: nil queries", ErrInvalidOptions)
@@ -134,10 +111,8 @@ func NewHandler(q Queries, deleter UserDeleter, opts Options) (*Handler, error) 
 	return h, nil
 }
 
-// Routes returns the registered routes as "METHOD /path" (for the OpenAPI route test).
 func (h *Handler) Routes() []string { return h.mux.Routes() }
 
-// ServeHTTP implements http.Handler.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) { h.root.ServeHTTP(w, r) }
 
 func (h *Handler) routes() {
@@ -153,7 +128,6 @@ func (h *Handler) routes() {
 	h.mux.Handle(http.MethodGet, "/v1/version", h.version)
 }
 
-// serveLimited authenticates, applies the request limits and dispatches to the mux.
 func (h *Handler) serveLimited(w http.ResponseWriter, r *http.Request) {
 	if !h.authorized(r) {
 		httpmw.Unauthorized(w, r)
@@ -171,7 +145,6 @@ func (h *Handler) serveLimited(w http.ResponseWriter, r *http.Request) {
 	h.mux.ServeHTTP(w, r)
 }
 
-// authorized applies the bearer-token rule, then the session cookie for reads.
 func (h *Handler) authorized(r *http.Request) bool {
 	if h.bearer.Check(r.Header.Get("Authorization")) {
 		return true
@@ -185,7 +158,6 @@ func (h *Handler) authorized(r *http.Request) bool {
 	return false
 }
 
-// fail writes err as the error envelope, logging unexpected failures once.
 func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var pe *paramError
 	if errors.As(err, &pe) {

@@ -24,8 +24,6 @@ var (
 	errBadBody      = errors.New("otlp: malformed request body")
 )
 
-// guardReader counts decompressed bytes against the per-request cap and the shared
-// in-flight limit while they are read. held is what the limiter has to get back.
 type guardReader struct {
 	r    io.Reader
 	lim  *ingest.InflightLimiter
@@ -49,14 +47,11 @@ func (g *guardReader) Read(p []byte) (int, error) {
 	return n, err //nolint:wrapcheck // io.EOF and transport errors must stay comparable
 }
 
-// release returns every byte the reader acquired.
 func (g *guardReader) release() {
 	g.lim.Release(g.held)
 	g.held = 0
 }
 
-// readBody reads the whole decompressed body. The returned release func must be
-// called once the request is done with the bytes (spans enqueued or request failed).
 func (s *Server) readBody(body io.Reader, gzipped bool) (data []byte, release func(), err error) {
 	g := &guardReader{lim: s.lim, max: s.cfg.MaxRequestBytes}
 	release = g.release
@@ -80,7 +75,6 @@ func (s *Server) readBody(body io.Reader, gzipped bool) (data []byte, release fu
 	}
 }
 
-// unmarshalProto decodes a protobuf-encoded request.
 func unmarshalProto(data []byte, m proto.Message) error {
 	if err := proto.Unmarshal(data, m); err != nil {
 		return fmt.Errorf("%w: protobuf: %w", errBadBody, err)
@@ -88,9 +82,6 @@ func unmarshalProto(data []byte, m proto.Message) error {
 	return nil
 }
 
-// unmarshalJSON decodes an OTLP/JSON request. OTLP/JSON carries trace and span ids
-// as hex strings where protojson expects base64, so ids are converted first;
-// hex text would otherwise decode silently to the wrong bytes.
 func unmarshalJSON(data []byte, m proto.Message) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.UseNumber()
@@ -111,8 +102,6 @@ func unmarshalJSON(data []byte, m proto.Message) error {
 	return nil
 }
 
-// rewriteHexIDs replaces hex id strings with base64 in place. Attribute keys are
-// data, never JSON object keys, so matching on object keys cannot touch user data.
 func rewriteHexIDs(v any) error {
 	switch x := v.(type) {
 	case map[string]any:

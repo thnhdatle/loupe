@@ -58,7 +58,6 @@ func TestStore_ExportTraces_Pages(t *testing.T) {
 	s := openStore(t)
 	const n = 250
 	for i := 1; i <= n; i++ {
-		// Every trace of a group of 5 shares a start time, so the keyset tie-break is exercised.
 		start := time.Duration(i/5) * time.Second
 		writeSpans(t, s, mkSpan(i, 1, 0, trace.KindChain, at(start), lasting(time.Millisecond)))
 	}
@@ -89,7 +88,6 @@ func TestStore_ExportTraces_StopsOnCallbackError(t *testing.T) {
 func TestStore_ExportTraces_NoReadTxnDuringCallback(t *testing.T) {
 	t.Parallel()
 	s := listFixture(t)
-	// While fn runs the read pool must be free: a connection is available and no transaction is open.
 	err := s.ExportTraces(context.Background(), query.ExportRequest{From: anchor, To: anchor.Add(time.Hour)},
 		func([]query.TraceDetail) error {
 			assert.Zero(t, s.ReadPool().Stats().InUse)

@@ -185,7 +185,6 @@ func TestStore_WriteBatch_Content(t *testing.T) {
 	orphan := logPart
 	orphan.SpanID = sid(9)
 
-	// The log events arrive first, before their spans.
 	_, err := s.WriteBatch(ctx, &trace.Batch{Content: []trace.ContentPart{logPart, orphan}})
 	require.NoError(t, err)
 	db := rawDB(t, s.Path())
@@ -225,8 +224,6 @@ func TestStore_WriteBatch_ContentPartsDoNotCollide(t *testing.T) {
 	t.Parallel()
 	s := openStore(t)
 	sp := mkSpan(1, 1, 0, trace.KindLLM)
-	// semconv numbers parts from 0 per carrier: attribute, event and two log
-	// records all use part 0 for the same span.
 	sp.Content = []trace.ContentPart{
 		{Part: 0, Source: trace.SourceAttribute, Key: "gen_ai.input.messages", Bytes: 1, Body: []byte("a")},
 		{Part: 0, Source: trace.SourceEvent, Key: "gen_ai.user.message", Bytes: 1, Body: []byte("e"), TimeNs: sp.StartNs},
@@ -275,14 +272,12 @@ func TestStore_IngestTotalsBetween(t *testing.T) {
 	}})
 	require.NoError(t, err)
 
-	// [h+30m, h+90m) overlaps hours h and h+1h only.
 	st, err := s.IngestTotalsBetween(ctx, h.Add(30*time.Minute), h.Add(90*time.Minute))
 	require.NoError(t, err)
 	assert.Equal(t, map[string]int64{trace.ReasonQueueFull: 6}, st.Rejected)
 	assert.Equal(t, map[string]int64{trace.ReasonStoreError: 16}, st.Dropped)
 	assert.Equal(t, int64(32), st.Received)
 
-	// An end on an hour boundary excludes that hour.
 	st, err = s.IngestTotalsBetween(ctx, h, h.Add(time.Hour))
 	require.NoError(t, err)
 	assert.Equal(t, map[string]int64{trace.ReasonQueueFull: 2}, st.Rejected)

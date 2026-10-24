@@ -23,13 +23,11 @@ func rawSpan(attrs ...trace.Attr) *trace.RawSpan {
 	return &trace.RawSpan{TraceID: testTrace, SpanID: testSpan, Name: "s", Attributes: attrs}
 }
 
-// fataler is the part of testing.TB that both *testing.T and *rapid.T provide.
 type fataler interface {
 	Helper()
 	Fatalf(format string, args ...any)
 }
 
-// attrsJSON decodes a span's Attributes into a generic object.
 func attrsJSON(t fataler, b []byte) map[string]any {
 	t.Helper()
 	var m map[string]any

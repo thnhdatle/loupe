@@ -20,7 +20,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// readAll runs one round of every read the dashboard and API make.
 func readAll(ctx context.Context, s *sqlite.Store, n int) error {
 	var errs []error
 	note := func(what string, err error) {
@@ -54,7 +53,6 @@ func readAll(ctx context.Context, s *sqlite.Store, n int) error {
 	return errors.Join(errs...)
 }
 
-// Concurrent ingest and concurrent dashboard queries (-race).
 func TestStore_ConcurrentReadersDuringWrites(t *testing.T) {
 	t.Parallel()
 	s := openStore(t)

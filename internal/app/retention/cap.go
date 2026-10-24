@@ -8,12 +8,6 @@ import (
 	"time"
 )
 
-// enforceCap deletes the oldest content, then the oldest spans, one
-// retention.batch job at a time, compacting and re-measuring after each, until
-// the database is within retention.max_db_bytes. Rows younger than CapFloor are
-// never deleted: when only they remain the pass logs an error and ingest goes
-// on. A busy checkpoint ends the cap phase for this pass, because the size
-// cannot drop until the WAL is checkpointed and deleting on would overshoot.
 func (p *Planner) enforceCap(ctx context.Context, now time.Time) error {
 	size, err := p.measure(ctx)
 	if err != nil || size <= p.cfg.MaxDBBytes {
@@ -61,7 +55,6 @@ func (p *Planner) enforceCap(ctx context.Context, now time.Time) error {
 	return nil
 }
 
-// measure reads the database size and records it.
 func (p *Planner) measure(ctx context.Context) (int64, error) {
 	size, err := p.store.Size(ctx)
 	if err != nil {

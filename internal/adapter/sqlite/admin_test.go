@@ -32,7 +32,6 @@ func gptCalculator(t *testing.T) *cost.Calculator {
 	return calc
 }
 
-// unpricedTriage is triageTrace written before gpt-x had a price.
 func unpricedTriage(tr int) []trace.Span {
 	spans := triageTrace(tr)
 	spans[3].Cost, spans[4].Cost = trace.Cost{}, trace.Cost{}
@@ -44,7 +43,7 @@ func TestAdmin_RecomputeCosts_EqualsPricingAtIngest(t *testing.T) {
 	ctx := context.Background()
 	ref := openStore(t)
 	want := triageTrace(1)
-	want[3].Cost, want[4].Cost = trace.Priced(0), trace.Priced(200) // 100·1 + 50·2 nano-USD
+	want[3].Cost, want[4].Cost = trace.Priced(0), trace.Priced(200)
 	writeSpans(t, ref, want...)
 	writeSpans(t, ref, mkSpan(2, 1, 0, trace.KindLLM, model("gpt-x"), usage(10, 10), at(2*time.Hour)))
 
@@ -78,8 +77,6 @@ func TestAdmin_DeleteUserData(t *testing.T) {
 	t.Parallel()
 	s := openStore(t)
 	ctx := context.Background()
-	// Trace 1: the victim is the trace's user (set by one span). Trace 2: only
-	// a child span names the victim. Trace 3: another user, same session id space.
 	writeSpans(t, s,
 		mkSpan(1, 1, 0, trace.KindAgent, named("victim-marker-a"), user("victim"), session("sv")),
 		mkSpan(1, 2, 1, trace.KindLLM, withContent("secret")))

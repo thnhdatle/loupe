@@ -46,7 +46,6 @@ func TestBucketBounds_ContiguousAndNarrow(t *testing.T) {
 		lo, hi := bucketBounds(idx)
 		require.Equal(t, prevHi, lo, "bucket %d starts where %d ends", idx, idx-1)
 		require.Less(t, lo, hi)
-		// Relative width ≤ 1/64 bounds the in-bucket error.
 		require.LessOrEqual(t, float64(hi-lo)/float64(lo), 1.0/SubBuckets, "bucket %d", idx)
 		require.Equal(t, idx, bucketIndex(lo))
 		require.Equal(t, idx, bucketIndex(hi-1))
@@ -59,7 +58,7 @@ func TestBucketBounds_ContiguousAndNarrow(t *testing.T) {
 
 func TestEstimate_SlotCentres(t *testing.T) {
 	t.Parallel()
-	lo, hi := bucketBounds(1) // [1000, 1008)
+	lo, hi := bucketBounds(1)
 	require.Equal(t, [2]int64{1000, 1008}, [2]int64{lo, hi})
 	assert.Equal(t, int64(1004), estimate(1, 1, 1))
 	assert.Equal(t, int64(1001), estimate(1, 1, 4))
@@ -70,7 +69,6 @@ func TestEstimate_SlotCentres(t *testing.T) {
 
 func TestHistogram_Quantile_InconsistentTotal(t *testing.T) {
 	t.Parallel()
-	// Unreachable through the API; guards the fallback after the bucket walk.
 	h := Histogram{buckets: []bucket{{idx: 1, n: 1}}, total: 3}
 	got, err := h.Quantile(1)
 	require.NoError(t, err)

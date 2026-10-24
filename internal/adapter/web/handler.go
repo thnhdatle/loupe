@@ -23,25 +23,18 @@ import (
 	assets "github.com/thnhdatle/loupe/web"
 )
 
-// ErrInvalidOptions reports unusable Options or a missing dependency.
 var ErrInvalidOptions = errors.New("web: invalid options")
 
-// DefaultSessionTTL is the session lifetime when Options.SessionTTL is unset.
 const DefaultSessionTTL = 12 * time.Hour
 
-// SessionCookie is the name of the dashboard session cookie.
 const SessionCookie = "loupe_session"
 
-// layoutTemplate is the entry template of every full page.
 const layoutTemplate = "layout"
 
-// trueValue is the header and form value for "yes".
 const trueValue = "true"
 
-// pageLimit is the page size of the trace and session lists.
 const pageLimit = 50
 
-// Queries is the read side the dashboard needs, implemented by *queries.Service.
 type Queries interface {
 	ListTraces(ctx context.Context, req queries.TraceListRequest) (query.TracePage, error)
 	GetTrace(ctx context.Context, id string, includeContent bool) (query.TraceDetail, error)
@@ -52,26 +45,17 @@ type Queries interface {
 	IngestInRange(ctx context.Context, from, to time.Time) (query.IngestStats, error)
 }
 
-// Options configures the dashboard handler.
 type Options struct {
-	// Tokens are the API tokens POST /login accepts (api.token_file).
-	Tokens []string
-	// RequireLogin makes every page need a session. The caller sets it when
-	// the UI listener is not loopback and ui.allow_unauthenticated is false.
+	Tokens       []string
 	RequireLogin bool
-	// SessionTTL is the session lifetime (ui.session_ttl); zero means DefaultSessionTTL.
-	SessionTTL time.Duration
-	// SecureCookie sets the Secure cookie flag (ui.tls or ui.secure_cookie).
+	SessionTTL   time.Duration
 	SecureCookie bool
-	// Clock supplies time for expiry and rate limiting; nil uses the system clock.
-	Clock clock.Clock
-	// Logger receives internal errors; nil discards them.
-	Logger *slog.Logger
-	// Rand is the source of session ids, login codes and nonces; nil uses crypto/rand.
-	Rand io.Reader
+	Clock        clock.Clock
+	Logger       *slog.Logger
+	Rand         io.Reader
 }
 
-// Handler serves the dashboard at "/" plus /login, /logout and /static/.
+// Handler serves the dashboard pages and the login flow.
 type Handler struct {
 	q        Queries
 	opts     Options
@@ -87,7 +71,7 @@ type Handler struct {
 	root     http.Handler
 }
 
-// NewHandler returns the dashboard handler reading from q.
+// NewHandler returns the dashboard handler.
 func NewHandler(q Queries, opts Options) (*Handler, error) {
 	if q == nil {
 		return nil, fmt.Errorf("%w: nil queries", ErrInvalidOptions)
@@ -118,13 +102,11 @@ func NewHandler(q Queries, opts Options) (*Handler, error) {
 	return h, nil
 }
 
-// ServeHTTP implements http.Handler.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) { h.root.ServeHTTP(w, r) }
 
 func (h *Handler) routes() http.Handler {
 	static, err := fs.Sub(assets.FS, "static")
 	if err != nil {
-		// Unreachable: "static" is embedded by go:embed.
 		panic(err)
 	}
 	mux := http.NewServeMux()
@@ -154,7 +136,6 @@ func cacheFor(next http.Handler) http.Handler {
 	})
 }
 
-// page wraps a page handler with the session requirement.
 func (h *Handler) page(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if h.opts.RequireLogin && !h.SessionAuth(r) {
@@ -172,21 +153,15 @@ func (h *Handler) page(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// SessionAuth reports whether r carries a valid dashboard session cookie. It
-// is meant for httpapi.Options.SessionAuth, which applies it to GET and HEAD
-// requests of /v1/* only.
 func (h *Handler) SessionAuth(r *http.Request) bool {
 	c, err := r.Cookie(SessionCookie)
 	return err == nil && c.Value != "" && h.sessions.has(c.Value)
 }
 
-// isHTMX reports whether r is an htmx request that wants a fragment (a history
-// restore after a cache miss wants the whole page).
 func isHTMX(r *http.Request) bool {
 	return r.Header.Get("HX-Request") == trueValue && r.Header.Get("HX-History-Restore-Request") != trueValue
 }
 
-// randSource serialises reads of an injected, possibly non-thread-safe reader.
 type randSource struct {
 	mu sync.Mutex
 	r  io.Reader
@@ -202,11 +177,8 @@ func (s *randSource) read(n int) ([]byte, error) {
 	return b, nil
 }
 
-// view names a page template file and the template in it to execute.
 type view struct{ page, name string }
 
-// render executes the named page template into a buffer and writes it, so a
-// template failure still yields a clean 500.
 func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, v view, data any) {
 	page, name := v.page, v.name
 	t, ok := h.pages[page]
@@ -227,12 +199,10 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, v v
 	_, _ = w.Write(buf.Bytes())
 }
 
-// renderPage renders a full page whose entry template is "layout".
 func (h *Handler) renderPage(w http.ResponseWriter, r *http.Request, page string, data any) {
 	h.render(w, r, http.StatusOK, view{page, layoutTemplate}, data)
 }
 
-// errorData is the data of the error page.
 type errorData struct {
 	base
 	Status  int
@@ -244,7 +214,6 @@ func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, status int
 	h.render(w, r, status, view{"error.html", layoutTemplate}, errorData{base: b, Status: status, Message: msg})
 }
 
-// fail maps an error of the query layer to an error page.
 func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case isNotFound(err):

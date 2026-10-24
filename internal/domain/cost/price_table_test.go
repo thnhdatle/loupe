@@ -12,8 +12,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/cost"
 )
 
-// selectionTable is a small table whose entries differ by input price, so a
-// lookup's InputPerMtok identifies the selected entry (in whole USD).
 func selectionTable(t *testing.T) *cost.PriceTable {
 	t.Helper()
 	defaults := []cost.Price{
@@ -39,7 +37,7 @@ func selectionTable(t *testing.T) *cost.PriceTable {
 		entry(t, "exact openai gpt-4o-mini", "21", "0", "2025-03-01"),
 		entry(t, "exact - gpt-4.1", "22", "0", "2025-06-01"),
 	}
-	user[1].Source, user[1].AsOf = "", time.Time{} // user entries need no provenance
+	user[1].Source, user[1].AsOf = "", time.Time{}
 	tbl, err := cost.NewPriceTable(defaults, user)
 	require.NoError(t, err)
 	return tbl
@@ -54,7 +52,7 @@ func TestPriceTable_Lookup_Selection(t *testing.T) {
 		provider string
 		model    string
 		start    time.Time
-		want     int64 // whole USD input price of the selected entry; 0 = unpriced
+		want     int64
 		origin   cost.Origin
 	}{
 		{name: "exact latest version", provider: "openai", model: "gpt-4o", start: at, want: 2},

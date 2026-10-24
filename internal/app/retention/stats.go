@@ -7,31 +7,25 @@ import (
 	"sync/atomic"
 )
 
-// Stats is a snapshot of the planner's counters, cumulative since New, for
-// metrics (loupe_retention_deleted_total{class}, loupe_db_size_bytes).
 type Stats struct {
-	Passes      int64           // passes completed, with or without errors
-	PassErrors  int64           // passes that ended with an error other than shutdown or cancellation
-	Deleted     map[Class]int64 // rows deleted by the age rules, every class present
-	CapDeleted  map[Class]int64 // rows deleted by the disk cap; keys ClassContent and ClassSpans
-	CapExceeded int64           // passes that found the database above max_db_bytes
-	// CapUnmet counts passes that ended above max_db_bytes with nothing left
-	// to delete but the last hour of data.
+	Passes         int64
+	PassErrors     int64
+	Deleted        map[Class]int64
+	CapDeleted     map[Class]int64
+	CapExceeded    int64
 	CapUnmet       int64
-	CheckpointBusy int64 // wal_checkpoint(TRUNCATE) calls that reported busy
-	DBSizeBytes    int64 // last measured size (main + WAL + SHM); 0 until measured
+	CheckpointBusy int64
+	DBSizeBytes    int64
 }
 
 type counters struct {
 	passes, passErrors, capExceeded, capUnmet, checkpointBusy, dbSize atomic.Int64
 
-	deleted    [6]atomic.Int64 // indexed by classIndex
+	deleted    [6]atomic.Int64
 	capContent atomic.Int64
 	capSpans   atomic.Int64
 }
 
-// classIndex returns the position of c in Classes; the planner only passes
-// the constants.
 func classIndex(c Class) int { return slices.Index(Classes(), c) }
 
 func (c *counters) snapshot() Stats {

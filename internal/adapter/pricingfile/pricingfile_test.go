@@ -141,7 +141,7 @@ func TestDefaultsAreAValidTable(t *testing.T) {
 	assert.Equal(t, cost.OriginDefault, price.Origin)
 	nanos, _, err := price.Cost(trace.Usage{Input: 1000, Output: 1000})
 	require.NoError(t, err)
-	assert.Equal(t, int64(12_500_000), nanos) // 1000*2.5e9/1e6 + 1000*10e9/1e6
+	assert.Equal(t, int64(12_500_000), nanos)
 	_, ok = table.Lookup("openai", "no-such-model", at)
 	assert.False(t, ok)
 }
@@ -200,8 +200,6 @@ func TestLoadErrors(t *testing.T) {
 
 func TestFixtureDefaultsParse(t *testing.T) {
 	t.Parallel()
-	// The cost fixture's default block is the format reference: every entry parses
-	// (the fixture only adds an id label).
 	raw, err := os.ReadFile("../../../testdata/cost/cases.yaml")
 	require.NoError(t, err)
 	start := strings.Index(string(raw), "prices:")

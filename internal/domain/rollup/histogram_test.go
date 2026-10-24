@@ -103,7 +103,6 @@ func TestHistogram_Quantile_MaxValueStaysInRange(t *testing.T) {
 
 func TestHistogram_Quantile_InterpolatesByRank(t *testing.T) {
 	t.Parallel()
-	// 1000..1007 share the first bucket [1000, 1008): ranks map to slot centres.
 	h := histogramOf(1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007)
 	for r := 1; r <= 8; r++ {
 		got, err := h.Quantile(float64(r) / 8)

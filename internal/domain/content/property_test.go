@@ -26,7 +26,6 @@ func genParts(t *rapid.T) []trace.ContentPart {
 	return parts
 }
 
-// In off and metadata_only no output part carries a body.
 func TestPolicy_Apply_NoBodyInStrippedModesProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -44,7 +43,6 @@ func TestPolicy_Apply_NoBodyInStrippedModesProperty(t *testing.T) {
 	})
 }
 
-// In on mode the output respects the byte budget and stays valid UTF-8.
 func TestPolicy_Apply_BudgetAndUTF8Property(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -76,7 +74,6 @@ var luhnRedactor = func() *content.Redactor {
 }()
 
 func luhnCard(digits []int) string {
-	// digits: the payload; append the check digit.
 	sum := 0
 	for i := range digits {
 		d := digits[len(digits)-1-i]
@@ -95,7 +92,6 @@ func luhnCard(digits []int) string {
 	return sb.String()
 }
 
-// Generated emails and Luhn-valid cards embedded in text never survive redaction.
 func TestRedactor_Redact_RemovesEmailAndCardProperty(t *testing.T) {
 	t.Parallel()
 	letters := rapid.StringMatching(`[a-z]{1,10}`)

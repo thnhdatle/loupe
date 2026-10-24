@@ -20,7 +20,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// anchor is the dataset anchor; test spans start shortly after it.
 var anchor = time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
 
 func dbPath(tb testing.TB) string {
@@ -28,7 +27,6 @@ func dbPath(tb testing.TB) string {
 	return filepath.Join(tb.TempDir(), "loupe.db")
 }
 
-// openAt opens a store at path with a fake clock at anchor and closes it at cleanup.
 func openAt(tb testing.TB, path string, opts ...sqlite.Option) *sqlite.Store {
 	tb.Helper()
 	opts = append([]sqlite.Option{sqlite.WithClock(clock.NewFake(anchor)), sqlite.WithReadPoolSize(4)}, opts...)
@@ -60,8 +58,6 @@ func sid(n int) trace.SpanID {
 
 type spanOpt func(*trace.Span)
 
-// mkSpan builds span id of trace tr with parent (0: root), starting id ms
-// after the anchor and lasting 100 ms.
 func mkSpan(tr, id, parent int, kind trace.Kind, opts ...spanOpt) trace.Span {
 	start := anchor.Add(time.Duration(id) * time.Millisecond).UnixNano()
 	sp := trace.Span{
@@ -115,7 +111,6 @@ func writeSpans(tb testing.TB, s *sqlite.Store, spans ...trace.Span) trace.Batch
 	return res
 }
 
-// rawDB opens a separate read-only handle for assertions on stored rows.
 func rawDB(tb testing.TB, path string) *sql.DB {
 	tb.Helper()
 	db := openRaw(tb, path)
@@ -131,7 +126,6 @@ func openRaw(tb testing.TB, path string) *sql.DB {
 	return db
 }
 
-// dump formats every row of q as one string.
 func dump(tb testing.TB, db *sql.DB, q string) []string {
 	tb.Helper()
 	rows, err := db.QueryContext(context.Background(), q)
@@ -161,9 +155,6 @@ func dump(tb testing.TB, db *sql.DB, q string) []string {
 	return out
 }
 
-// snapshot dumps every stored row and aggregate that must not depend on
-// arrival order or re-sends: spans (without rowid), content (without rowid),
-// traces, sessions and the four rollup tables.
 func snapshot(tb testing.TB, path string) map[string][]string {
 	tb.Helper()
 	db := openRaw(tb, path)

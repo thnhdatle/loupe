@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// Defaults of the retention section.
 const (
 	DefaultSpans         = 14 * 24 * time.Hour
 	DefaultContent       = 7 * 24 * time.Hour
@@ -20,30 +19,23 @@ const (
 	DefaultBatch         = 5000
 )
 
-// MinMaxDBBytes is the smallest non-zero retention.max_db_bytes.
 const MinMaxDBBytes = int64(64) << 20
 
-// CapFloor is the age below which the disk cap never deletes spans or content:
-// the last hour of data always survives, even above the cap.
 const CapFloor = time.Hour
 
-// ErrInvalidConfig reports a retention configuration that fails validation.
 var ErrInvalidConfig = errors.New("retention: invalid config")
 
-// Config is the retention section. Durations are ages relative to the clock's
-// now; MaxDBBytes 0 turns the disk cap off.
 type Config struct {
-	Spans         time.Duration // retention.spans
-	Content       time.Duration // retention.content, ≤ Spans
-	RollupsHourly time.Duration // retention.rollups_hourly (rollup_hour, rollup_user_hour), ≤ RollupsDaily
-	RollupsDaily  time.Duration // retention.rollups_daily (rollup_day, rollup_user_day, ingest_stats)
-	OrphanContent time.Duration // retention.orphan_content: content rows without a stored span
-	MaxDBBytes    int64         // retention.max_db_bytes: main + WAL + SHM; 0 = off, else ≥ MinMaxDBBytes
-	Interval      time.Duration // retention.interval between passes
-	Batch         int           // retention.batch: rows per writer job
+	Spans         time.Duration
+	Content       time.Duration
+	RollupsHourly time.Duration
+	RollupsDaily  time.Duration
+	OrphanContent time.Duration
+	MaxDBBytes    int64
+	Interval      time.Duration
+	Batch         int
 }
 
-// DefaultConfig returns the documented defaults.
 func DefaultConfig() Config {
 	return Config{
 		Spans:         DefaultSpans,
@@ -57,7 +49,6 @@ func DefaultConfig() Config {
 	}
 }
 
-// Validate reports every problem at once, each wrapping ErrInvalidConfig.
 func (c Config) Validate() error {
 	var errs []error
 	bad := func(format string, args ...any) {

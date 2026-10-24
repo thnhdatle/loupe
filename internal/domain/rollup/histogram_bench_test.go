@@ -17,7 +17,7 @@ func BenchmarkHistogram_Add(b *testing.B) {
 	values := lognormalValues(4096)
 	var h rollup.Histogram
 	for _, v := range values {
-		h.Add(v) // warm: buckets exist, as in a long-lived rollup row
+		h.Add(v)
 	}
 	b.ReportAllocs()
 	b.ResetTimer()

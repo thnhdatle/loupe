@@ -14,11 +14,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// sharedTemplates are parsed with every page and are not pages themselves.
 var sharedTemplates = map[string]bool{"layout.html": true, "partials.html": true}
 
-// parsePages parses each templates/*.html page together with the layout and
-// the partials into its own template set, keyed by file name.
 func parsePages(fsys fs.FS) (map[string]*template.Template, error) {
 	files, err := fs.Glob(fsys, "templates/*.html")
 	if err != nil {
@@ -59,7 +56,6 @@ func funcMap() template.FuncMap {
 	}
 }
 
-// formatMoney renders nano-USD with enough digits for small amounts.
 func formatMoney(nanos int64) string {
 	usd := float64(nanos) / 1e9
 	switch {
@@ -81,7 +77,6 @@ func formatMoneyPtr(nanos *int64) string {
 	return formatMoney(*nanos)
 }
 
-// formatDuration renders nanoseconds as a short human duration.
 func formatDuration(ns int64) string {
 	switch {
 	case ns < 1_000:
@@ -100,7 +95,6 @@ func formatDuration(ns int64) string {
 	}
 }
 
-// formatInt groups digits by thousands.
 func formatInt(n int64) string {
 	s := strconv.FormatInt(n, 10)
 	neg := strings.HasPrefix(s, "-")
@@ -125,12 +119,10 @@ func formatPercent(part, total int64) string {
 	return fmt.Sprintf("%.1f%%", float64(part)*100/float64(total))
 }
 
-// formatTime renders unix nanoseconds as UTC.
 func formatTime(ns int64) string {
 	return time.Unix(0, ns).UTC().Format("2006-01-02 15:04:05")
 }
 
-// totalTokens is the token count shown in lists: input plus output.
 func totalTokens(u trace.Usage) int64 { return u.Input + u.Output }
 
 var kindBadges = map[trace.Kind]string{
@@ -146,7 +138,6 @@ func kindBadge(k trace.Kind) string {
 	return "OTH"
 }
 
-// barData is the input of the "bar" template: an SVG bar on the 0..1000 scale.
 type barData struct {
 	X, W  int
 	Class string

@@ -6,7 +6,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 GOLANGCI_LINT_VERSION="2.14.0"
 missing=0
 
-check() { # name required(1|0) [version-command]
+check() {
   local name="$1" required="$2"
   if ! command -v "$name" >/dev/null 2>&1; then
     if [[ "$required" == 1 ]]; then

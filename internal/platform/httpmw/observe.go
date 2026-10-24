@@ -10,12 +10,9 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// Observer receives one call per finished request: the matched route pattern
-// (bounded cardinality), the status and the duration.
 type Observer func(endpoint string, status int, d time.Duration)
 
-// Observe reports every request to obs and, when log is non-nil, writes an
-// access log line. With both nil it returns next unchanged.
+// Observe reports every request to obs and writes an access log line.
 func Observe(clk clock.Clock, obs Observer, log *slog.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		if obs == nil && log == nil {

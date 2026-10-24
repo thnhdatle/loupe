@@ -11,32 +11,22 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// Run is the writer goroutine. It flushes batches and runs jobs until ctx
-// ends, then stops accepting work, drains the queue within the shutdown
-// timeout and returns. It returns ErrDrainIncomplete (wrapped) when queued
-// spans had to be abandoned, and ErrAlreadyRunning on a second call.
+// Run flushes batches and runs jobs until ctx ends, then drains the queue.
 func (w *Writer) Run(ctx context.Context) error {
 	if !w.started.CompareAndSwap(false, true) {
 		return ErrAlreadyRunning
 	}
 	defer close(w.stopped)
-	// Store calls and jobs use wctx: it survives the end of ctx, so that an
-	// in-flight batch and the drain can finish, and ends at the drain deadline
-	// (shutdown_timeout minus the counter reserve). fctx ends at shutdown_timeout;
-	// the final counters write uses it.
 	wctx, fctx, stopDeadline := w.shutdownDeadline(ctx)
 	defer stopDeadline()
 	tick := w.clk.NewTicker(w.cfg.batchInterval)
 	defer tick.Stop()
 	for {
-		// Shutdown takes priority over ready batches, ticks and jobs.
 		if ctx.Err() != nil {
 			return w.drain(wctx, fctx)
 		}
 		if w.batchReady() {
 			w.flush(wctx)
-			// Between size-triggered batches give one job a turn, so that jobs
-			// do not starve under sustained ingest.
 			select {
 			case req := <-w.jobs:
 				w.runJob(wctx, req)
@@ -56,14 +46,8 @@ func (w *Writer) Run(ctx context.Context) error {
 	}
 }
 
-// counterReserve is the part of shutdown_timeout kept, after items are
-// abandoned, for the final write of the pending counters (including the
-// dropped{shutdown} counts of those items): a tenth of the timeout, at most 1 s.
 func (w *Writer) counterReserve() time.Duration { return min(w.cfg.shutdownTimeout/10, time.Second) }
 
-// shutdownDeadline returns two contexts that are not cancelled with ctx: wctx
-// ends shutdown_timeout − counterReserve after ctx ends (the drain deadline),
-// fctx at shutdown_timeout (on the injected clock). stop must be called.
 func (w *Writer) shutdownDeadline(ctx context.Context) (wctx, fctx context.Context, stop func()) {
 	fctx, cancelF := context.WithCancel(context.WithoutCancel(ctx))
 	wctx, cancelW := context.WithCancel(fctx)
@@ -97,8 +81,6 @@ func (w *Writer) shutdownDeadline(ctx context.Context) (wctx, fctx context.Conte
 	}
 }
 
-// withTimeout derives a context that is cancelled after d on the injected
-// clock. cancel must be called; it also stops the helper goroutine.
 func (w *Writer) withTimeout(parent context.Context, d time.Duration) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(parent)
 	quit := make(chan struct{})
@@ -120,7 +102,6 @@ func (w *Writer) withTimeout(parent context.Context, d time.Duration) (context.C
 	}
 }
 
-// flush writes the next batch (items and pending counters), if any.
 func (w *Writer) flush(wctx context.Context) {
 	entries, counts := w.take()
 	if len(entries) == 0 && len(counts) == 0 {
@@ -135,8 +116,6 @@ func (w *Writer) flush(wctx context.Context) {
 		w.settle(entries, nil)
 		w.log.Debug("batch committed", "count", len(b.Spans), "duration_ms", w.clk.Now().Sub(start).Milliseconds())
 	case wctx.Err() != nil:
-		// The drain deadline passed: the items cannot be written any more;
-		// their counters go back to the pending set for the final write.
 		w.restoreCounts(counts)
 		w.abandon(entries)
 	default:
@@ -144,8 +123,6 @@ func (w *Writer) flush(wctx context.Context) {
 	}
 }
 
-// writeWithRetry calls WriteBatch up to retryAttempts times with jittered
-// exponential backoff, stopping early when wctx ends.
 func (w *Writer) writeWithRetry(wctx context.Context, b *trace.Batch) (trace.BatchResult, error) {
 	var err error
 	for attempt := 1; attempt <= w.cfg.retryAttempts; attempt++ {
@@ -180,8 +157,6 @@ func (w *Writer) writeOnce(wctx context.Context, b *trace.Batch) (trace.BatchRes
 	return res, nil
 }
 
-// backoff returns the delay before retry n (n >= 1): base·2^(n−1) capped at
-// retryMax, with equal jitter.
 func (w *Writer) backoff(n int) time.Duration {
 	d := w.cfg.retryBase
 	for i := 1; i < n && d < w.cfg.retryMax; i++ {
@@ -192,9 +167,6 @@ func (w *Writer) backoff(n int) time.Duration {
 	return half + time.Duration(w.cfg.rnd.Int64N(int64(d-half)+1))
 }
 
-// dropAfterRetries drops a batch whose retry budget is spent: its slots are
-// released, waiters learn the error, and the spans are counted as dropped
-// (store_error) in Stats and, with the next batch, in ingest_stats.
 func (w *Writer) dropAfterRetries(entries []*entry, counts []trace.IngestCount, err error) {
 	spans, logs := spanAndLogSlots(entries)
 	w.stats.droppedStoreError.Add(spans + logs)
@@ -210,10 +182,6 @@ func (w *Writer) dropAfterRetries(entries []*entry, counts []trace.IngestCount, 
 	w.settle(entries, fmt.Errorf("writer: batch dropped after %d attempts: %w", w.cfg.retryAttempts, err))
 }
 
-// abandon gives up on entries at the shutdown deadline: their waiters get
-// ErrShuttingDown and their spans and log records are counted as
-// dropped{shutdown} in Stats and in the pending counters, which drain writes
-// once more before Run returns.
 func (w *Writer) abandon(entries []*entry) {
 	if len(entries) == 0 {
 		return
@@ -230,10 +198,6 @@ func (w *Writer) abandon(entries []*entry) {
 	w.settle(entries, fmt.Errorf("writer: abandoned at shutdown deadline: %w", trace.ErrShuttingDown))
 }
 
-// drain runs after ctx ends: it refuses new items and jobs, writes queued
-// items until the queue is empty or the drain deadline (wctx) passes, abandons
-// whatever is left, and then writes the pending counters, including the
-// abandoned items' dropped{shutdown} counts, within the counter reserve (fctx).
 func (w *Writer) drain(wctx, fctx context.Context) error {
 	w.mu.Lock()
 	w.closed = true
@@ -255,9 +219,6 @@ func (w *Writer) drain(wctx, fctx context.Context) error {
 	if w.hasCounts() {
 		w.log.Error("ingest counters not stored at shutdown")
 	}
-	// Only the shutdown deadline abandons items, and Run runs once, so the
-	// counter covers exactly this shutdown (including a batch abandoned by the
-	// flush that was in progress when ctx ended).
 	if lost := w.stats.droppedShutdown.Load(); lost > 0 {
 		w.log.Error("shutdown drain incomplete", "count", lost)
 		return fmt.Errorf("%w: %d spans and log records not written", ErrDrainIncomplete, lost)

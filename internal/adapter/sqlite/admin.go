@@ -14,16 +14,12 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// Admin implements admin.Store on the writer connection. Its methods must run
-// inside writer jobs.
 type Admin struct{ s *Store }
 
-// Admin returns the admin.Store view of the store.
 func (s *Store) Admin() *Admin { return &Admin{s: s} }
 
 var _ admin.Store = (*Admin)(nil)
 
-// recomputeRow is a span examined by a pricing recompute.
 type recomputeRow struct {
 	id      int64
 	traceID trace.ID
@@ -32,11 +28,6 @@ type recomputeRow struct {
 	flags   trace.Flags
 }
 
-// RecomputeCosts implements admin.Store. A cost error leaves the span
-// unpriced, as at ingest. Changed spans update cost_nanos and the clamp flag;
-// their traces are then re-settled, which moves trace, session and rollup
-// cost sums and unpriced counts by the delta (including cost taken over by
-// kept spans from their duplicates).
 func (a *Admin) RecomputeCosts(
 	ctx context.Context, calc *cost.Calculator, r admin.Range, afterKey int64, limit int,
 ) (int64, int, error) {
@@ -78,7 +69,6 @@ func (a *Admin) RecomputeCosts(
 	return next, n, nil
 }
 
-// recomputeSQL selects the next spans to reprice by rowid.
 func recomputeSQL(r admin.Range, after int64, limit int) (string, []any) {
 	var w where
 	w.add("id > ?", after)
@@ -126,10 +116,6 @@ func selectRecompute(ctx context.Context, tx *sql.Tx, r admin.Range, after int64
 	return out, nil
 }
 
-// DeleteUserData implements admin.Store: whole traces in which the trace or
-// any span has the user id (content, spans and the trace row), then the
-// user's sessions and per-user rollup rows. Each step stops once limit rows
-// were deleted; a trace is always deleted whole.
 func (a *Admin) DeleteUserData(ctx context.Context, userID string, limit int) (int, error) {
 	if userID == "" || limit < 1 {
 		return 0, fmt.Errorf("%w: delete user data needs a user id and a positive limit", ErrInvalidOption)
@@ -164,7 +150,6 @@ func (a *Admin) DeleteUserData(ctx context.Context, userID string, limit int) (i
 	return n, nil
 }
 
-// deleteUserTraces deletes whole traces of the user until limit rows went.
 func deleteUserTraces(ctx context.Context, tx *sql.Tx, userID string, limit int) (int, error) {
 	n := 0
 	for n < limit {
@@ -181,7 +166,6 @@ func deleteUserTraces(ctx context.Context, tx *sql.Tx, userID string, limit int)
 	return n, nil
 }
 
-// userTraceSQL finds one trace of the user, by trace row or by span.
 const userTraceSQL = `SELECT trace_id FROM traces WHERE user_id = ?1 AND user_id <> ''
 	UNION ALL SELECT trace_id FROM spans WHERE user_id = ?1 AND user_id <> '' LIMIT 1`
 
@@ -214,8 +198,6 @@ func deleteTrace(ctx context.Context, tx *sql.Tx, tid []byte) (int, error) {
 	return total, nil
 }
 
-// IncrementalVacuum implements admin.Store: it frees at most pages free pages
-// and returns the number freed.
 func (a *Admin) IncrementalVacuum(ctx context.Context, pages int) (int, error) {
 	before, after, err := a.s.incrementalVacuum(ctx, pages)
 	if err != nil {
@@ -224,14 +206,11 @@ func (a *Admin) IncrementalVacuum(ctx context.Context, pages int) (int, error) {
 	return before - after, nil
 }
 
-// Checkpoint implements admin.Store; a busy checkpoint is not an error.
 func (a *Admin) Checkpoint(ctx context.Context) error {
 	_, err := a.s.Checkpoint(ctx)
 	return err
 }
 
-// BackupTo implements admin.Backuper: VACUUM INTO path on a separate
-// read-only connection, never through the writer. It fails when path exists.
 func (s *Store) BackupTo(ctx context.Context, path string) error {
 	if path == "" {
 		return fmt.Errorf("%w: empty backup path", ErrInvalidOption)

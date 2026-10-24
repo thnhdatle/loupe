@@ -14,16 +14,10 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// DefaultVacuumPages is the number of free pages one incremental-vacuum job
-// releases (8 MiB with 4 KiB pages), so that a vacuum after a large delete
-// does not hold the writer for long.
 const DefaultVacuumPages = 2048
 
-// ErrInvalidArgument reports a nil dependency or an invalid option given to New.
 var ErrInvalidArgument = errors.New("retention: invalid argument")
 
-// FreeDiskFunc returns the bytes available to Loupe on the file system that
-// holds the database.
 type FreeDiskFunc func(ctx context.Context) (int64, error)
 
 type options struct {
@@ -32,22 +26,15 @@ type options struct {
 	vacuumPages int
 }
 
-// Option configures a Planner.
 type Option func(*options)
 
-// WithLogger sets the logger (default: discard).
 func WithLogger(l *slog.Logger) Option { return func(o *options) { o.logger = l } }
 
-// WithFreeDisk sets the free-disk probe used by the startup check of Run
-// (default: none, the check is skipped).
 func WithFreeDisk(f FreeDiskFunc) Option { return func(o *options) { o.freeDisk = f } }
 
-// WithVacuumPages sets the free pages released per incremental-vacuum job
-// (default DefaultVacuumPages).
 func WithVacuumPages(n int) Option { return func(o *options) { o.vacuumPages = n } }
 
-// Planner deletes data past its retention and enforces the disk cap
-// by submitting bounded jobs to the single writer.
+// Planner deletes data past its retention and enforces the disk cap.
 type Planner struct {
 	store Store
 	jobs  trace.JobRunner
@@ -56,11 +43,11 @@ type Planner struct {
 	opts  options
 	log   *slog.Logger
 
-	passMu sync.Mutex // serialises passes started by Run and Pass
+	passMu sync.Mutex
 	stats  counters
 }
 
-// New validates cfg and returns a Planner. It starts nothing; call Run.
+// New validates cfg and returns a Planner.
 func New(store Store, jobs trace.JobRunner, clk clock.Clock, cfg Config, opts ...Option) (*Planner, error) {
 	if store == nil || jobs == nil || clk == nil {
 		return nil, fmt.Errorf("%w: store, job runner and clock are required", ErrInvalidArgument)
@@ -81,13 +68,9 @@ func New(store Store, jobs trace.JobRunner, clk clock.Clock, cfg Config, opts ..
 	}, nil
 }
 
-// Stats returns a snapshot of the counters.
 func (p *Planner) Stats() Stats { return p.stats.snapshot() }
 
-// Run checks free disk, runs a pass at once and then one every
-// retention.interval on the planner's clock, until ctx ends or the writer
-// shuts down; both return nil. Pass errors are logged and retried at the next
-// interval.
+// Run runs a retention pass at start and then at every interval until ctx ends.
 func (p *Planner) Run(ctx context.Context) error {
 	p.checkFreeDisk(ctx)
 	tick := p.clk.NewTicker(p.cfg.Interval)
@@ -108,11 +91,7 @@ func (p *Planner) Run(ctx context.Context) error {
 	}
 }
 
-// Pass runs one retention pass now: every class in Classes order, an
-// incremental vacuum and checkpoint, then the disk cap. Concurrent calls run
-// one after the other. It returns ctx's error or one wrapping
-// trace.ErrShuttingDown as soon as either happens, and otherwise the joined
-// errors of the steps that failed (later steps still run).
+// Pass runs one retention pass now.
 func (p *Planner) Pass(ctx context.Context) error {
 	p.passMu.Lock()
 	defer p.passMu.Unlock()
@@ -156,7 +135,6 @@ func (p *Planner) pass(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// age returns how old rows of c must be to go; sessions use now as cutoff.
 func (p *Planner) age(c Class) time.Duration {
 	switch c {
 	case ClassContent:
@@ -170,15 +148,13 @@ func (p *Planner) age(c Class) time.Duration {
 	case ClassRollupsDaily:
 		return p.cfg.RollupsDaily
 	case ClassSessions:
-		return 0 // every session without traces goes
+		return 0
 	}
 	return 0
 }
 
 func jobName(c Class) string { return "retention_" + string(c) }
 
-// purgeAll submits one Purge job of retention.batch rows after another until a
-// job deletes fewer rows, so ingest batches run between the jobs.
 func (p *Planner) purgeAll(ctx context.Context, c Class, cutoff time.Time) (int64, error) {
 	var total int64
 	for {
@@ -190,7 +166,6 @@ func (p *Planner) purgeAll(ctx context.Context, c Class, cutoff time.Time) (int6
 	}
 }
 
-// purgeOnce runs one Purge of at most retention.batch rows as a writer job.
 func (p *Planner) purgeOnce(ctx context.Context, name string, c Class, cutoff time.Time) (int64, error) {
 	var deleted int64
 	err := p.submit(ctx, name, func(jctx context.Context) error {
@@ -207,9 +182,6 @@ func (p *Planner) purgeOnce(ctx context.Context, name string, c Class, cutoff ti
 	return deleted, nil
 }
 
-// submit runs fn as a writer job. Values fn writes may be read only after a
-// nil return: then fn has finished and Submit's channel receive orders its
-// writes before the read. After a non-nil return fn may still be running.
 func (p *Planner) submit(ctx context.Context, name string, fn func(context.Context) error) error {
 	if err := p.jobs.Submit(ctx, trace.Job{Name: name, Run: fn}); err != nil {
 		return fmt.Errorf("retention: %s: %w", name, err)
@@ -217,8 +189,6 @@ func (p *Planner) submit(ctx context.Context, name string, fn func(context.Conte
 	return nil
 }
 
-// compact releases free pages in bounded vacuum jobs, then truncates the WAL.
-// busy reports a checkpoint that could not complete because of readers.
 func (p *Planner) compact(ctx context.Context) (busy bool, err error) {
 	prev := -1
 	for {
@@ -234,15 +204,11 @@ func (p *Planner) compact(ctx context.Context) (busy bool, err error) {
 		if err != nil {
 			return false, err
 		}
-		// Stop when the free list is empty, or when it stopped shrinking
-		// because concurrent batches keep freeing a few pages.
 		if remaining == 0 || (prev >= 0 && remaining >= prev) {
 			break
 		}
 		prev = remaining
 	}
-	// The job writes its own variable, not the named result: after an error
-	// return it may still be running.
 	var walBusy bool
 	err = p.submit(ctx, "retention_checkpoint", func(jctx context.Context) error {
 		b, cerr := p.store.Checkpoint(jctx)
@@ -263,7 +229,6 @@ func (p *Planner) compact(ctx context.Context) (busy bool, err error) {
 	return busy, nil
 }
 
-// checkFreeDisk warns when the file system has less than twice the cap free.
 func (p *Planner) checkFreeDisk(ctx context.Context) {
 	if p.cfg.MaxDBBytes == 0 || p.opts.freeDisk == nil {
 		return

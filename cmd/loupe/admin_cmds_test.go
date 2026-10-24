@@ -22,7 +22,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/cost"
 )
 
-// runCmd executes the root command with args and returns stdout.
 func runCmd(t *testing.T, args ...string) (string, error) {
 	t.Helper()
 	cmd := newRootCmd()
@@ -34,7 +33,6 @@ func runCmd(t *testing.T, args ...string) (string, error) {
 	return out.String(), err
 }
 
-// writeConfig writes a minimal config file and returns its path.
 func writeCfgYAML(t *testing.T, yaml string) string {
 	t.Helper()
 	p := filepath.Join(t.TempDir(), "loupe.yaml")
@@ -101,14 +99,12 @@ func TestDialHost(t *testing.T) {
 	require.Error(t, err)
 }
 
-// fakeAdmin is an admin API double: it accepts a job and reports it running
-// once before done (or failed).
 type fakeAdmin struct {
 	t     *testing.T
 	fail  bool
 	polls atomic.Int32
-	body  atomic.Value // last POST body
-	post  atomic.Value // last POST path
+	body  atomic.Value
+	post  atomic.Value
 }
 
 func (f *fakeAdmin) ServeHTTP(w http.ResponseWriter, r *http.Request) {

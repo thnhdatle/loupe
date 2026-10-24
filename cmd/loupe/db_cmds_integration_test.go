@@ -17,7 +17,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/adapter/sqlite"
 )
 
-// newDB creates a migrated empty database and returns a config file for it.
 func newDB(t *testing.T) (cfgPath, dbPath string) {
 	t.Helper()
 	dbPath = filepath.Join(t.TempDir(), "loupe.db")
@@ -66,7 +65,7 @@ func TestDBBackup(t *testing.T) {
 	t.Parallel()
 	cfg, dbPath := newDB(t)
 	dst := filepath.Join(t.TempDir(), "copy.db")
-	st, err := sqlite.Open(context.Background(), dbPath) // online: the server holds the lock
+	st, err := sqlite.Open(context.Background(), dbPath)
 	require.NoError(t, err)
 	defer func() { _ = st.Close() }()
 

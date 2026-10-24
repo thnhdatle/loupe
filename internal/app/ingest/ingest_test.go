@@ -89,7 +89,7 @@ func TestIngestor_IngestSpans_TranslatesPricesAndStores(t *testing.T) {
 	f.run()
 	sameAttrs := &trace.RawResource{Attributes: slices.Clone(res.Attributes)}
 	other := chatSpan()
-	other.Resource = sameAttrs // a distinct pointer with equal attributes
+	other.Resource = sameAttrs
 	raws := []trace.RawSpan{
 		chatSpan(sattr("gen_ai.input.messages", `[{"role":"user","content":"hi"}]`)),
 		other,
@@ -180,10 +180,10 @@ func TestIngestor_IngestSpans_ContentPolicy(t *testing.T) {
 
 func TestIngestor_IngestSpans_AttributeLimitAndBadUsage(t *testing.T) {
 	t.Parallel()
-	f := newFixture(t, nil, ingest.WithMaxAttributeBytes(16)) // keeps "gpt-4o-mini" whole
+	f := newFixture(t, nil, ingest.WithMaxAttributeBytes(16))
 	f.run()
 	long := chatSpan(sattr("app.note", strings.Repeat("x", 100)))
-	negative := chatSpan(iattr("gen_ai.usage.input_tokens", math.MaxInt64/2)) // cost overflows int64
+	negative := chatSpan(iattr("gen_ai.usage.input_tokens", math.MaxInt64/2))
 	_, err := f.in.IngestSpans(t.Context(), []trace.RawSpan{long, negative})
 	require.NoError(t, err)
 	f.flushUntil(func() bool { return f.store.SpanCount() == 2 })
@@ -250,8 +250,6 @@ func TestIngestor_IngestSpans_Overflow(t *testing.T) {
 	}
 }
 
-// A request refused by the queue pre-check is counted received and refused,
-// but not translated: an unknown model would otherwise count as unpriced.
 func TestIngestor_IngestSpans_OverflowBeforeTranslation(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, []writer.Option{writer.WithQueueLimits(1, 1<<30)}, ingest.WithOverflow(ingest.OverflowDrop))
@@ -268,8 +266,6 @@ func TestIngestor_IngestSpans_OverflowBeforeTranslation(t *testing.T) {
 	assert.Equal(t, 1, f.store.SpanCount())
 }
 
-// The queue's byte limit is checked at Enqueue, after translation; drop mode
-// then reports the spans as dropped.
 func TestIngestor_IngestSpans_ByteLimitDrop(t *testing.T) {
 	t.Parallel()
 	one := ingest.SpanOverheadBytes + 64
@@ -352,7 +348,7 @@ func TestIngestor_IngestSpans_SyncAckReportsStoreErrorDrop(t *testing.T) {
 func TestIngestor_IngestSpans_SyncAckAbandonedAtShutdown(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, nil, ingest.WithSyncAck(true))
-	f.store.Hold() // never released
+	f.store.Hold()
 	stop := f.run()
 	done := async(func() (trace.IngestResult, error) {
 		return f.in.IngestSpans(t.Context(), []trace.RawSpan{chatSpan()})
@@ -371,7 +367,6 @@ func TestIngestor_IngestSpans_SyncAckAbandonedAtShutdown(t *testing.T) {
 	})
 	require.ErrorIs(t, r.err, trace.ErrShuttingDown)
 	assert.Equal(t, 1, r.res.Rejected)
-	// The final counters write (also held) ends at the shutdown timeout.
 	var runErr error
 	f.flushUntil(func() bool {
 		select {

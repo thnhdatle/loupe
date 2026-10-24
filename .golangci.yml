@@ -6,7 +6,6 @@ run:
   tests: true
   build-tags:
     - integration
-    - acceptance
 
 linters:
   default: none
@@ -102,6 +101,11 @@ linters:
       - path-except: internal/adapter/
         linters:
           - wrapcheck
+      # Only the public API needs a doc comment on every exported name.
+      - path: (^internal/|/internal/|^cmd/|^examples/|^scripts/)
+        text: "exported"
+        linters:
+          - revive
       # Test files may relax these four linters only.
       - path: _test\.go
         linters:

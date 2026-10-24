@@ -19,12 +19,11 @@ func TestHistogram_MarshalBinary_Layout(t *testing.T) {
 		want []byte
 	}{
 		{name: "empty", h: histogramOf(), want: []byte{1, 0}},
-		// Underflow (index 0) ×2, first regular bucket (index 1) ×1, overflow (index 2323) ×1.
 		{name: "edges", h: histogramOf(0, 5, 1000, rollup.MaxValueNs+1), want: []byte{
 			1, 3,
 			0, 2,
 			0, 1,
-			0x91, 0x12, 1, // gap 2321 = 0x911
+			0x91, 0x12, 1,
 		}},
 	}
 	for _, tc := range cases {
@@ -44,7 +43,7 @@ func TestHistogram_UnmarshalBinary_RoundTrip(t *testing.T) {
 	t.Parallel()
 	h := histogramOf(-1, 0, 1000, 1e6, 1e6, 3e9, rollup.MaxValueNs, rollup.MaxValueNs+1)
 	b := encoded(t, h)
-	got := histogramOf(5e9) // decoding replaces previous content
+	got := histogramOf(5e9)
 	require.NoError(t, got.UnmarshalBinary(b))
 	assert.Equal(t, h.Count(), got.Count())
 	assert.Equal(t, b, encoded(t, got))
@@ -90,7 +89,6 @@ func TestHistogram_UnmarshalBinary_Corrupt(t *testing.T) {
 
 func TestHistogram_UnmarshalBinary_LastIndexAccepted(t *testing.T) {
 	t.Parallel()
-	// One bucket at the overflow index 2323 (gap 0x913) is the largest valid index.
 	var h rollup.Histogram
 	require.NoError(t, h.UnmarshalBinary([]byte{1, 1, 0x93, 0x12, 7}))
 	assert.Equal(t, uint64(7), h.Count())
@@ -110,7 +108,6 @@ func FuzzHistogramDecode(f *testing.F) {
 			require.True(t, h.IsEmpty())
 			return
 		}
-		// A decoded blob re-encodes to a canonical blob that decodes to the same histogram.
 		canon := encoded(t, &h)
 		var again rollup.Histogram
 		require.NoError(t, again.UnmarshalBinary(canon))

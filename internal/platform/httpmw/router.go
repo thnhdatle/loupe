@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// Router is a ServeMux that answers unknown paths with a JSON 404 and known
-// paths under another method with a JSON 405 carrying an Allow header.
+// Router is a ServeMux that answers unknown paths with a JSON 404 and wrong methods with a JSON
+// 405.
 type Router struct {
 	mux     *http.ServeMux
 	methods map[string][]string
@@ -25,7 +25,6 @@ func NewRouter() *Router {
 	return r
 }
 
-// Handle registers fn for method and path (a Go 1.22 path pattern).
 func (r *Router) Handle(method, path string, fn http.HandlerFunc) {
 	r.mux.HandleFunc(method+" "+path, fn)
 	if len(r.methods[path]) == 0 {
@@ -39,8 +38,6 @@ func (r *Router) Handle(method, path string, fn http.HandlerFunc) {
 	sort.Strings(r.methods[path])
 }
 
-// ServeHTTP implements http.Handler.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) { r.mux.ServeHTTP(w, req) }
 
-// Routes returns the registered routes as "METHOD /path" in registration order.
 func (r *Router) Routes() []string { return append([]string(nil), r.routes...) }

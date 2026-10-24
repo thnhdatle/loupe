@@ -15,17 +15,12 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/httpmw"
 )
 
-// Export constants.
 const (
-	// ExportFormatJSONL is the only export format.
-	ExportFormatJSONL = "jsonl"
-	// exportContentType is the media type of a JSON Lines stream.
-	exportContentType = "application/x-ndjson"
-	// exportWriteTimeout is the per-batch write deadline of the stream.
+	ExportFormatJSONL  = "jsonl"
+	exportContentType  = "application/x-ndjson"
 	exportWriteTimeout = 30 * time.Second
 )
 
-// exportParams parses and resolves the query of GET /v1/export/traces.
 func (h *Handler) exportParams(r *http.Request) (query.ExportRequest, error) {
 	p, err := newParams(r.URL.Query(), "from", "to", "format")
 	if err != nil {
@@ -52,7 +47,6 @@ func (h *Handler) exportParams(r *http.Request) (query.ExportRequest, error) {
 	return query.ExportRequest{From: start, To: end}, nil
 }
 
-// exportStream writes export batches as JSON Lines to one response.
 type exportStream struct {
 	w       http.ResponseWriter
 	rc      *http.ResponseController
@@ -60,7 +54,6 @@ type exportStream struct {
 	started bool
 }
 
-// start sends the status line and headers once.
 func (e *exportStream) start() {
 	if e.started {
 		return
@@ -71,9 +64,6 @@ func (e *exportStream) start() {
 	e.w.WriteHeader(http.StatusOK)
 }
 
-// EncodeExportLines writes the batch as JSON Lines, one trace per line, the
-// format shared by GET /v1/export/traces and `loupe export`. Nil slices are
-// encoded as empty arrays.
 func EncodeExportLines(w io.Writer, batch []query.TraceDetail) error {
 	enc := json.NewEncoder(w)
 	for i := range batch {
@@ -90,14 +80,13 @@ func EncodeExportLines(w io.Writer, batch []query.TraceDetail) error {
 	return nil
 }
 
-// write encodes the batch, one trace per line, and flushes it.
 func (e *exportStream) write(batch []query.TraceDetail) error {
 	var buf bytes.Buffer
 	if err := EncodeExportLines(&buf, batch); err != nil {
 		return err
 	}
 	e.start()
-	_ = e.rc.SetWriteDeadline(e.clk.Now().Add(exportWriteTimeout)) // unsupported writers keep the server's
+	_ = e.rc.SetWriteDeadline(e.clk.Now().Add(exportWriteTimeout))
 	if _, err := e.w.Write(buf.Bytes()); err != nil {
 		return fmt.Errorf("write export: %w", err)
 	}
@@ -107,10 +96,6 @@ func (e *exportStream) write(batch []query.TraceDetail) error {
 	return nil
 }
 
-// exportTraces streams the traces starting in the range as JSON Lines, one
-// trace (the body of GET /v1/traces/{id} without content) per line. Each batch
-// is flushed when written. After the first byte the status cannot change, so
-// a later failure is logged and ends the stream.
 func (h *Handler) exportTraces(w http.ResponseWriter, r *http.Request) {
 	if h.opts.Exporter == nil {
 		httpmw.WriteError(w, r, http.StatusNotFound, CodeNotFound, "export is not available")
@@ -125,7 +110,7 @@ func (h *Handler) exportTraces(w http.ResponseWriter, r *http.Request) {
 	err = h.opts.Exporter.ExportTraces(r.Context(), req, st.write)
 	switch {
 	case err == nil:
-		st.start() // no traces: an empty stream
+		st.start()
 	case !st.started:
 		h.fail(w, r, err)
 	case h.opts.Logger != nil:

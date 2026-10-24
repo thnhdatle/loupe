@@ -14,9 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// run serves until ctx ends or a component fails, then shuts down in order:
-// stop the receivers and retention, drain the writer, stop the HTTP servers,
-// checkpoint, close the store (releasing the flock). It always closes the store.
+// run serves until ctx ends or a component fails, then shuts down in order.
 func (s *server) run(ctx context.Context) error {
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -36,8 +34,6 @@ func (s *server) run(ctx context.Context) error {
 		cancel()
 	}
 
-	// The writer and the HTTP servers outlive the receivers: they get contexts
-	// that are cancelled only by the shutdown steps below.
 	writerCtx, stopWriter := context.WithCancel(context.WithoutCancel(ctx))
 	defer stopWriter()
 	httpCtx, stopHTTP := context.WithCancel(context.WithoutCancel(ctx))
@@ -101,7 +97,6 @@ func (s *server) run(ctx context.Context) error {
 	return firstErr
 }
 
-// serveHTTP serves srv on ln until ctx ends, then drains it within timeout.
 func serveHTTP(ctx context.Context, srv *http.Server, ln net.Listener, useTLS bool, timeout time.Duration) error {
 	errc := make(chan error, 1)
 	go func() {

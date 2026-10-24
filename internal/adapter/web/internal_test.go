@@ -102,7 +102,7 @@ func TestOrderSpans_CyclesAndOrphans(t *testing.T) {
 	t.Parallel()
 	spans := []query.SpanView{
 		{SpanID: "c", ParentSpanID: "b", StartNs: 3},
-		{SpanID: "a", ParentSpanID: "c", StartNs: 1}, // a -> c -> b -> a: a cycle
+		{SpanID: "a", ParentSpanID: "c", StartNs: 1},
 		{SpanID: "b", ParentSpanID: "a", StartNs: 2},
 		{SpanID: "o", ParentSpanID: "missing", StartNs: 0},
 		{SpanID: "self", ParentSpanID: "self", StartNs: 9},
@@ -161,12 +161,12 @@ func TestExpiringSet_Bounded(t *testing.T) {
 		s.add(fmt.Sprint("k", i), time.Duration(i+1)*time.Minute)
 	}
 	assert.Len(t, s.m, maxEntries)
-	s.add("new", time.Hour) // full, none expired: evicts the one closest to expiry (k0)
+	s.add("new", time.Hour)
 	assert.Len(t, s.m, maxEntries)
 	assert.False(t, s.has("k0"))
 	assert.True(t, s.has("k1"))
 	assert.True(t, s.has("new"))
-	clk.Advance(30 * time.Minute) // k1..k29 expire
+	clk.Advance(30 * time.Minute)
 	s.add("newer", time.Hour)
 	assert.LessOrEqual(t, len(s.m), maxEntries-28)
 	assert.True(t, s.take("newer"))

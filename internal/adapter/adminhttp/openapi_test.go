@@ -15,9 +15,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/testutil/openapispec"
 )
 
-// TestOpenAPI_Contract drives every admin operation of api/openapi.yaml with
-// its request example and checks the response against the success example.
-// Route-vs-spec coverage lives in the httpapi tests, which see both handlers.
 func TestOpenAPI_Contract(t *testing.T) {
 	t.Parallel()
 	for _, op := range openapispec.Load(t).Operations() {

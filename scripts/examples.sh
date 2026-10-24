@@ -2,16 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-# Runs each examples/<name>/run.sh and checks its output against expected.txt.
+# Runs each example and checks its output against expected.txt.
 shopt -s nullglob
 dirs=(examples/*/)
 if ((${#dirs[@]} == 0)); then
   echo "no examples found"
   exit 0
 fi
-# Starts Loupe and fakellm from deploy/docker-compose.yml (host ports can be moved with
-# LOUPE_*_HOST_PORT / FAKELLM_HOST_PORT plus LOUPE_OTLP_ENDPOINT, LOUPE_API, FAKELLM_URL) and
-# removes them afterwards.
 compose=(docker compose -f deploy/docker-compose.yml)
 export RAYLD_LOUPE_IMAGE="${RAYLD_LOUPE_IMAGE:-thnhdatle/loupe:dev}"
 trap '"${compose[@]}" down -v --remove-orphans >/dev/null 2>&1 || true' EXIT

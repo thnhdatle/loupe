@@ -28,11 +28,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// With capture on and the redaction presets, no value matching a
-// preset reaches the database file, its WAL or SHM, or a decompressed content body; with
-// metadata_only no content text is stored at all.
-
-// Synthetic sensitive values (not real credentials).
 const (
 	redEmail     = "alice.tester@example.com"
 	redPhone     = "415-555-0132"
@@ -50,7 +45,6 @@ var redSecrets = []string{
 
 var redMarkers = []string{"[EMAIL]", "[PHONE]", "[CREDIT_CARD]", "[API_KEY]"}
 
-// redText is a sentence carrying every secret kind.
 const redText = "mail " + redEmail + " phone " + redPhone + " or " + redPhoneIntl +
 	" cards " + redCard + " and " + redCardSpace + " keys " + redKey + " and " + redAWS
 
@@ -141,13 +135,11 @@ func redLog(ns, event, body string, attrs ...jm) jm {
 	}
 }
 
-// redInputMessages is a gen_ai.input.messages JSON value carrying text.
 func redInputMessages(text string) string {
 	b, _ := json.Marshal([]jm{{"role": "user", "parts": []jm{{"type": "text", "content": text}}}})
 	return string(b)
 }
 
-// redRawScan counts occurrences of each needle in the database file, WAL and SHM.
 func redRawScan(t *testing.T, path string, needles []string) map[string]int {
 	t.Helper()
 	found := map[string]int{}
@@ -174,7 +166,6 @@ type redRow struct {
 	truncated         bool
 }
 
-// redContent reads span_content through SQL, decompressing zstd bodies.
 func redContent(t *testing.T, path string) []redRow {
 	t.Helper()
 	dec, err := zstd.NewReader(nil, zstd.WithDecoderMaxMemory(64<<20))
@@ -229,7 +220,7 @@ func TestRedactionCaptureOnLeavesNoSecret(t *testing.T) {
 		sattr("output.value", redText),
 		sattr("llm.input_messages.0.message.content", redText),
 		sattr("llm.output_messages.0.message.content", redText),
-		sattr("app.note", "support contact "+redEmail+" card "+redCard), // non-content attribute
+		sattr("app.note", "support contact "+redEmail+" card "+redCard),
 		sattr("app.key", redKey),
 	}, []jm{
 		{"timeUnixNano": "1100000000", "name": "gen_ai.user.message", "attributes": []jm{sattr("content", redText)}},
@@ -241,10 +232,8 @@ func TestRedactionCaptureOnLeavesNoSecret(t *testing.T) {
 	))
 	p.stop()
 
-	// Raw bytes of the database, WAL and SHM.
 	assert.Empty(t, redRawScan(t, p.path, redSecrets), "secret in raw database bytes")
 
-	// Decompressed content bodies, and the markers must be there (not vacuous).
 	rows := redContent(t, p.path)
 	require.NotEmpty(t, rows)
 	sources := map[string]bool{}
@@ -272,7 +261,6 @@ func TestRedactionCaptureOnLeavesNoSecret(t *testing.T) {
 		assert.True(t, keys[k], "content key %s not stored; have %v", k, keys)
 	}
 
-	// A non-content attribute value is stored redacted, in the spans row.
 	db := rawDB(t, p.path)
 	attrs := redQueryString(t, db, "SELECT attributes FROM spans")
 	assert.Contains(t, attrs, "[EMAIL]")
@@ -282,7 +270,7 @@ func TestRedactionCaptureOnLeavesNoSecret(t *testing.T) {
 		assert.NotContains(t, attrs, s)
 	}
 	res := redQueryString(t, db, "SELECT group_concat(CAST(attributes AS TEXT)) FROM resources")
-	assert.NotContains(t, res, "[EMAIL]") // sanity: nothing odd in the resource row
+	assert.NotContains(t, res, "[EMAIL]")
 }
 
 func TestRedactionMetadataOnlyStoresNoText(t *testing.T) {
@@ -341,15 +329,10 @@ func TestRedactionMaxBytesTruncates(t *testing.T) {
 	assert.LessOrEqual(t, len(rows[0].body), limit)
 }
 
-// redLogNs is the timeUnixNano of the i-th log event of a test.
 func redLogNs(i int) string { return "1000000" + strconv.Itoa(100+i) }
 
-// redLimit is content.max_bytes in the per-span budget tests.
 const redLimit = 100
 
-// redSpanBudget asserts the content.max_bytes rule on every row of
-// the database (one span): stored bodies total at most redLimit, a truncated row
-// exists exactly when want.
 func redSpanBudget(t *testing.T, path string, wantTruncated bool) []redRow {
 	t.Helper()
 	rows := redContent(t, path)
@@ -367,8 +350,6 @@ func redSpanBudget(t *testing.T, path string, wantTruncated bool) []redRow {
 	return rows
 }
 
-// TestRedactionMaxBytesAcrossLogEvents: the GenAI log events of one span share
-// one content.max_bytes budget, not one budget each.
 func TestRedactionMaxBytesAcrossLogEvents(t *testing.T) {
 	t.Parallel()
 	const limit, records = redLimit, 5
@@ -390,8 +371,6 @@ func TestRedactionMaxBytesAcrossLogEvents(t *testing.T) {
 	assert.Len(t, rows[1].body, 20)
 }
 
-// TestRedactionMaxBytesLogsBeforeSpan: log events arrive in separate requests
-// (separate batches) before their span, whose attribute content comes last.
 func TestRedactionMaxBytesLogsBeforeSpan(t *testing.T) {
 	t.Parallel()
 	const limit = redLimit
@@ -411,8 +390,6 @@ func TestRedactionMaxBytesLogsBeforeSpan(t *testing.T) {
 	assert.Equal(t, 80, rows[2].bytes)
 }
 
-// TestRedactionMaxBytesSpanThenLogs: span attribute content first, then log
-// events in later requests; a log event past the limit is an empty marker.
 func TestRedactionMaxBytesSpanThenLogs(t *testing.T) {
 	t.Parallel()
 	const limit = redLimit
@@ -440,8 +417,6 @@ func TestRedactionMaxBytesSpanThenLogs(t *testing.T) {
 	assert.Empty(t, rows[3].body)
 }
 
-// TestRedactionMaxBytesResentLogsNotCounted: a re-sent log event is ignored by
-// the idempotent insert and does not consume the budget again.
 func TestRedactionMaxBytesResentLogsNotCounted(t *testing.T) {
 	t.Parallel()
 	const limit = redLimit
@@ -458,8 +433,6 @@ func TestRedactionMaxBytesResentLogsNotCounted(t *testing.T) {
 	assert.Len(t, rows[1].body, 40)
 }
 
-// TestRedactionMaxBytesCountsRedactedText: the budget counts the stored text,
-// after redaction (a replacement longer than the match counts in full).
 func TestRedactionMaxBytesCountsRedactedText(t *testing.T) {
 	t.Parallel()
 	const limit = redLimit

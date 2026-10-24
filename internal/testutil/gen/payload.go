@@ -18,19 +18,14 @@ import (
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 )
 
-// Defaults of the LPE-02 payload.
 const (
-	// PayloadSpans is the number of spans in one LPE-02 request.
-	PayloadSpans = 512
-	// PayloadAttrBytes is the mean JSON size of the non-content attributes of a span.
-	PayloadAttrBytes = 600
-	// payloadContentFraction is the share of llm spans that carry content attributes.
+	PayloadSpans           = 512
+	PayloadAttrBytes       = 600
 	payloadContentFraction = 0.10
 	plContentMin           = 2 << 10
 	plContentMax           = 8 << 10
 )
 
-// Content attribute keys; they are excluded from the attribute size measure.
 const (
 	PayloadInputKey  = "gen_ai.input.messages"
 	PayloadOutputKey = "gen_ai.output.messages"
@@ -46,7 +41,6 @@ const (
 	plRetrieval
 )
 
-// plKinds is the number of span kinds.
 const plKinds = 5
 
 const (
@@ -54,7 +48,6 @@ const (
 	plAnthropic = "anthropic"
 )
 
-// plShare is the span mix, in the order of the plKind constants.
 var plShare = [plKinds]float64{plChain: 0.15, plAgent: 0.10, plLLM: 0.40, plTool: 0.25, plRetrieval: 0.10}
 
 var (
@@ -72,23 +65,18 @@ var (
 		"customer ticket update system plan step reason final value record")
 )
 
-// Payload generates deterministic LPE-02 export requests. Request(seq) depends only
-// on the seed, the run id, seq and now, so it is safe for concurrent use.
+// Payload generates deterministic OTLP export requests.
 type Payload struct {
-	seed  uint64
-	runID uint32
-	// SpansPerRequest is the number of spans per request (default PayloadSpans).
+	seed            uint64
+	runID           uint32
 	SpansPerRequest int
 }
 
-// NewPayload returns a generator for one run. Span and trace ids are unique across
-// the requests of a run and carry runID and the request sequence number.
+// NewPayload returns a generator for one run.
 func NewPayload(seed uint64, runID uint32) *Payload {
 	return &Payload{seed: seed, runID: runID, SpansPerRequest: PayloadSpans}
 }
 
-// PayloadCounts splits n spans over the kinds in the order chain, agent, llm,
-// tool, retrieval by the largest-remainder method.
 func PayloadCounts(n int) (chain, agent, llm, tool, retrieval int) {
 	var c [plKinds]int
 	var rem [plKinds]float64
@@ -112,8 +100,6 @@ func PayloadCounts(n int) (chain, agent, llm, tool, retrieval int) {
 	return c[plChain], c[plAgent], c[plLLM], c[plTool], c[plRetrieval]
 }
 
-// PayloadSeq reports the run id and request sequence number carried by the trace ids
-// of a request produced by Request.
 func PayloadSeq(req *coltrace.ExportTraceServiceRequest) (runID, seq uint32, ok bool) {
 	rs := req.GetResourceSpans()
 	if len(rs) == 0 || len(rs[0].GetScopeSpans()) == 0 || len(rs[0].ScopeSpans[0].GetSpans()) == 0 {
@@ -126,7 +112,7 @@ func PayloadSeq(req *coltrace.ExportTraceServiceRequest) (runID, seq uint32, ok 
 	return binary.BigEndian.Uint32(id[2:]), binary.BigEndian.Uint32(id[6:]), true
 }
 
-// Request returns request number seq with all spans ending at or before now.
+// Request returns request number seq.
 func (p *Payload) Request(seq uint32, now time.Time) *coltrace.ExportTraceServiceRequest {
 	n := p.SpansPerRequest
 	if n <= 0 {
@@ -140,7 +126,7 @@ func (p *Payload) Request(seq uint32, now time.Time) *coltrace.ExportTraceServic
 	var tidx uint16
 	for off := 0; off < n; {
 		size := min(4+r.IntN(17), n-off)
-		group := make([]int, size) // indexes into kinds, containers first
+		group := make([]int, size)
 		for i := range group {
 			group[i] = off + i
 		}
@@ -175,7 +161,6 @@ func (p *Payload) Request(seq uint32, now time.Time) *coltrace.ExportTraceServic
 	}}}
 }
 
-// plShuffledKinds returns n span kinds in the exact mix, shuffled.
 func plShuffledKinds(n int, r *rand.Rand) []plKind {
 	chain, agent, llm, tool, retr := PayloadCounts(n)
 	kinds := make([]plKind, 0, n)
@@ -188,7 +173,6 @@ func plShuffledKinds(n int, r *rand.Rand) []plKind {
 	return kinds
 }
 
-// plContentSet picks exactly round(10% of llm) llm spans to carry content.
 func plContentSet(kinds []plKind, r *rand.Rand) map[int]bool {
 	var llmIdx []int
 	for i, k := range kinds {
@@ -217,7 +201,6 @@ func plResource(r *rand.Rand) *resourcepb.Resource {
 	}}
 }
 
-// plContainersFirst stably moves chain and agent spans to the front of group.
 func plContainersFirst(group []int, kinds []plKind) {
 	out := make([]int, 0, len(group))
 	for _, i := range group {
@@ -233,7 +216,6 @@ func plContainersFirst(group []int, kinds []plKind) {
 	copy(group, out)
 }
 
-// traceID layout: 0x4c 0x02, runID, seq, trace index in request, 4 random bytes.
 func (p *Payload) traceID(seq uint32, idx uint16, r *rand.Rand) []byte {
 	b := make([]byte, 16)
 	b[0], b[1] = 0x4c, 0x02
@@ -244,7 +226,6 @@ func (p *Payload) traceID(seq uint32, idx uint16, r *rand.Rand) []byte {
 	return b
 }
 
-// spanID layout: runID (low 16 bits), seq, span index in request (1-based).
 func (p *Payload) spanID(seq uint32, idx int) []byte {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint16(b, uint16(p.runID)) //nolint:gosec // low 16 bits by design.
@@ -338,7 +319,6 @@ func (p *Payload) fillSpan(sp *tracepb.Span, kind plKind, content bool, now time
 		plStr("user.id", fmt.Sprintf("user-%d", r.IntN(500))),
 		plStr("deployment.region", "eu-west-"+strconv.Itoa(1+r.IntN(3))),
 	)
-	// The target is uniform in [540, 660], so the mean is PayloadAttrBytes.
 	target := PayloadAttrBytes - 60 + r.IntN(121)
 	attrs = plPad(attrs, target, r)
 	if content {
@@ -351,8 +331,6 @@ func (p *Payload) fillSpan(sp *tracepb.Span, kind plKind, content bool, now time
 	sp.Attributes = attrs
 }
 
-// PayloadAttrSize returns the JSON size of the key to value map of the non-content
-// attributes of a span.
 func PayloadAttrSize(sp *tracepb.Span) int {
 	m := make(map[string]any, len(sp.Attributes))
 	for _, kv := range sp.Attributes {
@@ -372,14 +350,11 @@ func PayloadAttrSize(sp *tracepb.Span) int {
 	return len(b)
 }
 
-// plPad appends hex-valued attributes until the JSON size is target bytes (or the
-// base already exceeds it).
 func plPad(attrs []*commonpb.KeyValue, target int, r *rand.Rand) []*commonpb.KeyValue {
 	sp := &tracepb.Span{Attributes: attrs}
 	for i := 0; ; i++ {
 		need := target - PayloadAttrSize(sp)
 		key := fmt.Sprintf("app.meta.%02d", i)
-		// Each added attribute costs len(key)+6 bytes (quotes, colon, comma, quotes).
 		overhead := len(key) + 6
 		if need <= overhead {
 			return sp.Attributes
@@ -387,7 +362,7 @@ func plPad(attrs []*commonpb.KeyValue, target int, r *rand.Rand) []*commonpb.Key
 		l := need - overhead
 		if l > 64 {
 			l = 64
-			if need-(overhead+l) < overhead+1 { // avoid a remainder too small to fill
+			if need-(overhead+l) < overhead+1 {
 				l = need - overhead - overhead - 1
 			}
 		}
@@ -395,7 +370,6 @@ func plPad(attrs []*commonpb.KeyValue, target int, r *rand.Rand) []*commonpb.Key
 	}
 }
 
-// plMessages returns a gen_ai messages JSON document of exactly size bytes.
 func plMessages(role string, size int, r *rand.Rand) string {
 	prefix := `[{"role":"` + role + `","parts":[{"type":"text","content":"`
 	const suffix = `"}]}]`

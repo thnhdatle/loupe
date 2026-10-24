@@ -53,7 +53,6 @@ var (
 		[]string{"version", "commit", "go_version"}, nil)
 )
 
-// collector emits everything that is read from snapshots at scrape time.
 type collector struct{ m *Metrics }
 
 func (c *collector) Describe(ch chan<- *prometheus.Desc) {
@@ -117,8 +116,6 @@ func (c *collector) Collect(ch chan<- prometheus.Metric) {
 
 type writerView struct{ inserted, duplicates, storeErr, shutdown int64 }
 
-// emitReasons emits every fixed reason (zero when unseen) plus "other" when seen,
-// summing the signals; extra adds writer-side counts per reason.
 func emitReasons(counter func(*prometheus.Desc, int64, ...string), d *prometheus.Desc,
 	seen map[reasonKey]int64, reasons []string, extra map[string]int64,
 ) {
@@ -162,7 +159,6 @@ func emitRetention(counter func(*prometheus.Desc, int64, ...string), gauge func(
 	gauge(descDBSize, s.DBSizeBytes)
 }
 
-// buildInfoCollector emits loupe_build_info{version,commit,go_version} 1.
 type buildInfoCollector BuildInfo
 
 func (buildInfoCollector) Describe(ch chan<- *prometheus.Desc) { ch <- descBuildInfo }
@@ -171,10 +167,6 @@ func (b buildInfoCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(descBuildInfo, prometheus.GaugeValue, 1, b.Version, b.Commit, b.GoVersion)
 }
 
-// WrapQueue returns an ingest.Queue that records every AddCount in m before
-// delegating. The Ingestor sends all of its counters (queue-full outcomes,
-// receiver-side limit rejections via Ingestor.Count, discarded signals, stripped
-// content) through the queue, so wrapping it once covers them all.
 func WrapQueue(q ingest.Queue, m *Metrics) ingest.Queue { return &countingQueue{Queue: q, m: m} }
 
 type countingQueue struct {

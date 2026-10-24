@@ -19,7 +19,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/config"
 )
 
-// Job states reported by the admin API.
 const (
 	jobDone   = "done"
 	jobFailed = "failed"
@@ -33,8 +32,6 @@ const (
 
 var errAdminAPI = errors.New("admin api")
 
-// adminFlags are the flags shared by the commands that call the admin API of
-// a running server.
 type adminFlags struct {
 	server    string
 	tokenFile string
@@ -47,8 +44,6 @@ func (f *adminFlags) register(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&f.offline, "offline", false, "run locally holding the database lock (server stopped)")
 }
 
-// dialHost returns host:port of a listen address with an unspecified host
-// replaced by loopback, so that it can be dialled.
 func dialHost(listen string) (string, error) {
 	host, port, err := net.SplitHostPort(listen)
 	if err != nil {
@@ -68,7 +63,6 @@ type adminClient struct {
 	poll  time.Duration
 }
 
-// newAdminClient resolves the server URL and the token from the flags and cfg.
 func newAdminClient(cfg *config.Config, f adminFlags) (*adminClient, error) {
 	base := strings.TrimRight(f.server, "/")
 	if base == "" {
@@ -97,7 +91,6 @@ func newAdminClient(cfg *config.Config, f adminFlags) (*adminClient, error) {
 	return c, nil
 }
 
-// jobView is the job document of the admin API.
 type jobView struct {
 	JobID string `json:"job_id"`
 	Kind  string `json:"kind"`
@@ -106,7 +99,6 @@ type jobView struct {
 	Error string `json:"error"`
 }
 
-// runJob starts a job with POST path and waits until it is done or failed.
 func (c *adminClient) runJob(ctx context.Context, path string, body any) (jobView, error) {
 	var payload io.Reader = http.NoBody
 	if body != nil {
@@ -145,7 +137,6 @@ func (c *adminClient) runJob(ctx context.Context, path string, body any) (jobVie
 	}
 }
 
-// call describes one admin API request and the status it expects.
 type call struct {
 	method, path string
 	body         io.Reader

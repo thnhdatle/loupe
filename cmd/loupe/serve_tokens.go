@@ -20,9 +20,6 @@ const (
 	tokenFileMode       = 0o600
 )
 
-// readTokens reads a tokens file: one token per line, blank lines ignored.
-// An empty path means no tokens. A file without any token is an error, so a
-// typo cannot silently disable authentication.
 func readTokens(path string) ([]string, error) {
 	if path == "" {
 		return nil, nil
@@ -43,9 +40,6 @@ func readTokens(path string) ([]string, error) {
 	return tokens, nil
 }
 
-// ensureAPIToken writes a random 256-bit token (mode 0600) to api.token_file
-// when api.generate_token is set and the file does not exist yet. It reports
-// whether it created the file.
 func ensureAPIToken(cfg *config.Config) (bool, error) {
 	if !cfg.API.GenerateToken || cfg.API.TokenFile == "" {
 		return false, nil
@@ -74,7 +68,6 @@ func ensureAPIToken(cfg *config.Config) (bool, error) {
 	return true, nil
 }
 
-// loadTLS returns the TLS config of a listener, or nil when TLS is off.
 func loadTLS(t config.TLS) (*tls.Config, error) {
 	if !t.Enabled() {
 		return nil, nil //nolint:nilnil // nil means plain TCP.
@@ -86,7 +79,6 @@ func loadTLS(t config.TLS) (*tls.Config, error) {
 	return &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12}, nil
 }
 
-// isLoopback reports whether a host:port listen address is loopback only.
 func isLoopback(addr string) bool {
 	host, _, err := net.SplitHostPort(addr)
 	if err != nil {

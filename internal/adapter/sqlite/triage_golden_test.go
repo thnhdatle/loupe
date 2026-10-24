@@ -30,75 +30,58 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// The usage-dedupe golden test of routed calls: the contract fixtures of testdata/contracts/triage
-// (recorded from examples/triage, or hand-written, see the README there) go through the real
-// write path (OTLP/HTTP receiver, ingestor, writer, SQLite store) and the queries service.
-
 const triageDir = "../../../testdata/contracts/triage"
 
-// triageCase is one fixture with what the write path must store for it.
 type triageCase struct {
-	file string
-	// duplicates are the names of the spans flagged usage_duplicate, with the span count of
-	// each name, per the usage-dedupe rule.
-	duplicates map[string]int
-	spans      int
-	input      int64
-	output     int64
-	llmCalls   int64
-	embCalls   int64
-	llmModels  map[string]int64 // calls per model of kind llm
-	embModels  map[string]int64
-	// cost with the "strong" price table (fake-strong and fake-embed priced, fake-small not) and
-	// with the "all" table (fake-small priced too), and the unpriced span counts of the trace.
+	file                        string
+	duplicates                  map[string]int
+	spans                       int
+	input                       int64
+	output                      int64
+	llmCalls                    int64
+	embCalls                    int64
+	llmModels                   map[string]int64
+	embModels                   map[string]int64
 	costStrong, costAll         int64
 	unpricedStrong, unpricedAll int64
 }
 
 var triageCases = []triageCase{
-	{ // (a) caller llm -> HTTP client -> route request -> one attempt
+	{
 		file: "chat-single-attempt", spans: 4, input: 2, output: 6, llmCalls: 1,
 		duplicates: map[string]int{"route request": 1, "chat fake-small": 1},
 		llmModels:  map[string]int64{"fake-small": 1},
-		// 2 in x 0.10 + 6 out x 0.20 USD per Mtok.
 		costStrong: 0, unpricedStrong: 1, costAll: 1400,
 	},
-	{ // (b) a failed attempt without usage, then the successful one
+	{
 		file: "chat-fallback", spans: 5, input: 4, output: 6, llmCalls: 1,
 		duplicates: map[string]int{"route request": 1, "chat fake-small": 1, "chat fake-strong": 1},
 		llmModels:  map[string]int64{"fake-strong": 1},
-		// 4 in x 1.25 + 6 out x 10 USD per Mtok; Triage's own triage.cost_usd is 6.5e-05.
 		costStrong: 65000, costAll: 65000,
 	},
-	{ // (b) cut stream: the cut attempt has no usage, the continuation reports the totals
+	{
 		file: "chat-stream-continuation", spans: 5, input: 30, output: 40, llmCalls: 1,
 		duplicates: map[string]int{"route request": 1, "chat fake-small": 1, "chat fake-strong": 1},
 		llmModels:  map[string]int64{"fake-small": 1},
-		// Triage's triage.cost_usd is 0.0004375: the unpriced caller (response model fake-small)
-		// takes the priced continuation's cost through the unpriced route request. With
-		// fake-small priced the caller keeps its own cost: 30 x 0.10 + 40 x 0.20.
 		costStrong: 437500, costAll: 11000,
 	},
-	{ // (b) cut stream where both attempts report usage, summing to the route request's
+	{
 		file: "chat-stream-continuation-usage", spans: 5, input: 30, output: 40, llmCalls: 1,
 		duplicates: map[string]int{"route request": 1, "chat fake-small": 1, "chat fake-strong": 1},
 		llmModels:  map[string]int64{"fake-small": 1},
-		// The attempt with tokens on fake-small is unpriced, so the unpriced caller stays unpriced.
 		costStrong: 0, unpricedStrong: 1, costAll: 11000,
 	},
-	{ // (c) caller embedding -> HTTP client -> route request (embedding) -> one attempt
+	{
 		file: "embeddings-chain", spans: 4, input: 4, embCalls: 1,
 		duplicates: map[string]int{"route request": 1, "embeddings fake-embed": 1},
 		embModels:  map[string]int64{"fake-embed": 1},
-		// 4 in x 0.02 USD per Mtok.
 		costStrong: 80, costAll: 80,
 	},
-	{ // (d) mf's embeddings span under a chat route request: its own call
+	{
 		file: "embeddings-under-chat-route", spans: 5, input: 8, output: 6, llmCalls: 1, embCalls: 1,
 		duplicates: map[string]int{"route request": 1, "chat fake-small": 1},
 		llmModels:  map[string]int64{"fake-small": 1},
 		embModels:  map[string]int64{"fake-embed": 1},
-		// the embedding: 6 in x 0.02; the caller as in (a).
 		costStrong: 120, unpricedStrong: 1, costAll: 1520,
 	},
 }
@@ -110,7 +93,6 @@ func (c triageCase) cost(table string) (nanos, unpriced int64) {
 	return c.costStrong, c.unpricedStrong
 }
 
-// triageTables are the user price tables: USD per Mtok as integer nano-USD.
 func triageTables(tb testing.TB) map[string]*cost.PriceTable {
 	tb.Helper()
 	from := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -134,7 +116,6 @@ func triageTables(tb testing.TB) map[string]*cost.PriceTable {
 	return out
 }
 
-// triagePipeline is the write path of cmd/loupe serve without the listeners.
 type triagePipeline struct {
 	store   *sqlite.Store
 	path    string
@@ -170,7 +151,6 @@ func newTriagePipeline(t *testing.T, table *cost.PriceTable) *triagePipeline {
 	}
 }
 
-// send posts one OTLP/JSON traces request; with sync_ack it returns once the batch committed.
 func (p *triagePipeline) send(t *testing.T, body []byte) {
 	t.Helper()
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/v1/traces", bytes.NewReader(body))
@@ -180,14 +160,12 @@ func (p *triagePipeline) send(t *testing.T, body []byte) {
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 }
 
-// otlpSpan is one span of a fixture with the resource and scope it came from.
 type otlpSpan struct {
 	resource, scope json.RawMessage
 	span            map[string]any
 	id, parent      string
 }
 
-// field returns a string field of an OTLP/JSON object, empty when absent.
 func field(m map[string]any, key string) string {
 	v, _ := m[key].(string)
 	return v
@@ -219,7 +197,6 @@ func loadTriageFixture(t *testing.T, name string) (all []byte, spans []otlpSpan)
 	return all, spans
 }
 
-// request wraps spans into OTLP/JSON requests, one per span, in the given order.
 func requests(t *testing.T, spans []otlpSpan, order []int) [][]byte {
 	t.Helper()
 	out := make([][]byte, 0, len(order))
@@ -235,7 +212,6 @@ func requests(t *testing.T, spans []otlpSpan, order []int) [][]byte {
 	return out
 }
 
-// depth is the number of ancestors of span i within the fixture.
 func depth(spans []otlpSpan, i int) int {
 	parents := map[string]string{}
 	for _, s := range spans {
@@ -248,8 +224,6 @@ func depth(spans []otlpSpan, i int) int {
 	return d
 }
 
-// arrivalOrders are the orders each trace's spans are sent in, one request per span: as
-// recorded, reversed, ancestors first, attempts (leaves) first and seeded shuffles.
 func arrivalOrders(spans []otlpSpan) map[string][]int {
 	idx := make([]int, len(spans))
 	for i := range idx {
@@ -296,7 +270,6 @@ func (p *triagePipeline) trace(t *testing.T, spans []otlpSpan) query.TraceDetail
 	return d
 }
 
-// assertCase checks everything expected of one stored fixture.
 func (p *triagePipeline) assertCase(t *testing.T, c triageCase, table string, spans []otlpSpan) {
 	t.Helper()
 	d := p.trace(t, spans)
@@ -313,7 +286,6 @@ func (p *triagePipeline) assertCase(t *testing.T, c triageCase, table string, sp
 	assert.Equal(t, wantCost, d.Summary.CostNanos, "cost counted once")
 	assert.Equal(t, int(wantUnpriced), d.Summary.UnpricedSpans, "unpriced spans")
 
-	// The call is counted at the caller span: the root of the fixture trace.
 	root := d.Spans[0]
 	for _, sp := range d.Spans {
 		if sp.ParentSpanID == "" {
@@ -359,7 +331,6 @@ func (p *triagePipeline) assertCase(t *testing.T, c triageCase, table string, sp
 	assert.Equal(t, orEmpty(c.embModels), gotEmb, "embedding calls per model")
 }
 
-// kindRequests is the overview's request count of one span kind.
 func kindRequests(t *testing.T, q *queries.Service, from, to time.Time, kind trace.Kind) int64 {
 	t.Helper()
 	ov, err := q.Overview(context.Background(), query.OverviewRequest{
@@ -392,9 +363,6 @@ func TestTriageContracts_UsageDedupeGolden(t *testing.T) {
 	}
 }
 
-// TestTriageContracts_ArrivalOrderIndependent sends every span of a fixture as its own request
-// in several orders: the stored spans, traces, sessions and rollups must equal those of
-// the whole trace in one request, and the fixture expectations hold.
 func TestTriageContracts_ArrivalOrderIndependent(t *testing.T) {
 	t.Parallel()
 	tables := triageTables(t)
@@ -419,8 +387,6 @@ func TestTriageContracts_ArrivalOrderIndependent(t *testing.T) {
 	}
 }
 
-// TestTriageContracts_AllTracesTogether stores every fixture in one database: the totals are
-// the sums of the calls, whatever order the traces' spans arrive in.
 func TestTriageContracts_AllTracesTogether(t *testing.T) {
 	t.Parallel()
 	table := triageTables(t)["strong"]

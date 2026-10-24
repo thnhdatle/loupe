@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-// authenticator checks bearer tokens in constant time.
 type authenticator struct {
 	digests [][sha256.Size]byte
 }
@@ -21,13 +20,8 @@ func newAuthenticator(tokens []string) *authenticator {
 	return a
 }
 
-// enabled reports whether any token is configured.
 func (a *authenticator) enabled() bool { return len(a.digests) > 0 }
 
-// check accepts a request carrying one of the tokens in Authorization: Bearer or
-// X-Loupe-Token, or any request when authentication is disabled. Tokens are hashed
-// first so the comparison time does not depend on length, and every token is
-// compared so it does not depend on which one matched.
 func (a *authenticator) check(authorization, xToken string) bool {
 	if !a.enabled() {
 		return true

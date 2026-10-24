@@ -27,7 +27,6 @@ func wantCSP(nonce string) string {
 		"connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 }
 
-// pageURLs lists a URL for every page and fragment the dashboard renders.
 var pageURLs = []string{
 	"/", "/?range=30d", "/traces", "/traces/" + traceID, "/traces/" + traceID + "?span=a000000000000002",
 	"/traces/" + traceID + "?span=a000000000000003", "/sessions", "/sessions/sess-1", "/models", "/login", "/nope",

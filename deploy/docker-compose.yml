@@ -32,8 +32,8 @@ services:
       start_period: 5s
     restart: unless-stopped
 
-  # Fake OpenAI-compatible provider (from Triage), used by the examples and the
-  # acceptance suite. RAYLD_FAKELLM_IMAGE selects another image, for example a
+  # Fake OpenAI-compatible provider (from Triage), used by the examples.
+  # RAYLD_FAKELLM_IMAGE selects another image, for example a
   # local thnhdatle/fakellm:dev.
   fakellm:
     image: ${RAYLD_FAKELLM_IMAGE:-ghcr.io/thnhdatle/fakellm:v0.1.0}

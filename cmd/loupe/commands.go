@@ -16,6 +16,7 @@ import (
 	"github.com/thnhdatle/loupe/internal/config"
 )
 
+// newRootCmd builds the loupe command tree.
 func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "loupe",
@@ -53,7 +54,6 @@ func printVersion(w io.Writer) error {
 	return err
 }
 
-// commandContext returns the command context cancelled by SIGINT or SIGTERM.
 func commandContext(cmd *cobra.Command) (context.Context, context.CancelFunc) {
 	return signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 }

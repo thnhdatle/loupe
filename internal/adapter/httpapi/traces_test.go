@@ -98,7 +98,6 @@ func TestListTraces_BadParameters(t *testing.T) {
 			h := newHandler(t, q, nil, httpapi.Options{})
 			rec := get(t, h, "/v1/traces?"+tc.query)
 			if tc.code == "invalid_limit" {
-				// Rejected by the use case; the fake lets it through, so check the forwarded value.
 				assert.Equal(t, -1, q.traceReq.Page.Limit)
 				return
 			}

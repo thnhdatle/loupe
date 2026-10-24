@@ -8,12 +8,6 @@ set -euo pipefail
 #
 #   -d DATE  effective_from and as_of (UTC midnight); default: today (UTC)
 #   -n       omit provider so entries match every provider
-#
-# Per-token costs are converted to USD per million tokens by shifting the decimal
-# point of the shortest decimal text of the JSON number, never by float arithmetic.
-# Limitation: LiteLLM stores a double, so the text is whatever the shortest
-# round-trip form of that double is; prices that need more than 9 fractional
-# digits per Mtok are truncated (with a warning on stderr).
 
 url="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
 date="$(date -u +%Y-%m-%d)"
@@ -42,7 +36,6 @@ fi
 filter='
 def zeros($n): if $n <= 0 then "" else "0" * $n end;
 
-# Decimal text of a per-token cost, multiplied by 10^6 by moving the point.
 def per_mtok:
   (tojson | ascii_downcase
    | capture("^(?<m>[0-9]*\\.?[0-9]*)(e(?<e>[+-]?[0-9]+))?$")) as $c

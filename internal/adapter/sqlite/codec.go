@@ -8,13 +8,8 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-// maxContentBytes bounds a decompressed content body; bodies are limited by
-// content.max_bytes (default 32 KiB per span, see WithContentMaxBytes), so
-// this only guards against a corrupt blob.
 const maxContentBytes = 64 << 20
 
-// codec compresses content bodies with zstd. Both halves
-// are safe for concurrent use.
 type codec struct {
 	enc *zstd.Encoder
 	dec *zstd.Decoder
@@ -34,7 +29,6 @@ func newCodec(readers int) (*codec, error) {
 	return &codec{enc: enc, dec: dec}, nil
 }
 
-// compress returns nil for a nil body (a content marker).
 func (c *codec) compress(body []byte) []byte {
 	if body == nil {
 		return nil
@@ -56,9 +50,6 @@ func (c *codec) decompress(blob []byte) ([]byte, error) {
 	return out, nil
 }
 
-// size returns the decompressed length of a body blob, from the zstd frame
-// header when it records the content size (EncodeAll does), else by
-// decompressing.
 func (c *codec) size(blob []byte) (int, error) {
 	var h zstd.Header
 	if err := h.Decode(blob); err == nil && h.HasFCS && h.FrameContentSize <= maxContentBytes {

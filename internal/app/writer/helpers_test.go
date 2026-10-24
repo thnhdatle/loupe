@@ -28,7 +28,6 @@ const (
 	wait     = testutil.DefaultTimeout
 )
 
-// spans returns a batch of n spans with ids unique within the test binary.
 func spans(n int) *trace.Batch {
 	b := &trace.Batch{Resources: []trace.Resource{{ID: 7, Attributes: []byte(`{}`)}}}
 	for range n {
@@ -62,8 +61,6 @@ func newFixture(t *testing.T, opts ...writer.Option) *fixture {
 	return &fixture{t: t, store: store, clk: clk, w: w}
 }
 
-// run starts the writer; the returned stop cancels it and returns Run's error.
-// Cleanup stops it if the test did not.
 func (f *fixture) run() (stop func() error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	errc := make(chan error, 1)
@@ -91,7 +88,6 @@ func (f *fixture) enqueue(n int, ack bool) <-chan error {
 	return ch
 }
 
-// advanceUntil advances the fake clock by step until cond holds.
 func (f *fixture) advanceUntil(step time.Duration, cond func() bool) {
 	f.t.Helper()
 	testutil.Eventually(f.t, func() bool {
@@ -103,7 +99,6 @@ func (f *fixture) advanceUntil(step time.Duration, cond func() bool) {
 	}, wait)
 }
 
-// spanTotal counts spans over committed batches.
 func spanTotal(bs []trace.Batch) int {
 	n := 0
 	for i := range bs {
@@ -112,7 +107,6 @@ func spanTotal(bs []trace.Batch) int {
 	return n
 }
 
-// receive waits for one value on ch.
 func receive(t *testing.T, ch <-chan error) error {
 	t.Helper()
 	select {

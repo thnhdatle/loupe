@@ -7,10 +7,8 @@ import (
 	"time"
 )
 
-// State is the lifecycle state of an admin job.
 type State string
 
-// Job states.
 const (
 	StatePending State = "pending"
 	StateRunning State = "running"
@@ -18,10 +16,8 @@ const (
 	StateFailed  State = "failed"
 )
 
-// Kind names an admin operation.
 type Kind string
 
-// Job kinds.
 const (
 	KindRecompute  Kind = "pricing_recompute"
 	KindVacuum     Kind = "vacuum"
@@ -29,33 +25,28 @@ const (
 	KindUserDelete Kind = "user_delete"
 )
 
-// JobStatus is a snapshot of an admin job. It never contains user data.
 type JobStatus struct {
-	ID    string
-	Kind  Kind
-	State State
-	// Rows counts rows processed so far (spans repriced, rows deleted, pages freed).
-	Rows int
-	// Error is the failure text when State is StateFailed.
+	ID         string
+	Kind       Kind
+	State      State
+	Rows       int
 	Error      string
 	CreatedAt  time.Time
-	StartedAt  time.Time // zero while pending
-	FinishedAt time.Time // zero until done or failed
+	StartedAt  time.Time
+	FinishedAt time.Time
 }
 
-// registry keeps the most recent jobs, bounded by max. mu protects every field.
 type registry struct {
 	mu    sync.Mutex
 	max   int
 	jobs  map[string]*JobStatus
-	order []string // oldest first
+	order []string
 }
 
 func newRegistry(maxJobs int) *registry {
 	return &registry{max: maxJobs, jobs: make(map[string]*JobStatus)}
 }
 
-// add registers a pending job, evicting the oldest finished job when full.
 func (r *registry) add(st JobStatus) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -88,7 +79,6 @@ func (r *registry) get(id string) (JobStatus, error) {
 	return *st, nil
 }
 
-// update applies f to the job under the lock.
 func (r *registry) update(id string, f func(*JobStatus)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

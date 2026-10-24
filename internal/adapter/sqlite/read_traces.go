@@ -14,17 +14,10 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// sortIndexMinCoverage is the share of the stored traces' time span a list
-// range must cover for a cost or duration sort to walk the sort index (see
-// sortIndexPlan).
 const sortIndexMinCoverage = 0.25
 
-// traceBoundsSQL reads the oldest and newest trace start; each subquery is a
-// single traces_start endpoint lookup.
 const traceBoundsSQL = "SELECT (SELECT min(start_ns) FROM traces), (SELECT max(start_ns) FROM traces)"
 
-// sortIndex is the index ordered by a non-start sort column ("" for start,
-// which the range on traces_start already serves).
 func sortIndex(s query.Sort) string {
 	switch s {
 	case query.SortCost:
@@ -38,14 +31,6 @@ func sortIndex(s query.Sort) string {
 	}
 }
 
-// sortIndexPlan reports whether a cost or duration sort should walk the sort
-// index (traces_cost, traces_duration) in order, checking the time range per
-// row and stopping after limit+1 matches, instead of reading every trace of
-// the range from traces_start and sorting them. Without statistics the
-// planner always picks the latter, which reads the whole range (benchmark query q4: all
-// 100k traces of 30 days). Walking wins when the range covers a large share
-// of the stored traces: about limit/coverage rows are visited. Session and
-// user filters keep their own indexes.
 func (s *Store) sortIndexPlan(ctx context.Context, f *query.TraceFilter, srt query.Sort) (bool, error) {
 	if sortIndex(srt) == "" || f.SessionID != "" || f.UserID != "" {
 		return false, nil
@@ -60,8 +45,6 @@ func (s *Store) sortIndexPlan(ctx context.Context, f *query.TraceFilter, srt que
 	return rangeCoverage(f.From, f.To, lo.Int64, hi.Int64) >= sortIndexMinCoverage, nil
 }
 
-// rangeCoverage returns the share of [lo, hi] that [from, to) covers; a zero
-// bound is open.
 func rangeCoverage(from, to time.Time, lo, hi int64) float64 {
 	a, b := lo, hi+1
 	if !from.IsZero() {
@@ -76,7 +59,6 @@ func rangeCoverage(from, to time.Time, lo, hi int64) float64 {
 	return float64(b-a) / float64(hi-lo+1)
 }
 
-// sortColumn maps a sort key to its traces column (a fixed identifier, never user input).
 func sortColumn(s query.Sort) (string, error) {
 	switch s {
 	case query.SortStart:
@@ -103,7 +85,6 @@ func (r *traceRow) sortKey(s query.Sort) int64 {
 	}
 }
 
-// where collects SQL conditions and their arguments.
 type where struct {
 	conds []string
 	args  []any
@@ -121,8 +102,6 @@ func (w *where) sql() string {
 	return strings.Join(w.conds, " AND ")
 }
 
-// prefixUpper returns the smallest string greater than every string with
-// prefix p, and false when there is none (p is all 0xff bytes).
 func prefixUpper(p string) (string, bool) {
 	b := []byte(p)
 	for i := len(b) - 1; i >= 0; i-- {
@@ -134,8 +113,6 @@ func prefixUpper(p string) (string, bool) {
 	return "", false
 }
 
-// spanExists returns the EXISTS condition requiring one span of the trace to
-// match every set field of f.
 func spanExists(f query.SpanFilter) (string, []any) {
 	var w where
 	w.add("s.trace_id = t.trace_id")
@@ -194,11 +171,6 @@ func traceWhere(f *query.TraceFilter) where {
 	return w
 }
 
-// impliedTraceConds adds trace-level conditions that every trace with a span
-// matching f satisfies, so the span probe runs only for candidate traces: a
-// span with status error sets traces.has_error, and a trace lasts at least as
-// long as each of its spans (min start to max end). Neither changes the
-// result; they only skip probes (LPE-04 benchmark queries q2, q3).
 func impliedTraceConds(w *where, f query.SpanFilter) {
 	if f.Status == trace.StatusError {
 		w.add("t.has_error = 1")
@@ -208,8 +180,6 @@ func impliedTraceConds(w *where, f query.SpanFilter) {
 	}
 }
 
-// traceKeyset decodes a trace-list cursor and appends the condition selecting
-// rows after it in the given order.
 func traceKeyset(w *where, col, cursor string, srt query.Sort, o query.Order) error {
 	c, err := query.DecodeCursor(cursor, srt, o)
 	if err != nil {
@@ -238,7 +208,7 @@ func direction(o query.Order) (string, error) {
 	}
 }
 
-// ListTraces implements query.TraceReader.
+// ListTraces returns a page of traces matching the filter.
 func (s *Store) ListTraces(
 	ctx context.Context, f query.TraceFilter, srt query.Sort, o query.Order, p query.Page,
 ) (query.TracePage, error) {
@@ -257,9 +227,6 @@ func (s *Store) ListTraces(
 	return tracePage(items, limit, srt, o), nil
 }
 
-// listTracesSQL builds the trace-list query; it fetches limit+1 rows to know
-// whether a next page exists. walkSort forces the sort column's index
-// (sortIndexPlan); it is ignored for the start sort.
 func listTracesSQL(
 	f *query.TraceFilter, srt query.Sort, o query.Order, p query.Page, walkSort bool,
 ) (string, []any, int, error) {
@@ -293,13 +260,11 @@ func listTracesSQL(
 	return q, append(w.args, limit+1), limit, nil
 }
 
-// Queries of GetTrace.
 const (
 	getTraceSQL    = "SELECT " + traceCols + " FROM traces WHERE trace_id = ?"
 	traceSpansTail = "s.trace_id = ? ORDER BY s.start_ns, s.span_id"
 )
 
-// tracedRow is a trace row with its id.
 type tracedRow struct {
 	id  trace.ID
 	row traceRow
@@ -318,7 +283,6 @@ func tracePage(items []tracedRow, limit int, srt query.Sort, o query.Order) quer
 	return page
 }
 
-// queryer is a *sql.DB or *sql.Tx.
 type queryer interface {
 	QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row
@@ -349,7 +313,6 @@ func (s *Store) queryTraces(ctx context.Context, db queryer, q string, args ...a
 	return out, nil
 }
 
-// prefixed qualifies every column of a column list with p.
 func prefixed(p, cols string) string {
 	names := splitCols(cols)
 	for i := range names {
@@ -358,8 +321,7 @@ func prefixed(p, cols string) string {
 	return strings.Join(names, ", ")
 }
 
-// GetTrace implements query.TraceReader. The trace row, its spans and its
-// content are read in one read transaction, so they are consistent.
+// GetTrace returns one trace with its spans.
 func (s *Store) GetTrace(ctx context.Context, id trace.ID, includeContent bool) (query.TraceDetail, error) {
 	tx, err := s.r.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {

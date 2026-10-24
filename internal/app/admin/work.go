@@ -10,12 +10,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// step runs one bounded transaction and reports the rows it handled and whether
-// the work is finished.
 type step func(ctx context.Context) (n int, done bool, err error)
 
-// loop submits one writer job per step until the work is done, so that ingest
-// batches interleave between them.
 func (s *Service) loop(ctx context.Context, name string, add func(int), st step) error {
 	for {
 		var n int
@@ -34,8 +30,6 @@ func (s *Service) loop(ctx context.Context, name string, add func(int), st step)
 	}
 }
 
-// checkpoint runs the final job after work that frees pages: one bounded
-// incremental vacuum step, then wal_checkpoint(TRUNCATE).
 func (s *Service) checkpoint(ctx context.Context) error {
 	return s.runner.Submit(ctx, trace.Job{Name: jobCheckpoint, Run: func(ctx context.Context) error {
 		if _, err := s.store.IncrementalVacuum(ctx, s.batch); err != nil {

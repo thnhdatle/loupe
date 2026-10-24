@@ -15,9 +15,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// listFixture stores 6 traces: trace n starts n minutes after the anchor,
-// costs 100·(n mod 3) and lasts n seconds; odd traces have an error span of
-// service "api" and model "gpt-b"; trace 6 has a span named "agent.plan".
 func listFixture(t *testing.T) *sqlite.Store {
 	t.Helper()
 	s := openStore(t)
@@ -122,7 +119,6 @@ func TestStore_ListTraces_SortsAndPages(t *testing.T) {
 		want  []string
 	}{
 		{name: "start asc", sort: query.SortStart, order: query.OrderAsc, want: tids(1, 2, 3, 4, 5, 6)},
-		// Cost ties break on trace id in the same direction.
 		{name: "cost desc", sort: query.SortCost, order: query.OrderDesc, want: tids(5, 2, 4, 1, 6, 3)},
 		{name: "duration desc", sort: query.SortDuration, order: query.OrderDesc, want: tids(5, 3, 1, 6, 4, 2)},
 	}
@@ -144,9 +140,6 @@ func TestStore_ListTraces_SortsAndPages(t *testing.T) {
 	}
 }
 
-// TestStore_ListTraces_SortPlans covers both plans of a cost or duration sort:
-// ranges covering most stored traces walk the sort index, narrow ones read the
-// range and sort it; the results must not depend on the plan.
 func TestStore_ListTraces_SortPlans(t *testing.T) {
 	t.Parallel()
 	s := listFixture(t)

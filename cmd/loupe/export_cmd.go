@@ -50,7 +50,6 @@ func newExportCmd() *cobra.Command {
 	return cmd
 }
 
-// exportRange resolves the --from/--to flags to a request.
 func exportRange(from, to string, now time.Time) (query.ExportRequest, error) {
 	var fp, tp *time.Time
 	if from != "" {
@@ -74,8 +73,7 @@ func exportRange(from, to string, now time.Time) (query.ExportRequest, error) {
 	return query.ExportRequest{From: start, To: end}, nil
 }
 
-// runExport streams the traces of req from the database at dbPath to the file
-// out, or to stdout when out is empty.
+// runExport streams the traces of a range from the database to a file or stdout.
 func runExport(ctx context.Context, dbPath string, req query.ExportRequest, out string, stdout io.Writer) (err error) {
 	w := stdout
 	if out != "" {

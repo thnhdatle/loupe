@@ -13,8 +13,7 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// Service implements the query use cases. It is safe for concurrent use when
-// its readers are.
+// Service implements the query use cases.
 type Service struct {
 	traces   query.TraceReader
 	sessions query.SessionReader
@@ -24,21 +23,15 @@ type Service struct {
 	gauges   Gauges
 }
 
-// Gauges reports live ingest gauges that are not stored.
 type Gauges interface {
-	// QueueDepth returns the spans and bytes waiting in the ingest queue.
 	QueueDepth() (spans, bytes int64)
-	// InflightBytes returns the bytes of requests being processed.
 	InflightBytes() int64
 }
 
-// Option configures a Service.
 type Option func(*Service)
 
-// WithGauges makes IngestStats report live queue and in-flight gauges.
 func WithGauges(g Gauges) Option { return func(s *Service) { s.gauges = g } }
 
-// Readers are the read ports a Service queries.
 type Readers struct {
 	Traces   query.TraceReader
 	Sessions query.SessionReader
@@ -46,7 +39,7 @@ type Readers struct {
 	Stats    query.StatsReader
 }
 
-// New returns a Service reading from r; clk supplies "now" for default ranges.
+// New returns a Service that reads from r.
 func New(r Readers, clk clock.Clock, opts ...Option) *Service {
 	s := &Service{traces: r.Traces, sessions: r.Sessions, rollups: r.Rollups, stats: r.Stats, clock: clk}
 	for _, o := range opts {
@@ -55,8 +48,6 @@ func New(r Readers, clk clock.Clock, opts ...Option) *Service {
 	return s
 }
 
-// TraceListRequest selects one page of traces. A zero From and To means the
-// last 24 hours; Sort and Order default to start time, descending.
 type TraceListRequest struct {
 	Filter query.TraceFilter
 	Sort   query.Sort
@@ -64,8 +55,7 @@ type TraceListRequest struct {
 	Page   query.Page
 }
 
-// ListTraces returns one page of trace summaries. It returns errors wrapping
-// the query.ErrInvalid* sentinels for invalid input.
+// ListTraces returns one page of trace summaries.
 func (s *Service) ListTraces(ctx context.Context, req TraceListRequest) (query.TracePage, error) {
 	f := req.Filter
 	var err error
@@ -94,9 +84,7 @@ func (s *Service) ListTraces(ctx context.Context, req TraceListRequest) (query.T
 	return page, nil
 }
 
-// GetTrace returns one trace with its spans. Content bodies are included only
-// when includeContent is true. An unparsable id yields trace.ErrInvalidID and
-// an unknown one trace.ErrNotFound.
+// GetTrace returns one trace with its spans.
 func (s *Service) GetTrace(ctx context.Context, id string, includeContent bool) (query.TraceDetail, error) {
 	tid, err := trace.ParseID(id)
 	if err != nil {
@@ -109,14 +97,11 @@ func (s *Service) GetTrace(ctx context.Context, id string, includeContent bool) 
 	return d, nil
 }
 
-// SessionListRequest selects one page of sessions by last activity. A zero
-// From and To means the last 24 hours.
 type SessionListRequest struct {
 	Filter query.SessionFilter
 	Page   query.Page
 }
 
-// ListSessions returns one page of session summaries, most recent activity first.
 func (s *Service) ListSessions(ctx context.Context, req SessionListRequest) (query.SessionPage, error) {
 	f := req.Filter
 	var err error
@@ -134,9 +119,6 @@ func (s *Service) ListSessions(ctx context.Context, req SessionListRequest) (que
 	return page, nil
 }
 
-// GetSession returns a session with one page of its traces ordered by start
-// ascending. An empty id yields query.ErrInvalidFilter and an unknown one
-// trace.ErrNotFound.
 func (s *Service) GetSession(ctx context.Context, id string, p query.Page) (query.SessionDetail, error) {
 	if id == "" {
 		return query.SessionDetail{}, fmt.Errorf("%w: empty session id", query.ErrInvalidFilter)
@@ -152,7 +134,6 @@ func (s *Service) GetSession(ctx context.Context, id string, p query.Page) (quer
 	return d, nil
 }
 
-// resolve fills zero bounds with the default range ending now.
 func (s *Service) resolve(from, to time.Time) (time.Time, time.Time, error) {
 	var fp, tp *time.Time
 	if !from.IsZero() {
@@ -172,8 +153,6 @@ func normalizePage(p query.Page) (query.Page, error) {
 	return query.Page{Limit: n, Cursor: p.Cursor}, nil
 }
 
-// TopSpans returns the most expensive or slowest llm spans in the range. Zero
-// From and To mean the last 24 hours; By defaults to cost and Limit to 50.
 func (s *Service) TopSpans(ctx context.Context, req query.TopSpansRequest) ([]query.TopSpan, error) {
 	var err error
 	if req.From, req.To, err = s.resolve(req.From, req.To); err != nil {
@@ -197,8 +176,6 @@ func (s *Service) TopSpans(ctx context.Context, req query.TopSpansRequest) ([]qu
 	return out, nil
 }
 
-// IngestStats returns the stored ingest counters, with the queue and in-flight
-// gauges filled in when WithGauges was given.
 func (s *Service) IngestStats(ctx context.Context) (query.IngestStats, error) {
 	st, err := s.stats.IngestTotals(ctx)
 	if err != nil {
@@ -211,10 +188,6 @@ func (s *Service) IngestStats(ctx context.Context) (query.IngestStats, error) {
 	return st, nil
 }
 
-// IngestInRange returns the ingest counters of the hours overlapping
-// [from, to), widened outward to whole hours (ingest_stats is hourly). Counters
-// of the current hour lag until the writer folds them, so the numbers can be
-// slightly below /v1/ingest/stats. The gauge fields are left zero.
 func (s *Service) IngestInRange(ctx context.Context, from, to time.Time) (query.IngestStats, error) {
 	if !to.After(from) {
 		return query.IngestStats{}, fmt.Errorf("queries: ingest in range: %w", query.ErrInvalidRange)

@@ -12,7 +12,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/rollup"
 )
 
-// rawTx runs fn in a writer transaction and commits it.
 func (s *Store) rawTx(ctx context.Context, fn func(tx *sql.Tx) error) error {
 	tx, err := s.w.BeginTx(ctx, nil)
 	if err != nil {
@@ -28,7 +27,6 @@ func (s *Store) rawTx(ctx context.Context, fn func(tx *sql.Tx) error) error {
 	return nil
 }
 
-// Row selections of the retention classes; each takes (cutoff, limit).
 const (
 	oldContentSQL    = `SELECT id FROM span_content WHERE time_ns < ? ORDER BY time_ns LIMIT ?`
 	orphanContentSQL = `SELECT c.id FROM span_content c WHERE c.has_span = 0 AND c.inserted_ns < ?
@@ -43,9 +41,7 @@ const (
 		AND NOT EXISTS (SELECT 1 FROM spans WHERE trace_id = ?1)`
 )
 
-// Purge implements retention.Store. The orphan-content rule ages rows by
-// their insert time (inserted_ns, store clock) rather than their event time,
-// so log-event content whose span arrives late is not deleted early.
+// Purge deletes rows of one retention class older than cutoff.
 func (s *Store) Purge(ctx context.Context, c retention.Class, cutoff time.Time, limit int) (int, error) {
 	if limit < 1 {
 		return 0, fmt.Errorf("%w: purge limit %d", ErrInvalidOption, limit)
@@ -97,13 +93,11 @@ func execCount(ctx context.Context, tx *sql.Tx, q string, args ...any) (int, err
 	return int(n), nil
 }
 
-// bucketTable is a table purged by bucket start: rows with bucket ≤ last.
 type bucketTable struct {
 	name, bucketCol, keyCols string
 	last                     int64
 }
 
-// selectSQL selects the keys of the oldest rows with bucket ≤ ? (limit ?).
 func (t bucketTable) selectSQL() string {
 	return "SELECT " + t.keyCols + " FROM " + t.name + " WHERE " + t.bucketCol + " <= ? ORDER BY " + t.bucketCol +
 		" LIMIT ?"
@@ -113,8 +107,6 @@ func (t bucketTable) deleteSQL() string {
 	return "DELETE FROM " + t.name + " WHERE (" + t.keyCols + ") IN (" + t.selectSQL() + ")"
 }
 
-// purgeBuckets deletes the oldest qualifying rows of each table in turn,
-// sharing limit across them.
 func purgeBuckets(ctx context.Context, tx *sql.Tx, limit int, tables []bucketTable) (int, error) {
 	total := 0
 	for _, t := range tables {
@@ -136,8 +128,6 @@ type spanRef struct {
 	spanID  []byte
 }
 
-// purgeSpans deletes the oldest spans started before cut, their content and
-// the trace rows left without spans. Only spans count towards limit.
 func purgeSpans(ctx context.Context, tx *sql.Tx, cut int64, limit int) (int, error) {
 	refs, err := oldestSpans(ctx, tx, cut, limit)
 	if err != nil {
@@ -181,7 +171,6 @@ func oldestSpans(ctx context.Context, tx *sql.Tx, cut int64, limit int) ([]spanR
 	return refs, nil
 }
 
-// Size implements retention.Store: main file + WAL + SHM, missing files count 0.
 func (s *Store) Size(context.Context) (int64, error) {
 	var total int64
 	for _, p := range []string{s.path, s.path + "-wal", s.path + "-shm"} {
@@ -194,14 +183,10 @@ func (s *Store) Size(context.Context) (int64, error) {
 	return total, nil
 }
 
-// FreeDisk returns the bytes available on the file system holding the database
-// (a retention.FreeDiskFunc).
 func (s *Store) FreeDisk(context.Context) (int64, error) {
 	return freeDiskBytes(s.path)
 }
 
-// IncrementalVacuum implements retention.Store: it releases at most maxPages
-// free pages and returns the free pages left.
 func (s *Store) IncrementalVacuum(ctx context.Context, maxPages int) (int, error) {
 	_, after, err := s.incrementalVacuum(ctx, maxPages)
 	return after, err
@@ -223,8 +208,6 @@ func (s *Store) incrementalVacuum(ctx context.Context, maxPages int) (before, af
 	return before, after, nil
 }
 
-// Checkpoint implements retention.Store: wal_checkpoint(TRUNCATE); busy
-// reports that a reader kept it from completing.
 func (s *Store) Checkpoint(ctx context.Context) (bool, error) {
 	var busy, logPages, done int
 	if err := s.w.QueryRowContext(ctx, "PRAGMA wal_checkpoint(TRUNCATE)").Scan(&busy, &logPages, &done); err != nil {

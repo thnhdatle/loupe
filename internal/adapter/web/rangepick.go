@@ -10,10 +10,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/query"
 )
 
-// formTimeLayout is what <input type="datetime-local"> submits; read as UTC.
 const formTimeLayout = "2006-01-02T15:04"
 
-// hourlyMax is the longest range charted by the hour; longer ones use days.
 const hourlyMax = 7 * 24 * time.Hour
 
 type preset struct {
@@ -30,25 +28,21 @@ var presets = []preset{
 	{"30d", "30 d", 30 * 24 * time.Hour},
 }
 
-// presetLink is one entry of the time-range picker.
 type presetLink struct {
 	Key     string
 	Label   string
 	Current bool
 }
 
-// rangeView is the resolved time range of a page and what its picker shows.
 type rangeView struct {
 	From, To   time.Time
-	Key        string // preset key, or "custom"
+	Key        string
 	Presets    []presetLink
 	CustomFrom string
 	CustomTo   string
 	Interval   query.Interval
 }
 
-// resolveRange reads "range" (a preset) or "from" and "to" (UTC, datetime-local
-// or RFC 3339) from the query.
 func resolveRange(q url.Values, now time.Time) (rangeView, error) {
 	from, to := q.Get("from"), q.Get("to")
 	var rv rangeView
@@ -71,7 +65,6 @@ func resolveRange(q url.Values, now time.Time) (rangeView, error) {
 	return rv, nil
 }
 
-// presetRange resolves a preset key; an unknown key means the default.
 func presetRange(key string, now time.Time) rangeView {
 	span := 24 * time.Hour
 	for _, p := range presets {
@@ -109,7 +102,6 @@ func parseCustom(from, to string, now time.Time) (time.Time, time.Time, error) {
 	return f, t, nil
 }
 
-// parseOptionalTime parses RFC 3339 or datetime-local; empty yields the zero time.
 func parseOptionalTime(s string) (time.Time, error) {
 	if s == "" {
 		return time.Time{}, nil

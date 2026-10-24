@@ -86,14 +86,11 @@ func (c *client) get(ctx context.Context, path string, q url.Values, out any) er
 
 var errNotReady = errors.New("trace not complete yet")
 
-// wanted says when a read of the service's traces is complete.
 type wanted struct {
 	traces, minSpans int
 	content          bool
 }
 
-// fetchAll returns the details of the service's traces, oldest first, once there are at least
-// w.traces of them and each has w.minSpans spans. One wanted trace reads the newest only.
 func fetchAll(ctx context.Context, c *client, service string, w wanted) (int, []detail, error) {
 	var page struct {
 		Data []summary `json:"data"`
@@ -131,7 +128,6 @@ type node struct {
 	depth int
 }
 
-// walk returns the spans depth first, siblings ordered by start time then name.
 func walk(spans []span) []node {
 	ids := make(map[string]bool, len(spans))
 	for _, s := range spans {
@@ -193,8 +189,6 @@ func render(traces int, d detail, withContent bool) string {
 	return b.String()
 }
 
-// renderAll renders one trace like render; several traces are listed under one "traces:" line,
-// each after a "trace N" header line.
 func renderAll(traces int, ds []detail, withContent bool) string {
 	if len(ds) == 1 {
 		return render(traces, ds[0], withContent)
@@ -242,8 +236,6 @@ func run() error {
 	start := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
 	defer cancel()
-	// A summary is printed once two reads 500 ms apart agree: spans and log events of one run
-	// can reach Loupe in separate requests.
 	var last string
 	var lastErr error
 	for {

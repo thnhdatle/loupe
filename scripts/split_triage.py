@@ -2,9 +2,6 @@
 """Splits captured OTLP/JSON trace requests into one file per trace.
 
 usage: split_triage.py CAPTURE_DIR OUT_DIR
-
-Every trace holds the example app's spans and Triage's spans. Traces are named after the
-scenarios of examples/triage/app.py, in the order the app runs them.
 """
 
 import glob
@@ -37,7 +34,6 @@ def main(capture: str, out: str) -> None:
         return min(int(s["startTimeUnixNano"]) for rs in traces[tid] for ss in rs["scopeSpans"] for s in ss["spans"])
 
     def from_app(tid: str) -> bool:
-        # Triage also traces requests that carry no trace context (its readiness probe).
         attrs = [a for rs in traces[tid] for a in rs["resource"]["attributes"] if a["key"] == "service.name"]
         return any(a["value"]["stringValue"].startswith("example-triage") for a in attrs)
 

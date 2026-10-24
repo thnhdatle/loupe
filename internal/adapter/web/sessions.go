@@ -10,7 +10,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/query"
 )
 
-// sessionsData is the data of the Sessions list.
 type sessionsData struct {
 	base
 	Range    rangeView
@@ -40,7 +39,6 @@ func (h *Handler) sessionList(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// sessionNext keeps the range and user filters of q and sets the cursor.
 func sessionNext(path string, q url.Values, cursor string) string {
 	if cursor == "" {
 		return ""
@@ -55,13 +53,11 @@ func sessionNext(path string, q url.Values, cursor string) string {
 	return path + "?" + n.Encode()
 }
 
-// timelineRow is one trace of a session timeline.
 type timelineRow struct {
 	query.TraceSummary
 	X, W int
 }
 
-// sessionDetailData is the data of the session timeline page.
 type sessionDetailData struct {
 	base
 	Summary  query.SessionSummary

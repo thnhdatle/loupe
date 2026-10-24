@@ -9,8 +9,7 @@ Set up, test and submit a change to Loupe. For larger changes, open an issue fir
 - For `make lint`: golangci-lint 2.14.0, hadolint, shellcheck, gitleaks, kubeconform.
 - For `make bootstrap`: also goreleaser.
 - For `make security`: govulncheck, trivy.
-- For `make acceptance` and `make examples` only: Node >= 20 (CI pins Node LTS 24),
-  Playwright (`@playwright/test` 1.64.x), uv, Docker.
+- For `make examples` only: Node >= 20 (CI pins Node LTS 24), uv, Docker.
 
 `scripts/ci-install-tools.sh` lists the pinned versions and installs them on Linux.
 
@@ -23,28 +22,23 @@ make bootstrap   # check tools, download Go modules, pull compose images, set gi
 ```sh
 scripts/ci-install-tools.sh                         # installs into ~/.local/bin (must be on PATH)
 curl -LsSf https://astral.sh/uv/install.sh | sh     # uv
-npx playwright install --with-deps                  # Playwright browsers and system libraries
 ```
 
 - Install Go from <https://go.dev/dl/> first, then the tools, then run `make bootstrap`.
 - Install Docker Engine and add your user to the docker group.
 - Install Node with your package manager or nvm.
-- Acceptance needs at least 30 GB free disk ([acceptance/README.md](acceptance/README.md)).
 
 ## Makefile targets
 
-`bootstrap, generate, fmt, lint, test, test-integration, coverage, mutation,
-acceptance, bench, fuzz, examples, quickstart-test, security, build, docker, up,
-down, ci, release-check, release-dry`. Each prints a one-line PASS/FAIL.
+`bootstrap, generate, fmt, lint, test, test-integration, coverage, fuzz, examples,
+quickstart-test, security, build, docker, up, down, ci, release-check, release-dry`. Each prints a one-line PASS/FAIL.
 
 | Level | Command |
 |---|---|
 | Unit (race, goleak) | `make test` |
 | Integration | `make test-integration` |
 | Coverage threshold | `make coverage` |
-| Mutation | `make mutation` |
 | Fuzz | `make fuzz FUZZTIME=30s` |
-| Acceptance | `make acceptance` (`ONLY=LPE-01,LPE-04` for a subset) |
 | Everything CI runs first | `make ci` |
 
 ## Commit format
@@ -53,7 +47,7 @@ One line only, no body or trailers: `<type>(<scope>): <summary>`. The commit-msg
 anything else.
 
 - Type: feat, fix, perf, refactor, test, docs, build, ci, chore.
-- Scope: a package or area, for example otlp, writer, sqlite, api, web, bench, deps.
+- Scope: a package or area, for example otlp, writer, sqlite, api, web, deps.
 - Breaking change: `feat(api)!: ...`.
 - Summary: imperative, lowercase, no trailing period, whole line <= 72 chars.
 

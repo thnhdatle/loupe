@@ -22,9 +22,8 @@ import (
 )
 
 const (
-	interval = 200 * time.Millisecond
-	wait     = testutil.DefaultTimeout
-	// gpt-4o-mini at 0.15 / 0.60 USD per Mtok: 1000 in + 500 out = 450,000 nano-USD.
+	interval  = 200 * time.Millisecond
+	wait      = testutil.DefaultTimeout
 	wantNanos = 450_000
 )
 
@@ -47,8 +46,6 @@ func newIDs() (trace.ID, trace.SpanID) {
 	return tid, sid
 }
 
-// chatSpan is an OTel GenAI chat span with usage; extra attributes replace
-// same-key defaults or are appended.
 func chatSpan(extra ...trace.Attr) trace.RawSpan {
 	tid, sid := newIDs()
 	attrs := []trace.Attr{
@@ -86,7 +83,6 @@ func calculator(t *testing.T) *cost.Calculator {
 	return calc
 }
 
-// fixture wires an Ingestor to a real writer over a fake store and fake clock.
 type fixture struct {
 	t     *testing.T
 	store *fakespanstore.Store
@@ -112,7 +108,6 @@ func newFixture(t *testing.T, wopts []writer.Option, iopts ...ingest.Option) *fi
 	return &fixture{t: t, store: store, clk: clk, w: w, in: in}
 }
 
-// run starts the writer; stop cancels it and returns Run's error.
 func (f *fixture) run() (stop func() error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	errc := make(chan error, 1)
@@ -133,7 +128,6 @@ func (f *fixture) run() (stop func() error) {
 	return stop
 }
 
-// flushUntil advances the fake clock by one batch interval at a time until cond holds.
 func (f *fixture) flushUntil(cond func() bool) {
 	f.t.Helper()
 	testutil.Eventually(f.t, func() bool {
@@ -149,7 +143,6 @@ func (f *fixture) count(sig trace.Signal, r trace.Result, reason string) int64 {
 	return f.store.Counts()[fakespanstore.CountKey{Signal: sig, Result: r, Reason: reason}]
 }
 
-// result is the outcome of an asynchronous ingest call.
 type result struct {
 	res trace.IngestResult
 	err error

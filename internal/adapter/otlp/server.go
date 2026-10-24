@@ -17,11 +17,9 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// errTooManySpans is returned for a traces request above max_spans_per_request.
 var errTooManySpans = trace.ErrTooManySpans
 
-// Server holds what the HTTP and gRPC receivers share: limits, auth, the in-flight
-// limiter and the ingestor. It is safe for concurrent use.
+// Server holds what the HTTP and gRPC receivers share.
 type Server struct {
 	cfg      Config
 	ing      trace.Ingestor
@@ -31,7 +29,7 @@ type Server struct {
 	shutting atomic.Bool
 }
 
-// NewServer returns a Server feeding ing and accounting in-flight bytes in lim.
+// NewServer returns a Server that feeds ing.
 func NewServer(cfg Config, ing trace.Ingestor, lim *ingest.InflightLimiter) (*Server, error) {
 	if ing == nil || lim == nil {
 		return nil, fmt.Errorf("%w: ingestor and in-flight limiter are required", ErrInvalidConfig)
@@ -52,20 +50,14 @@ func NewServer(cfg Config, ing trace.Ingestor, lim *ingest.InflightLimiter) (*Se
 	}, nil
 }
 
-// BeginShutdown makes both receivers answer new requests with HTTP 503 / gRPC
-// UNAVAILABLE. RunHTTP and RunGRPC call it when their context ends.
 func (s *Server) BeginShutdown() { s.shutting.Store(true) }
 
-// count records a receiver-side outcome.
 func (s *Server) count(sig trace.Signal, res trace.Result, reason string, n int64) {
 	if n > 0 {
 		s.ing.Count(trace.IngestCount{Signal: sig, Result: res, Reason: reason, N: n})
 	}
 }
 
-// exportTraces converts and ingests one traces request, shared by HTTP and gRPC.
-// Errors are errTooManySpans, trace.ErrOverloaded, trace.ErrShuttingDown or other
-// ingest failures; the transports map them to statuses.
 func (s *Server) exportTraces(ctx context.Context, req *coltrace.ExportTraceServiceRequest) (
 	*coltrace.ExportTraceServiceResponse, error,
 ) {
@@ -91,7 +83,6 @@ func (s *Server) exportTraces(ctx context.Context, req *coltrace.ExportTraceServ
 	return resp, nil
 }
 
-// exportLogs converts and ingests one logs request.
 func (s *Server) exportLogs(ctx context.Context, req *collogs.ExportLogsServiceRequest) (
 	*collogs.ExportLogsServiceResponse, error,
 ) {
@@ -109,7 +100,6 @@ func (s *Server) exportLogs(ctx context.Context, req *collogs.ExportLogsServiceR
 	return resp, nil
 }
 
-// exportMetrics counts the data points of a metrics request and discards it.
 func (s *Server) exportMetrics(req *colmetrics.ExportMetricsServiceRequest) *colmetrics.ExportMetricsServiceResponse {
 	s.count(trace.SignalMetrics, trace.ResultDiscarded, trace.ReasonNotStored, countDataPoints(req.GetResourceMetrics()))
 	return &colmetrics.ExportMetricsServiceResponse{}
@@ -126,5 +116,4 @@ func partialMessage(msg string, invalid int) string {
 	return msg + "; " + inv
 }
 
-// isOverloaded reports whether err asks the client to retry later.
 func isOverloaded(err error) bool { return errors.Is(err, trace.ErrOverloaded) }

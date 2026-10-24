@@ -16,7 +16,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// v2Migrations is the embedded schema plus a second migration.
 func v2Migrations(t *testing.T) fs.FS {
 	t.Helper()
 	initial, err := fs.ReadFile(sqlite.EmbeddedMigrations(), "00001_initial.sql")
@@ -66,7 +65,6 @@ func TestMigrations_BackupBeforeMigrate(t *testing.T) {
 		"the backup holds the schema before the migration")
 	require.NoError(t, s.Close())
 
-	// Downgrades are refused.
 	_, err := sqlite.Open(ctx, path)
 	require.ErrorIs(t, err, sqlite.ErrDowngrade)
 }

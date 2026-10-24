@@ -16,9 +16,6 @@ import (
 
 const pageSize = 4096
 
-// Fake tables. Rows carry their own size so that the fake can model the
-// database file: deleted bytes move to the free list and the WAL until
-// IncrementalVacuum and Checkpoint release them.
 type (
 	fakeSpan struct {
 		id, session string
@@ -48,24 +45,23 @@ type purgeCall struct {
 	n      int
 }
 
-// fakeStore is an in-memory retention.Store. It is safe for concurrent use.
 type fakeStore struct {
-	mu       sync.Mutex // guards every field below
+	mu       sync.Mutex
 	spans    []fakeSpan
 	content  []fakeContent
 	sessions []fakeSession
 	buckets  []fakeBucket
-	live     int64 // bytes of stored rows
-	free     int64 // bytes on the free list (always whole pages)
-	wal      int64 // bytes in the WAL
+	live     int64
+	free     int64
+	wal      int64
 
 	purgeErr   map[retention.Class]error
 	sizeErr    error
 	vacuumErr  error
 	checkErr   error
 	busy       bool
-	stuckPages int                     // when > 0, IncrementalVacuum always reports this many pages left
-	onPurge    func(c retention.Class) // called at the start of each Purge, with mu held
+	stuckPages int
+	onPurge    func(c retention.Class)
 
 	purges      []purgeCall
 	sizeCalls   int
@@ -162,15 +158,12 @@ func (s *fakeStore) counts() (sizeCalls, vacuumCalls int) {
 	return s.sizeCalls, s.vacuumCalls
 }
 
-// sizeNow is the modelled file size: live rows, free list and WAL.
 func (s *fakeStore) sizeNow() int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.live + s.free + s.wal
 }
 
-// drop removes up to limit rows of rows matching ok, oldest first, and
-// returns the survivors and the removed rows.
 func drop[T any](rows []T, at func(T) time.Time, ok func(T) bool, limit int) (kept, gone []T) {
 	var cand []int
 	for i, r := range rows {
@@ -245,7 +238,6 @@ func (s *fakeStore) purgeContent(c retention.Class, cutoff time.Time, limit int)
 	return len(gone)
 }
 
-// purgeSpans also deletes the content of the deleted spans, as the contract says.
 func (s *fakeStore) purgeSpans(cutoff time.Time, limit int) int {
 	kept, gone := drop(s.spans, func(r fakeSpan) time.Time { return r.start },
 		func(r fakeSpan) bool { return r.start.Before(cutoff) }, limit)
@@ -322,15 +314,11 @@ func (s *fakeStore) Checkpoint(context.Context) (bool, error) {
 	return false, nil
 }
 
-// fakeRunner is a trace.JobRunner that runs jobs one at a time on the
-// submitting goroutine, like the writer runs them on its own.
 type fakeRunner struct {
-	mu       sync.Mutex // serialises jobs, like the single writer
-	names    []string   // guarded by mu
-	shutdown bool       // guarded by mu; Submit returns trace.ErrShuttingDown
-	// block, when set, is called before each job with the job's context; the
-	// job runs only if it returns nil.
-	block func(ctx context.Context, name string) error
+	mu       sync.Mutex
+	names    []string
+	shutdown bool
+	block    func(ctx context.Context, name string) error
 }
 
 var _ trace.JobRunner = (*fakeRunner)(nil)
@@ -368,7 +356,6 @@ func (r *fakeRunner) stop() {
 	r.shutdown = true
 }
 
-// logBuffer is an io.Writer safe for a logger in another goroutine.
 type logBuffer struct {
 	mu  sync.Mutex
 	buf bytes.Buffer

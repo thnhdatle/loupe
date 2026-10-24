@@ -10,10 +10,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// maxExactFloat is the largest integer a float64 holds exactly.
 const maxExactFloat = 1 << 53
 
-// attrIndex maps attribute keys to values; the first occurrence of a key wins.
 type attrIndex map[string]trace.Value
 
 func newAttrIndex(attrs []trace.Attr) attrIndex {
@@ -26,16 +24,13 @@ func newAttrIndex(attrs []trace.Attr) attrIndex {
 	return ix
 }
 
-// intResult is the outcome of resolving an integer field.
 type intResult struct {
 	N       int64
-	Key     string // accepted key the value came from
-	Present bool   // some accepted key was present, parseable or not
-	OK      bool   // a value parsed
+	Key     string
+	Present bool
+	OK      bool
 }
 
-// intField resolves an integer field: the first accepted key, in precedence
-// order, whose value is an int, an integral double or a numeric string.
 func (ix attrIndex) intField(f Field) intResult {
 	var r intResult
 	for _, k := range keysOf(f) {
@@ -52,8 +47,6 @@ func (ix attrIndex) intField(f Field) intResult {
 	return r
 }
 
-// strField resolves a string field: the first accepted key with a non-empty
-// string (or integer) value.
 func (ix attrIndex) strField(f Field) string {
 	for _, k := range keysOf(f) {
 		if s, ok := scalarString(ix[k]); ok {
@@ -63,13 +56,11 @@ func (ix attrIndex) strField(f Field) string {
 	return ""
 }
 
-// str returns the non-empty string value of key.
 func (ix attrIndex) str(key string) string {
 	s, _ := scalarString(ix[key])
 	return s
 }
 
-// scalarString returns a non-empty string, or the decimal form of an int.
 func scalarString(v trace.Value) (string, bool) {
 	switch v.Type {
 	case trace.ValueString:
@@ -83,8 +74,6 @@ func scalarString(v trace.Value) (string, bool) {
 	}
 }
 
-// intValue converts an int, integral double or numeric string to a count.
-// Negative or non-integral values are rejected.
 func intValue(v trace.Value) (int64, bool) {
 	switch v.Type {
 	case trace.ValueInt:

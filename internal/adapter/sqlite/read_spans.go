@@ -11,14 +11,12 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// spanViewCols are the spans columns read for API views.
 const spanViewCols = `s.trace_id, s.span_id, s.parent_span_id, s.resource_id, s.service, s.name, s.kind, s.status,
   s.start_ns, s.end_ns, s.model, s.provider,
   s.input_tokens, s.output_tokens, s.cache_read_tokens, s.cache_write_tokens, s.reasoning_tokens,
   s.has_usage, s.cost_nanos, s.eff_cost_nanos, s.session_id, s.user_id, s.error_type, s.flags,
   s.content_stripped, s.attributes`
 
-// storedSpan is a span as read for display, with its effective cost.
 type storedSpan struct {
 	span    trace.Span
 	effCost trace.Cost
@@ -56,10 +54,6 @@ func scanStoredSpan(sc scanner) (storedSpan, error) {
 	return out, nil
 }
 
-// view returns the API view of the span. A kept span shows its effective
-// cost, which includes the cost it took from its duplicates; a
-// duplicate shows its own cost. A span with a content marker reports
-// content_stripped.
 func (s *storedSpan) view(includeContent bool) query.SpanView {
 	v := query.NewSpanView(&s.span, includeContent)
 	if !s.span.Flags.Has(trace.FlagUsageDuplicate) {
@@ -77,7 +71,6 @@ func (s *storedSpan) view(includeContent bool) query.SpanView {
 	return v
 }
 
-// readSpans reads spans with the given WHERE … ORDER BY tail.
 func (s *Store) readSpans(ctx context.Context, db queryer, tail string, args ...any) ([]storedSpan, error) {
 	rows, err := db.QueryContext(ctx, spanViewSQL(tail), args...)
 	if err != nil {
@@ -98,9 +91,6 @@ func (s *Store) readSpans(ctx context.Context, db queryer, tail string, args ...
 	return out, nil
 }
 
-// attachContent reads the content parts of trace id and attaches them to the
-// spans; parts of spans not stored (orphans) are skipped. Bodies are read and
-// decompressed only when includeContent is set.
 func (s *Store) attachContent(ctx context.Context, db queryer, id trace.ID, spans []storedSpan, inc bool) error {
 	rows, err := db.QueryContext(ctx, contentSQL(inc), id[:])
 	if err != nil {
@@ -123,7 +113,6 @@ func (s *Store) attachContent(ctx context.Context, db queryer, id trace.ID, span
 	return nil
 }
 
-// contentSQL selects the content parts of one trace; bodies only when inc.
 func contentSQL(inc bool) string {
 	body := "NULL"
 	if inc {
@@ -134,7 +123,6 @@ func contentSQL(inc bool) string {
 		ORDER BY span_id, time_ns, source, key, part`
 }
 
-// spanViewSQL selects spans for display with the given WHERE … tail.
 func spanViewSQL(tail string) string { return "SELECT " + spanViewCols + " FROM spans s WHERE " + tail }
 
 func spanIndex(spans []storedSpan) map[trace.SpanID]int {
@@ -162,7 +150,6 @@ func (s *Store) scanPart(sc scanner, tid trace.ID) (trace.ContentPart, error) {
 	switch {
 	case marker:
 	case blob == nil:
-		// Content not requested: a non-nil empty body keeps it from looking like a marker.
 		p.Body = []byte{}
 	default:
 		if p.Body, err = s.codec.decompress(blob); err != nil {

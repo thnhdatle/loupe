@@ -10,35 +10,25 @@ import (
 	"time"
 )
 
-// Defaults for the receiver limits.
 const (
 	DefaultMaxRequestBytes    = 16 << 20
 	DefaultMaxSpansPerRequest = 10_000
 	DefaultShutdownTimeout    = 30 * time.Second
 )
 
-// ErrInvalidConfig reports an unusable Config or missing dependency.
 var ErrInvalidConfig = errors.New("otlp: invalid config")
 
-// Config holds the receiver settings. The zero value is invalid; start from DefaultConfig.
+// Config holds the receiver settings. Start from DefaultConfig.
 type Config struct {
-	// MaxRequestBytes caps one request after decompression (receiver.max_request_bytes).
-	MaxRequestBytes int64
-	// MaxSpansPerRequest caps the spans of one traces request (receiver.max_spans_per_request).
+	MaxRequestBytes    int64
 	MaxSpansPerRequest int
-	// Tokens are the accepted bearer tokens. Empty disables authentication; the caller
-	// decides whether that is allowed for the listener (receiver.allow_unauthenticated).
-	Tokens []string
-	// ShutdownTimeout bounds the drain of in-flight requests in RunHTTP and RunGRPC.
-	ShutdownTimeout time.Duration
-	// HTTPTLS and GRPCTLS enable TLS on the respective listener when non-nil.
-	HTTPTLS *tls.Config
-	GRPCTLS *tls.Config
-	// Logger receives warnings; nil discards them.
-	Logger *slog.Logger
+	Tokens             []string
+	ShutdownTimeout    time.Duration
+	HTTPTLS            *tls.Config
+	GRPCTLS            *tls.Config
+	Logger             *slog.Logger
 }
 
-// DefaultConfig returns the documented defaults.
 func DefaultConfig() Config {
 	return Config{
 		MaxRequestBytes:    DefaultMaxRequestBytes,

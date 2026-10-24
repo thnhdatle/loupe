@@ -17,13 +17,11 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// Defaults of the Service options.
 const (
 	DefaultBatch   = 5000
 	DefaultMaxJobs = 1000
 )
 
-// Job names submitted to the writer; a fixed vocabulary.
 const (
 	jobRecompute  = "admin_recompute"
 	jobDeleteUser = "admin_delete_user"
@@ -31,8 +29,7 @@ const (
 	jobCheckpoint = "admin_checkpoint"
 )
 
-// Service runs the admin operations as asynchronous jobs. It is safe for
-// concurrent use.
+// Service runs the admin operations as asynchronous jobs.
 type Service struct {
 	store  Store
 	backup Backuper
@@ -45,24 +42,19 @@ type Service struct {
 	ctx    context.Context //nolint:containedctx // lifetime context of the service-owned job goroutines
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
-	mu     sync.Mutex // protects closed
+	mu     sync.Mutex
 	closed bool
 }
 
-// Option configures a Service.
 type Option func(*Service)
 
-// WithBatch sets the maximum rows per writer job (default DefaultBatch).
 func WithBatch(n int) Option { return func(s *Service) { s.batch = n } }
 
-// WithMaxJobs sets how many jobs the status registry keeps (default DefaultMaxJobs).
 func WithMaxJobs(n int) Option { return func(s *Service) { s.jobs = newRegistry(n) } }
 
-// WithIDGenerator replaces the random job id generator.
 func WithIDGenerator(f func() string) Option { return func(s *Service) { s.newID = f } }
 
-// New returns a Service. Writes go through runner, backups through b. Close it
-// to stop running jobs.
+// New returns a Service that writes through runner and backs up through b.
 func New(st Store, b Backuper, runner trace.JobRunner, clk clock.Clock, opts ...Option) *Service {
 	s := &Service{
 		store: st, backup: b, runner: runner, clock: clk,
@@ -81,7 +73,7 @@ func New(st Store, b Backuper, runner trace.JobRunner, clk clock.Clock, opts ...
 	return s
 }
 
-// Recompute starts repricing of stored spans in r with calc and returns the job id.
+// Recompute starts repricing of the stored spans in r and returns the job id.
 func (s *Service) Recompute(calc *cost.Calculator, r Range) (string, error) {
 	if calc == nil {
 		return "", cost.ErrNilTable
@@ -104,12 +96,12 @@ func (s *Service) DeleteUser(userID string) (string, error) {
 	})
 }
 
-// Vacuum starts an incremental vacuum followed by a checkpoint and returns the job id.
+// Vacuum starts an incremental vacuum and returns the job id.
 func (s *Service) Vacuum() (string, error) {
 	return s.start(KindVacuum, s.vacuum)
 }
 
-// Backup starts a backup to path and returns the job id. The path must not exist yet.
+// Backup starts a backup to path and returns the job id.
 func (s *Service) Backup(path string) (string, error) {
 	if strings.TrimSpace(path) == "" || strings.ContainsRune(path, 0) {
 		return "", ErrInvalidPath
@@ -122,16 +114,12 @@ func (s *Service) Backup(path string) (string, error) {
 	})
 }
 
-// BackupPath returns the default backup file under dir/backups for time now:
-// loupe-<UTC timestamp>.db.
 func BackupPath(dir string, now time.Time) string {
 	return filepath.Join(dir, "backups", "loupe-"+now.UTC().Format("20060102T150405Z")+".db")
 }
 
-// JobStatus returns the status of job id, or ErrJobNotFound.
 func (s *Service) JobStatus(id string) (JobStatus, error) { return s.jobs.get(id) }
 
-// Close rejects new operations, cancels running jobs and waits for them.
 func (s *Service) Close() error {
 	s.mu.Lock()
 	s.closed = true
@@ -141,7 +129,6 @@ func (s *Service) Close() error {
 	return nil
 }
 
-// start registers a job and runs run in a goroutine owned by the service.
 func (s *Service) start(kind Kind, run func(ctx context.Context, add func(int)) error) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -171,6 +158,6 @@ func (s *Service) start(kind Kind, run func(ctx context.Context, add func(int)) 
 
 func randomID() string {
 	var b [8]byte
-	_, _ = rand.Read(b[:]) // never fails on supported platforms
+	_, _ = rand.Read(b[:])
 	return "job_" + hex.EncodeToString(b[:])
 }

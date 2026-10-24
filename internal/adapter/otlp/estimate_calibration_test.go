@@ -10,7 +10,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/thnhdatle/loupe/bench/gen"
 	"github.com/thnhdatle/loupe/internal/adapter/otlp"
 	"github.com/thnhdatle/loupe/internal/adapter/pricingfile"
 	"github.com/thnhdatle/loupe/internal/app/ingest"
@@ -19,23 +18,14 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/cost"
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 	"github.com/thnhdatle/loupe/internal/platform/clock"
+	"github.com/thnhdatle/loupe/internal/testutil/gen"
 )
 
 const (
-	// calibrationSpans is the calibration sample size: 100k spans of the
-	// benchmark payload mix (bench/gen, capture off).
-	calibrationSpans = 100_000
-	// calibrationBodies is the number of distinct benchmark requests generated
-	// (16,384 spans); they are sent in turn until enough spans are queued.
-	// Every request has the exact kind mix and nothing on the path
-	// deduplicates across requests, so repeating them changes the heap held
-	// per span only through the sample of payload sizes, and it keeps the
-	// generator's cost out of a test that runs under the race detector.
+	calibrationSpans  = 100_000
 	calibrationBodies = 32
 )
 
-// retainQueue is an ingest.Queue that keeps every batch it is given, as the
-// writer queue holds them until commit, and sums the estimated bytes.
 type retainQueue struct {
 	batches []*trace.Batch
 	spans   int
@@ -53,8 +43,6 @@ func (*retainQueue) AddCount(trace.IngestCount) {}
 
 func (*retainQueue) HasRoom(int) bool { return true }
 
-// heapAlloc returns the live heap after a full collection. Two cycles also
-// empty the sync.Pool victim caches the receiver may have filled.
 func heapAlloc() uint64 {
 	var ms runtime.MemStats
 	runtime.GC()
@@ -63,14 +51,6 @@ func heapAlloc() uint64 {
 	return ms.HeapAlloc
 }
 
-// TestEstimate_CalibratedOnBenchmarkMix is the byte-estimator calibration test:
-// 100k spans of the benchmark payload mix go through the production receive path (OTLP/HTTP
-// protobuf decode, conversion, Ingestor translation with the default content
-// policy and pricing) into a queue that retains the batches; the sum of the
-// estimates the Ingestor passes to Enqueue must be within ±25% of the measured
-// heap delta. The ingest benchmark runs with capture off; capture on is checked as well, on
-// one pass over the generated requests to bound the time under -race.
-//
 //nolint:paralleltest // measures the process heap; parallel tests would distort it.
 func TestEstimate_CalibratedOnBenchmarkMix(t *testing.T) {
 	now := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
@@ -99,9 +79,6 @@ func TestEstimate_CalibratedOnBenchmarkMix(t *testing.T) {
 	}
 }
 
-// measureQueuedHeap sends the request bodies in turn through an OTLP/HTTP
-// receiver into a retaining queue until it holds at least minSpans spans. It
-// returns the spans queued, the estimated bytes and the heap delta.
 func measureQueuedHeap(t *testing.T, mode content.Mode, now time.Time, bodies []httpReq, minSpans int) (
 	spans int, estimate, delta int64,
 ) {

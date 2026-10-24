@@ -46,8 +46,6 @@ func serve(ctx context.Context, cfg *config.Config, logOut io.Writer) error {
 	return s.run(ctx)
 }
 
-// applyMemoryLimit sets the soft memory limit from runtime.memory_limit unless
-// GOMEMLIMIT is set in the environment.
 func applyMemoryLimit(cfg *config.Config) {
 	if _, ok := os.LookupEnv("GOMEMLIMIT"); ok || cfg.Runtime.MemoryLimit <= 0 {
 		return

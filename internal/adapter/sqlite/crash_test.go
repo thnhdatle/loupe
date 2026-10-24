@@ -39,9 +39,6 @@ func crashBatch(n, spans int) *trace.Batch {
 	return b
 }
 
-// runCrashHelper runs in a child process: it commits crashBatches batches,
-// reporting each on stdout, starts a large batch and kills itself with SIGKILL
-// while that batch may be in flight. It returns only on failure.
 func runCrashHelper() int {
 	ctx := context.Background()
 	s, err := sqlite.Open(ctx, os.Getenv(crashHelperEnv))
@@ -88,8 +85,6 @@ func TestStore_CrashAndReopen(t *testing.T) {
 		require.ErrorAs(t, err, &exitErr, "round %d", round)
 		require.Equal(t, crashBatches, committed, "round %d", round)
 
-		// Restart without manual cleanup: the kernel released the flock and
-		// SQLite recovers the WAL.
 		s := openAt(t, path)
 		db := rawDB(t, path)
 		var check string

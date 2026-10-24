@@ -33,7 +33,6 @@ type env struct {
 	p      *retention.Planner
 }
 
-// testConfig is the default config with a small batch and the cap off.
 func testConfig() retention.Config {
 	cfg := retention.DefaultConfig()
 	cfg.Batch = 3
@@ -115,7 +114,7 @@ func TestPlanner_Pass_DeletesEachClassPastItsAge(t *testing.T) {
 			class: retention.ClassSpans,
 			seed: func(s *fakeStore) {
 				s.addSpan("old", "", ago(14*day+time.Minute), pageSize)
-				s.addSpan("edge", "", ago(14*day), pageSize) // exactly at the cutoff: kept
+				s.addSpan("edge", "", ago(14*day), pageSize)
 				s.addSpan("new", "", ago(14*day-time.Minute), pageSize)
 			},
 			check: func(t *testing.T, s *fakeStore) {
@@ -174,10 +173,10 @@ func TestPlanner_Pass_DeletesEachClassPastItsAge(t *testing.T) {
 			class: retention.ClassRollupsHourly,
 			seed: func(s *fakeStore) {
 				for _, tbl := range []string{"rollup_hour", "rollup_user_hour"} {
-					s.addBucket(tbl, ago(35*day+time.Hour), time.Hour)      // ends at the cutoff: deleted
-					s.addBucket(tbl, ago(35*day+30*time.Minute), time.Hour) // straddles: kept
+					s.addBucket(tbl, ago(35*day+time.Hour), time.Hour)
+					s.addBucket(tbl, ago(35*day+30*time.Minute), time.Hour)
 				}
-				s.addBucket("rollup_day", ago(36*day), day) // daily retention is longer
+				s.addBucket("rollup_day", ago(36*day), day)
 			},
 			check: func(t *testing.T, s *fakeStore) {
 				t.Helper()
@@ -191,7 +190,7 @@ func TestPlanner_Pass_DeletesEachClassPastItsAge(t *testing.T) {
 			seed: func(s *fakeStore) {
 				for _, tbl := range []string{"rollup_day", "rollup_user_day"} {
 					s.addBucket(tbl, ago(401*day), day)
-					s.addBucket(tbl, ago(400*day+time.Hour), day) // straddles: kept
+					s.addBucket(tbl, ago(400*day+time.Hour), day)
 				}
 				s.addBucket("ingest_stats", ago(400*day+time.Hour), time.Hour)
 				s.addBucket("ingest_stats", ago(400*day+30*time.Minute), time.Hour)
@@ -249,7 +248,7 @@ func TestPlanner_Pass_BatchesUntilAJobDeletesFewer(t *testing.T) {
 	tests := []struct {
 		name     string
 		old      int
-		wantJobs []int // rows deleted per spans job
+		wantJobs []int
 	}{
 		{name: "none", old: 0, wantJobs: []int{0}},
 		{name: "partial last batch", old: 7, wantJobs: []int{3, 3, 1}},
@@ -282,7 +281,7 @@ func TestPlanner_Pass_CompactsInBoundedVacuumJobsThenCheckpoints(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t, testConfig(), retention.WithVacuumPages(2))
 	for i := range 5 {
-		e.store.addSpan(fmt.Sprintf("s%d", i), "", ago(20*day), pageSize) // 5 pages freed
+		e.store.addSpan(fmt.Sprintf("s%d", i), "", ago(20*day), pageSize)
 	}
 	require.NoError(t, e.p.Pass(context.Background()))
 	names := e.runner.jobNames()

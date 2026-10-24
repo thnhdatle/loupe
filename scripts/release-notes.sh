@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-# Prints the CHANGELOG.md section of a release: release-notes.sh v0.1.0 (or 0.1.0).
-# Fails when the section is missing or empty.
+# Prints the CHANGELOG.md section of a release.
 ver="${1:?usage: release-notes.sh <tag>}"
 ver="${ver#v}"
 notes="$(awk -v v="$ver" '

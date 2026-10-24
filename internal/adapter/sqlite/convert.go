@@ -11,8 +11,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// maxTraceModels caps traces.models (≤ 8). The kept models
-// are the lexicographically smallest, so the set does not depend on arrival order.
 const maxTraceModels = 8
 
 func boolInt(b bool) int64 {
@@ -22,7 +20,6 @@ func boolInt(b bool) int64 {
 	return 0
 }
 
-// costArg binds a cost: NULL when unpriced.
 func costArg(c trace.Cost) any {
 	if !c.Priced {
 		return nil
@@ -37,7 +34,6 @@ func costOf(n sql.NullInt64) trace.Cost {
 	return trace.Priced(n.Int64)
 }
 
-// parentArg binds a parent span id: NULL for a root.
 func parentArg(p trace.SpanID) any {
 	if p.IsZero() {
 		return nil
@@ -61,7 +57,6 @@ func scanTraceID(b []byte) (trace.ID, error) {
 	return id, nil
 }
 
-// resourceKey stores a uint64 resource hash bit-cast into SQLite's int64.
 func resourceKey(id uint64) int64 { return int64(id) } //nolint:gosec // G115: intentional bit cast
 
 func encodeModels(models []string) string {
@@ -70,7 +65,6 @@ func encodeModels(models []string) string {
 	}
 	b, err := json.Marshal(models)
 	if err != nil {
-		// Unreachable: a []string always marshals.
 		return "[]"
 	}
 	return string(b)
@@ -84,8 +78,6 @@ func decodeModels(s string) ([]string, error) {
 	return out, nil
 }
 
-// addModel inserts m into the sorted set, keeping at most maxTraceModels of
-// the smallest values. It returns a new slice when the set changes.
 func addModel(models []string, m string) []string {
 	if m == "" {
 		return models

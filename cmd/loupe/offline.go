@@ -20,8 +20,6 @@ const offlinePoll = 20 * time.Millisecond
 
 var errOffline = errors.New("offline run")
 
-// openOffline opens the store while holding the database lock. It fails when a
-// running server holds the lock.
 func openOffline(ctx context.Context, cfg *config.Config) (*sqlite.Store, error) {
 	st, err := sqlite.Open(ctx, cfg.Storage.Path, sqlite.WithBackupBeforeMigrate(cfg.Storage.BackupBeforeMigrate))
 	if err != nil {
@@ -33,8 +31,7 @@ func openOffline(ctx context.Context, cfg *config.Config) (*sqlite.Store, error)
 	return st, nil
 }
 
-// runOffline runs one admin job through the same admin.Service code path as
-// the server, on a store opened under the database lock and a local writer.
+// runOffline runs one admin job on a store opened under the database lock.
 func runOffline(
 	ctx context.Context, cfg *config.Config, logOut io.Writer, start func(*admin.Service) (string, error),
 ) (admin.JobStatus, error) {

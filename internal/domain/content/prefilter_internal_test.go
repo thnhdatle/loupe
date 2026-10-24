@@ -10,7 +10,6 @@ import (
 	"pgregory.net/rapid"
 )
 
-// fragments make generated strings likely to contain (near-)matches of every preset.
 var prefilterFragments = []string{
 	"a", "Z", "0", "1", "9", " ", "-", ".", "_", "@", "+", "(", ")", "\t", "=", "/",
 	"sk-", "proj-", "ant-", "ghp_", "gho_", "ghs_", "github_pat_", "AKIA", "xoxb-", "AIza",
@@ -18,8 +17,6 @@ var prefilterFragments = []string{
 	"2026-10-20", "10.0.0.1", "abcdefghijklmnopqrstuvwxyz0123456789", "é", "日本",
 }
 
-// The prefilters only skip work: with or without them every preset rule
-// produces the same output.
 func TestPresetPrefilter_SameOutputProperty(t *testing.T) {
 	t.Parallel()
 	var rules []compiledRule

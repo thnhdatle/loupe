@@ -11,7 +11,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// Error codes of the API (registered in docs/guides/errors.md).
 const (
 	CodeUnauthorized     = "unauthorized"
 	CodeNotFound         = "not_found"
@@ -30,8 +29,6 @@ const (
 	CodeInternal         = "internal"
 )
 
-// classify maps an error from the use cases to an HTTP status and stable code.
-// Only client-caused errors carry their text; everything else is "internal".
 func classify(err error) (status int, code string, expose bool) {
 	table := []struct {
 		target error
@@ -58,7 +55,6 @@ func classify(err error) (status int, code string, expose bool) {
 	return http.StatusInternalServerError, CodeInternal, false
 }
 
-// paramError is a malformed query parameter.
 type paramError struct{ msg string }
 
 func (e *paramError) Error() string { return e.msg }

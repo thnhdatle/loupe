@@ -37,8 +37,6 @@ func TestStore_TopSpans(t *testing.T) {
 
 	byCost, err := s.TopSpans(ctx, r)
 	require.NoError(t, err)
-	// The triage caller ranks by the cost it took from its duplicates; the
-	// duplicates themselves, tools and spans outside the range are excluded.
 	assert.Equal(t, []string{
 		tid(1).String() + "/" + sid(1).String(),
 		tid(2).String() + "/" + sid(2).String(),

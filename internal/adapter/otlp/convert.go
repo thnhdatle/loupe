@@ -52,7 +52,6 @@ func convertResource(r *resourcepb.Resource) *trace.RawResource {
 	return &trace.RawResource{Attributes: convertAttrs(r.GetAttributes())}
 }
 
-// countSpans returns the number of spans in a traces request.
 func countSpans(rss []*tracepb.ResourceSpans) int {
 	n := 0
 	for _, rs := range rss {
@@ -63,8 +62,6 @@ func countSpans(rss []*tracepb.ResourceSpans) int {
 	return n
 }
 
-// convertSpans flattens a traces request into RawSpans. Spans whose ids are
-// malformed or all-zero are skipped and counted in invalid: they cannot be stored.
 func convertSpans(rss []*tracepb.ResourceSpans) (spans []trace.RawSpan, invalid int) {
 	spans = make([]trace.RawSpan, 0, countSpans(rss))
 	for _, rs := range rss {
@@ -122,7 +119,6 @@ func convertSpan(res *trace.RawResource, sp *tracepb.Span) (trace.RawSpan, bool)
 	return raw, true
 }
 
-// clampNs converts an OTLP fixed64 timestamp to int64, saturating instead of wrapping negative.
 func clampNs(u uint64) int64 {
 	const maxInt64 = 1<<63 - 1
 	if u > maxInt64 {
@@ -131,7 +127,6 @@ func clampNs(u uint64) int64 {
 	return int64(u)
 }
 
-// countLogRecords returns the number of log records in a logs request.
 func countLogRecords(rls []*logspb.ResourceLogs) int {
 	n := 0
 	for _, rl := range rls {
@@ -142,8 +137,6 @@ func countLogRecords(rls []*logspb.ResourceLogs) int {
 	return n
 }
 
-// convertLogs flattens a logs request into RawLogRecords. Records with malformed
-// ids keep a zero span context, so the ingestor discards them as having none.
 func convertLogs(rls []*logspb.ResourceLogs) []trace.RawLogRecord {
 	out := make([]trace.RawLogRecord, 0, countLogRecords(rls))
 	for _, rl := range rls {

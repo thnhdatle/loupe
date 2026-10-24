@@ -15,9 +15,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/testutil/fakeingestor"
 )
 
-// fuzzRequest drives the whole HTTP decode path (gzip, protobuf or JSON, conversion)
-// with arbitrary bytes. It must never panic, must answer with a status the receiver
-// is allowed to use, and must give every in-flight byte back.
 func fuzzRequest(f *testing.F, ct string, seeds [][]byte) {
 	f.Helper()
 	for _, s := range seeds {

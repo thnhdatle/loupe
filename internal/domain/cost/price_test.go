@@ -30,7 +30,6 @@ func TestPrice_Cost_Formula(t *testing.T) {
 	}{
 		{name: "input and output", price: bare, usage: trace.Usage{Input: 1000, Output: 100}, want: 2_800_000},
 		{
-			// 3000·3e9 + 2000·0.3e9 + 5000·3.75e9 + 500·15e9 = 35.85e12 → /1e6
 			name: "anthropic cache read and write", price: full,
 			usage: trace.Usage{Input: 10000, Output: 500, CacheRead: 2000, CacheWrite: 5000}, want: 35_850_000,
 		},
@@ -39,7 +38,6 @@ func TestPrice_Cost_Formula(t *testing.T) {
 			usage: trace.Usage{Input: 1000, CacheRead: 300, CacheWrite: 200}, want: 2_000_000,
 		},
 		{
-			// 100·15e9 + 300·20e9 = 7.5e12
 			name: "reasoning with price", price: full,
 			usage: trace.Usage{Output: 400, Reasoning: 300}, want: 7_500_000,
 		},
@@ -48,7 +46,6 @@ func TestPrice_Cost_Formula(t *testing.T) {
 			usage: trace.Usage{Output: 400, Reasoning: 300}, want: 3_200_000,
 		},
 		{
-			// uncached clamps to 0: 80·0.3e9 + 50·3.75e9 = 211.5e9
 			name: "cache exceeds input clamps", price: full,
 			usage: trace.Usage{Input: 100, CacheRead: 80, CacheWrite: 50}, want: 211_500, clamped: true,
 		},
@@ -75,7 +72,6 @@ func TestPrice_Cost_Formula(t *testing.T) {
 			price: cost.Price{InputPerMtok: math.MaxInt64}, usage: trace.Usage{Input: 1_000_000}, want: math.MaxInt64,
 		},
 		{
-			// (4·MaxInt64 + 1) / 1e6 = 36893488147419.103229; the numerator exceeds 2⁶⁴
 			name:  "128-bit numerator",
 			price: cost.Price{InputPerMtok: math.MaxInt64, OutputPerMtok: 1}, usage: trace.Usage{Input: 4, Output: 1},
 			want: 36_893_488_147_419,
@@ -135,8 +131,6 @@ func TestPrice_Cost_Errors(t *testing.T) {
 	}
 }
 
-// The largest possible numerator (3·MaxInt64², reached only with clamped
-// usage) must report an overflow, not wrap the 128-bit accumulator or panic.
 func TestPrice_Cost_LargestNumerator(t *testing.T) {
 	t.Parallel()
 	m := int64(math.MaxInt64)

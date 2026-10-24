@@ -10,12 +10,10 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// scanner is a *sql.Row or *sql.Rows.
 type scanner interface {
 	Scan(dest ...any) error
 }
 
-// traceRow is a traces row (traceCols order) without its id.
 type traceRow struct {
 	rootName    sql.NullString
 	rootService string
@@ -33,7 +31,6 @@ type traceRow struct {
 
 func (r *traceRow) durationNs() int64 { return r.endNs - r.startNs }
 
-// scanTraceRow scans traceCols, preceded by extra destinations (e.g. trace_id).
 func scanTraceRow(sc scanner, extra ...any) (traceRow, error) {
 	var r traceRow
 	var duration int64
@@ -75,7 +72,6 @@ func (r *traceRow) summary(id trace.ID) query.TraceSummary {
 	}
 }
 
-// sessionRow is a sessions row (sessionCols order) without its id.
 type sessionRow struct {
 	userID     string
 	firstNs    int64
@@ -112,5 +108,4 @@ func (r *sessionRow) summary(id string) query.SessionSummary {
 	}
 }
 
-// wrapScan wraps a scan error with what was read.
 func wrapScan(what string, err error) error { return fmt.Errorf("sqlite: read %s: %w", what, err) }

@@ -20,9 +20,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/testutil/fakespanstore"
 )
 
-// start runs p.Run in a goroutine. done is closed when Run returns; stop
-// cancels Run's context, waits for it and returns its error. Cleanup stops it
-// if the test did not.
 func start(t *testing.T, p *retention.Planner) (done <-chan struct{}, stop func() error) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -43,7 +40,6 @@ func start(t *testing.T, p *retention.Planner) (done <-chan struct{}, stop func(
 
 func (e *env) passes() int64 { return e.p.Stats().Passes }
 
-// advanceUntil advances the fake clock by step until cond holds.
 func (e *env) advanceUntil(t *testing.T, step time.Duration, cond func() bool) {
 	t.Helper()
 	testutil.Eventually(t, func() bool {
@@ -104,7 +100,7 @@ func TestPlanner_Run_ReturnsNilOnCancel(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name  string
-		block bool // cancel while a job runs, rather than between passes
+		block bool
 	}{
 		{name: "between passes"},
 		{name: "during a job", block: true},
@@ -175,7 +171,6 @@ func TestPlanner_Run_WarnsWhenFreeDiskBelowTwiceTheCap(t *testing.T) {
 	}
 }
 
-// writerBatch returns a batch of one span with a unique id.
 func writerBatch(i int) *trace.Batch {
 	var sid trace.SpanID
 	binary.BigEndian.PutUint64(sid[:], uint64(i)+1)
@@ -185,9 +180,6 @@ func writerBatch(i int) *trace.Batch {
 	}
 }
 
-// TestPlanner_WithWriter runs the planner against the real single writer:
-// ingest batches commit between retention jobs, and the planner stops cleanly
-// once the writer shuts down.
 func TestPlanner_WithWriter(t *testing.T) {
 	t.Parallel()
 	spans := fakespanstore.New()
@@ -209,8 +201,6 @@ func TestPlanner_WithWriter(t *testing.T) {
 	for i := range 7 {
 		e.store.addSpan(fmt.Sprintf("old%d", i), "", ago(30*day), pageSize)
 	}
-	// Each spans job enqueues one ingest batch; the next spans job must find
-	// it committed, because the writer runs a ready batch before the next job.
 	spansJobs := 0
 	var committedBefore []int
 	e.store.set(func(s *fakeStore) {

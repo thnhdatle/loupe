@@ -10,43 +10,30 @@ import (
 	"time"
 )
 
-// PriceTable selects the price version that applies to a span. It is
-// immutable after NewPriceTable and safe for concurrent use.
+// PriceTable selects the price version that applies to a span.
 type PriceTable struct {
-	tiers   [2]tier // index 0: user, 1: default; user series win before specificity
+	tiers   [2]tier
 	entries []Price
 }
 
-// seriesKey identifies a series; the provider is lower-cased because provider
-// names are compared case-insensitively.
 type seriesKey struct {
 	match    Match
 	provider string
 	model    string
 }
 
-// series is every version of one (match, provider, model), sorted by EffectiveFrom.
 type series struct {
 	key      seriesKey
 	literals int
 	versions []Price
 }
 
-// tier holds the series of one origin: exact series by (provider, model) and
-// glob series in selection order.
 type tier struct {
 	exact map[seriesKey]*series
 	globs []*series
 }
 
-// NewPriceTable builds a table from the embedded default entries and the user
-// file's entries. Origin is set from the argument each entry came from. A user
-// series replaces the default series with the same (match, provider, model)
-// entirely. Entries are copied, including the optional prices.
-//
-// It returns an *EntryError for an invalid match kind, an empty model, a
-// negative price, a zero EffectiveFrom, a default entry without Source or AsOf,
-// or two versions of one series with the same EffectiveFrom.
+// NewPriceTable merges the default and user prices into a PriceTable.
 func NewPriceTable(defaults, user []Price) (*PriceTable, error) {
 	userSeries, err := groupSeries(user, OriginUser)
 	if err != nil {
@@ -69,20 +56,7 @@ func NewPriceTable(defaults, user []Price) (*PriceTable, error) {
 	return t, nil
 }
 
-// Lookup returns the price version for a span of provider and pricing model
-// that started at start, and false when the model is unpriced.
-//
-// Selection: only series with a version whose EffectiveFrom ≤ start are
-// candidates; user series beat default series; within one origin an exact
-// series beats any glob, a glob with more literal characters beats one with
-// fewer, and a provider-specific series beats a provider-less one at equal
-// specificity; remaining ties between globs go to the pattern, then the
-// provider, that sorts first byte-wise. The version is the one with the latest
-// EffectiveFrom ≤ start. A provider-specific series applies only when its
-// provider equals provider ignoring case; an empty model is never priced.
-//
-// The returned Price shares its optional price pointers with the table; callers
-// must not modify the values they point to.
+// Lookup returns the price that applies to a model at the given start time.
 func (t *PriceTable) Lookup(provider, model string, start time.Time) (Price, bool) {
 	if model == "" {
 		return Price{}, false
@@ -96,8 +70,6 @@ func (t *PriceTable) Lookup(provider, model string, start time.Time) (Price, boo
 	return Price{}, false
 }
 
-// Entries returns every entry in effect after the user merge, ordered by
-// provider, model, match, origin and EffectiveFrom (for `loupe pricing list`).
 func (t *PriceTable) Entries() []Price { return slices.Clone(t.entries) }
 
 func (tr *tier) lookup(prov, model string, start time.Time) (*Price, bool) {
@@ -126,7 +98,6 @@ func (tr *tier) lookup(prov, model string, start time.Time) (*Price, bool) {
 	return nil, false
 }
 
-// at returns the version with the latest EffectiveFrom ≤ start.
 func (s *series) at(start time.Time) (*Price, bool) {
 	i := sort.Search(len(s.versions), func(i int) bool { return s.versions[i].EffectiveFrom.After(start) })
 	if i == 0 {
@@ -148,8 +119,6 @@ func newTier(m map[seriesKey]*series) tier {
 	return tr
 }
 
-// compareGlobs orders glob series by selection precedence: more literal
-// characters, then provider-specific, then pattern, then provider.
 func compareGlobs(a, b *series) int {
 	if c := cmp.Compare(b.literals, a.literals); c != 0 {
 		return c
@@ -168,7 +137,7 @@ func compareEntries(a, b Price) int {
 		strings.Compare(strings.ToLower(a.Provider), strings.ToLower(b.Provider)),
 		strings.Compare(a.Model, b.Model),
 		strings.Compare(string(a.Match), string(b.Match)),
-		strings.Compare(string(b.Origin), string(a.Origin)), // user before default
+		strings.Compare(string(b.Origin), string(a.Origin)),
 		a.EffectiveFrom.Compare(b.EffectiveFrom),
 	)
 }

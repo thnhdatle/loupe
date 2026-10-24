@@ -72,8 +72,6 @@ func newConfigPrintCmd() *cobra.Command {
 	return cmd
 }
 
-// exitCode maps a command error to the process exit code: 2 for an invalid
-// configuration, 1 otherwise.
 func exitCode(err error) int {
 	if errors.Is(err, config.ErrInvalid) {
 		return 2

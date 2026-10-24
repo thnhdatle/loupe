@@ -146,7 +146,6 @@ func TestServe_EndToEnd(t *testing.T) {
 	code, _ = get(t, admin+"/readyz")
 	require.Zero(t, code, "admin listener must be closed")
 
-	// The flock is released: another process may open the database now.
 	store, err := sqlite.Open(context.Background(), cfg.Storage.Path)
 	require.NoError(t, err)
 	require.NoError(t, store.Close())

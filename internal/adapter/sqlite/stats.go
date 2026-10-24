@@ -12,19 +12,16 @@ import (
 	"time"
 )
 
-// statsTables are the tables whose rows DBStats counts, in report order.
 var statsTables = []string{
 	"spans", "traces", "sessions", "span_content",
 	"rollup_hour", "rollup_day", "rollup_user_hour", "rollup_user_day",
 }
 
-// TableCount is the row count of one table.
 type TableCount struct {
 	Table string `json:"table"`
 	Rows  int64  `json:"rows"`
 }
 
-// DBStats describes a database file for `loupe db stats`.
 type DBStats struct {
 	Path          string       `json:"path"`
 	MainBytes     int64        `json:"main_bytes"`
@@ -39,9 +36,6 @@ type DBStats struct {
 	NewestSpan    *time.Time   `json:"newest_span,omitempty"`
 }
 
-// ReadStats reports sizes, row counts and the span time range of the database
-// at path. It opens the file read-only without taking the lock, so it is safe
-// while a server runs.
 func ReadStats(ctx context.Context, path string) (DBStats, error) {
 	st := DBStats{Path: path}
 	if _, err := os.Stat(path); err != nil {
@@ -95,9 +89,6 @@ func ReadStats(ctx context.Context, path string) (DBStats, error) {
 	return st, nil
 }
 
-// BackupFile writes a consistent copy of the database at path to dst with
-// VACUUM INTO on a read-only connection and without taking the lock, so it is
-// safe while a server runs. It fails with ErrBackupExists when dst exists.
 func BackupFile(ctx context.Context, path, dst string) error {
 	if path == "" || dst == "" {
 		return fmt.Errorf("%w: empty path", ErrInvalidOption)
@@ -117,9 +108,6 @@ func BackupFile(ctx context.Context, path, dst string) error {
 	return vacuumInto(ctx, db, dst)
 }
 
-// FullVacuum rewrites the whole database file with VACUUM and truncates the
-// WAL. It runs on the writer connection, so call it only while no writer job
-// runs (offline maintenance).
 func (s *Store) FullVacuum(ctx context.Context) error {
 	if _, err := s.w.ExecContext(ctx, "VACUUM"); err != nil {
 		return fmt.Errorf("sqlite: vacuum: %w", err)

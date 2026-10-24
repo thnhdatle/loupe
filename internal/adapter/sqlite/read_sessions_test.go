@@ -18,8 +18,6 @@ func TestStore_Sessions_ListAndDetail(t *testing.T) {
 	t.Parallel()
 	s := openStore(t)
 	ctx := context.Background()
-	// Session "a" has traces 1..5 (one per minute); "b" has trace 6 at minute 30;
-	// trace 7 has no session.
 	for n := 1; n <= 5; n++ {
 		writeSpans(t, s, mkSpan(n, 1, 0, trace.KindLLM, at(time.Duration(n)*time.Minute), session("a"), user("ua"),
 			usage(2, 1), priced(10)))
@@ -99,7 +97,6 @@ func TestStore_Sessions_TraceJoinsLater(t *testing.T) {
 	t.Parallel()
 	s := openStore(t)
 	ctx := context.Background()
-	// The first span carries no session; the trace joins "late" with its totals.
 	writeSpans(t, s, mkSpan(1, 2, 1, trace.KindLLM, usage(5, 5), priced(7)))
 	writeSpans(t, s, mkSpan(1, 1, 0, trace.KindAgent, session("late"), user("u")))
 	d, err := s.GetSession(ctx, "late", query.Page{})

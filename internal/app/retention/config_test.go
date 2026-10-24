@@ -18,7 +18,7 @@ func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name   string
 		mutate func(c *retention.Config)
-		want   []string // substrings, one per expected error; empty = valid
+		want   []string
 	}{
 		{name: "defaults", mutate: func(*retention.Config) {}},
 		{name: "cap off", mutate: func(c *retention.Config) { c.MaxDBBytes = 0 }},

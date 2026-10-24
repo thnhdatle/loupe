@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	_ "google.golang.org/grpc/encoding/gzip" // registers the gzip compressor
+	_ "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/stats"
 	"google.golang.org/grpc/status"
@@ -31,8 +31,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// admitReserve is the most a gRPC call reserves at admission, before its real
-// decompressed size is known.
 const admitReserve = 1 << 20
 
 const (
@@ -54,13 +52,10 @@ func signalOf(fullMethod string) trace.Signal {
 	}
 }
 
-// callState follows one gRPC call from admission (tap) to completion (stats End),
-// because grpc-go gives no single hook that spans both and a call can fail between
-// them, for example while decompressing an oversized message.
 type callState struct {
 	signal  trace.Signal
-	held    atomic.Int64 // in-flight bytes reserved for this call
-	entered atomic.Bool  // the handler ran, so errors after that point are ours
+	held    atomic.Int64
+	entered atomic.Bool
 }
 
 type callStateKey struct{}
@@ -70,8 +65,6 @@ func stateFrom(ctx context.Context) *callState {
 	return st
 }
 
-// ensureState returns the call's state, creating it if neither tap nor stats ran yet;
-// grpc-go does not document their order.
 func ensureState(ctx context.Context) (context.Context, *callState) {
 	if st := stateFrom(ctx); st != nil {
 		return ctx, st
@@ -80,7 +73,6 @@ func ensureState(ctx context.Context) (context.Context, *callState) {
 	return context.WithValue(ctx, callStateKey{}, st), st
 }
 
-// releaseHeld returns the call's reservation to the limiter, once.
 func (s *Server) releaseHeld(st *callState) {
 	if st == nil {
 		return
@@ -88,8 +80,6 @@ func (s *Server) releaseHeld(st *callState) {
 	s.lim.Release(st.held.Swap(0))
 }
 
-// tap admits a call: shutdown, auth, then a reservation of
-// min(max_request_bytes, 1 MiB) in the in-flight limiter.
 func (s *Server) tap(ctx context.Context, info *tap.Info) (context.Context, error) {
 	sig := signalOf(info.FullMethodName)
 	if sig == "" {
@@ -119,8 +109,6 @@ func firstMD(md metadata.MD, key string) string {
 	return ""
 }
 
-// callStats releases reservations when a call ends and counts messages grpc-go
-// rejected for size before the handler saw them.
 type callStats struct{ s *Server }
 
 func (c callStats) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
@@ -151,7 +139,6 @@ func (callStats) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Cont
 
 func (callStats) HandleConn(context.Context, stats.ConnStats) {}
 
-// adjust replaces the admission reservation with the real decompressed size.
 func (s *Server) adjust(st *callState, size int64) error {
 	diff := size - st.held.Load()
 	switch {
@@ -167,19 +154,14 @@ func (s *Server) adjust(st *callState, size int64) error {
 	return nil
 }
 
-// begin marks the handler as entered and settles the in-flight accounting.
 func (s *Server) begin(ctx context.Context, req proto.Message) (*callState, error) {
 	st := stateFrom(ctx)
 	if st == nil {
-		// Not admitted through tap (for example a test calling the service directly).
 		st = &callState{}
 	}
 	st.entered.Store(true)
 	if err := s.adjust(st, int64(proto.Size(req))); err != nil {
 		if st.signal != "" {
-			// The request is decoded, so the rejection is counted in its
-			// items (spans, log records, data points), the unit of every
-			// other ingest counter of the signal.
 			s.count(st.signal, trace.ResultRejected, trace.ReasonInflight, max(1, itemCount(req)))
 		}
 		s.releaseHeld(st)
@@ -188,8 +170,6 @@ func (s *Server) begin(ctx context.Context, req proto.Message) (*callState, erro
 	return st, nil
 }
 
-// itemCount is the number of spans, log records or metric data points of an
-// OTLP export request.
 func itemCount(req proto.Message) int64 {
 	switch r := req.(type) {
 	case *coltrace.ExportTraceServiceRequest:
@@ -203,8 +183,6 @@ func itemCount(req proto.Message) int64 {
 	}
 }
 
-// statusErr returns a gRPC status error; it is the call's return value, so it is
-// deliberately not wrapped.
 func statusErr(c codes.Code, msg string) error {
 	return status.Error(c, msg) //nolint:wrapcheck // a status error is the gRPC reply itself
 }
@@ -222,7 +200,6 @@ func overloadedStatus(msg string) error {
 	return statusError(withInfo)
 }
 
-// grpcError maps an ingest error to its gRPC status.
 func (s *Server) grpcError(err error) error {
 	switch {
 	case errors.Is(err, errTooManySpans):
@@ -297,7 +274,6 @@ func (m metricsService) Export(ctx context.Context, req *colmetrics.ExportMetric
 	return m.s.exportMetrics(req), nil
 }
 
-// recoverInterceptor turns a handler panic into INTERNAL.
 func (s *Server) recoverInterceptor(
 	ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
 ) (resp any, err error) {
@@ -311,8 +287,7 @@ func (s *Server) recoverInterceptor(
 	return handler(ctx, req)
 }
 
-// GRPCServer returns a grpc.Server with the Trace, Logs and Metrics services
-// registered. Extra options are applied after the receiver's own.
+// GRPCServer returns a gRPC server with the OTLP services registered.
 func (s *Server) GRPCServer(extra ...grpc.ServerOption) *grpc.Server {
 	opts := []grpc.ServerOption{
 		grpc.InTapHandle(s.tap),
@@ -330,8 +305,7 @@ func (s *Server) GRPCServer(extra ...grpc.ServerOption) *grpc.Server {
 	return srv
 }
 
-// RunGRPC serves OTLP/gRPC on ln until ctx ends, then stops accepting and drains
-// in-flight calls for at most Config.ShutdownTimeout before cutting them off.
+// RunGRPC serves OTLP/gRPC on ln until ctx ends.
 func (s *Server) RunGRPC(ctx context.Context, ln net.Listener) error {
 	srv := s.GRPCServer()
 	done := make(chan struct{})

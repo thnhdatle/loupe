@@ -17,14 +17,10 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// fixturePath is the hand-checked cost fixture.
 const fixturePath = "../../../testdata/cost/cases.yaml"
 
-// fixtureCaseCount is the number of cases the fixture must hold.
 const fixtureCaseCount = 200
 
-// scalarText keeps a YAML scalar's source text, so prices are never read
-// through float64 and timestamps are parsed explicitly.
 type scalarText string
 
 func (s *scalarText) UnmarshalYAML(n *yaml.Node) error {
@@ -60,7 +56,7 @@ type fixtureUsage struct {
 
 type fixtureCase struct {
 	ID           string       `yaml:"id"`
-	Kind         string       `yaml:"kind"` // span or trace
+	Kind         string       `yaml:"kind"`
 	Provider     string       `yaml:"provider"`
 	Model        string       `yaml:"model"`
 	RequestModel string       `yaml:"request_model"`
@@ -130,7 +126,6 @@ func toPrices(t *testing.T, entries []fixtureEntry) []cost.Price {
 	return out
 }
 
-// entryKey identifies a fixture entry by the fields a selected Price carries.
 func entryKey(origin cost.Origin, match cost.Match, provider, model string, from time.Time) string {
 	return fmt.Sprintf("%s|%s|%s|%s|%d", origin, match, strings.ToLower(provider), model, from.UnixNano())
 }
@@ -174,7 +169,6 @@ func TestCalculator_Cost_Fixture(t *testing.T) {
 	require.NoError(t, err)
 	ids := fixtureIDs(t, f)
 
-	// Trace-total cases need the usage-duplicate rule; the acceptance suite checks them.
 	var spanCases []fixtureCase
 	for _, c := range f.Cases {
 		if c.Kind == "span" {

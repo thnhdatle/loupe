@@ -12,12 +12,8 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/rollup/rolluptest"
 )
 
-// unitSamples is the per-distribution sample size of the unit test; the acceptance check uses 1M.
 const unitSamples = 100_000
 
-// TestHistogram_Quantile_ReferenceDistributions spreads each distribution over 24
-// hourly histograms, round-trips them through the blob encoding, merges them and
-// compares p50/p95/p99 with the nearest-rank exact quantile.
 func TestHistogram_Quantile_ReferenceDistributions(t *testing.T) {
 	t.Parallel()
 	for i, d := range rolluptest.Distributions() {

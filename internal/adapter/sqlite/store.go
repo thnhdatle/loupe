@@ -14,19 +14,15 @@ import (
 	"strings"
 	"sync"
 
-	// Registers the pure-Go "sqlite" database/sql driver (no cgo).
 	_ "modernc.org/sqlite"
 
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// driverName is the database/sql driver registered by modernc.org/sqlite.
 const driverName = "sqlite"
 
-// MaxReadPool caps the read-only connection pool (min(GOMAXPROCS, 8)).
 const MaxReadPool = 8
 
-// Synchronous modes accepted by WithSynchronous.
 const (
 	SynchronousOff    = "OFF"
 	SynchronousNormal = "NORMAL"
@@ -43,33 +39,20 @@ type config struct {
 	migrations          fs.FS
 }
 
-// Option configures Open.
 type Option func(*config)
 
-// WithClock sets the clock used for ingest_stats hours and content insert
-// times (default: the system clock).
 func WithClock(c clock.Clock) Option { return func(o *config) { o.clock = c } }
 
-// WithSynchronous sets PRAGMA synchronous on the writer (default NORMAL).
 func WithSynchronous(mode string) Option {
 	return func(o *config) { o.synchronous = strings.ToUpper(mode) }
 }
 
-// WithBackupBeforeMigrate enables or disables the VACUUM INTO backup taken
-// before pending migrations run on an existing database (default enabled).
 func WithBackupBeforeMigrate(on bool) Option {
 	return func(o *config) { o.backupBeforeMigrate = on }
 }
 
-// WithReadPoolSize sets the size of the read-only pool (default
-// min(GOMAXPROCS, MaxReadPool)).
 func WithReadPoolSize(n int) Option { return func(o *config) { o.readPool = n } }
 
-// WithContentMaxBytes sets content.max_bytes, the body budget of one span
-// across all of its content parts: the writer caps the stored body bytes
-// of each span across batches, whatever the arrival order of its span and
-// log events.
-// Zero or less means no limit (default).
 func WithContentMaxBytes(n int) Option { return func(o *config) { o.contentMaxBytes = n } }
 
 func withMigrationsFS(f fs.FS) Option { return func(o *config) { o.migrations = f } }
@@ -100,17 +83,13 @@ func (c *config) validate() error {
 	return errors.Join(errs...)
 }
 
-// Store is the SQLite storage adapter. It implements trace.SpanStore,
-// query.TraceReader, query.SessionReader, query.StatsReader,
-// rollup.RollupReader, retention.Store and admin.Backuper; Admin returns the
-// admin.Store. Write methods must be called from one goroutine (the single
-// writer); read methods are safe for concurrent use.
+// Store is the SQLite storage adapter.
 type Store struct {
 	path  string
 	cfg   config
 	lock  *os.File
-	w     *sql.DB // exactly one connection: the single writer
-	r     *sql.DB // read-only pool (mode=ro, query_only)
+	w     *sql.DB
+	r     *sql.DB
 	codec *codec
 	stmts *writeStmts
 
@@ -118,10 +97,7 @@ type Store struct {
 	closeErr  error
 }
 
-// Open opens or creates the database at path: it takes the flock on
-// <path>.lock, sets and verifies the pragmas, applies pending migrations
-// (after a VACUUM INTO <path>.pre-v<N> backup when enabled and the schema
-// version is above 0) and opens the read-only pool.
+// Open opens or creates the database at path and applies pending migrations.
 func Open(ctx context.Context, path string, opts ...Option) (*Store, error) {
 	cfg := defaultConfig()
 	for _, o := range opts {
@@ -168,10 +144,8 @@ func (s *Store) open(ctx context.Context) error {
 	return nil
 }
 
-// Path returns the absolute path of the database file.
 func (s *Store) Path() string { return s.path }
 
-// Close closes the pools and releases the lock. It is idempotent.
 func (s *Store) Close() error {
 	s.closeOnce.Do(func() {
 		var errs []error

@@ -12,7 +12,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// RequestIDHeader is the header carrying the request id.
 const RequestIDHeader = "X-Request-Id"
 
 const (
@@ -22,14 +21,11 @@ const (
 
 type requestIDKey struct{}
 
-// RequestIDFrom returns the request id stored by RequestID, or "".
 func RequestIDFrom(ctx context.Context) string {
 	id, _ := ctx.Value(requestIDKey{}).(string)
 	return id
 }
 
-// ValidRequestID reports whether s is acceptable as a client-supplied request
-// id: 1 to 64 characters from [A-Za-z0-9._-].
 func ValidRequestID(s string) bool {
 	if s == "" || len(s) > maxRequestIDLen {
 		return false
@@ -44,17 +40,13 @@ func ValidRequestID(s string) bool {
 	return true
 }
 
-// NewULID returns a 26-character ULID for time t using crypto/rand.
 func NewULID(t time.Time) string {
 	var b [16]byte
 	var ts [8]byte
 	binary.BigEndian.PutUint64(ts[:], uint64(t.UnixMilli()))
 	copy(b[:6], ts[2:])
-	// A failed read leaves the random part zero; ids stay well formed.
 	_, _ = rand.Read(b[6:])
 	var out [26]byte
-	// 128 bits are encoded as 26 groups of 5 bits, most significant first; the
-	// first group carries only 3 bits.
 	var acc uint
 	bits := 0
 	pos := 25
@@ -74,8 +66,7 @@ func NewULID(t time.Time) string {
 	return string(out[:])
 }
 
-// RequestID accepts a valid X-Request-Id or generates a ULID, stores it in the
-// request context and echoes it in the response.
+// RequestID reads or generates a request id and stores it on the context and response.
 func RequestID(clk clock.Clock) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

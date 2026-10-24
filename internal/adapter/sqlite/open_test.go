@@ -51,7 +51,6 @@ func TestOpen_RejectsNonIncrementalDatabase(t *testing.T) {
 
 	_, err = sqlite.Open(context.Background(), path)
 	require.ErrorIs(t, err, sqlite.ErrPragma)
-	// A failed Open releases the lock.
 	lock, err := os.OpenFile(path+".lock", os.O_RDWR, 0)
 	require.NoError(t, err)
 	require.NoError(t, lock.Close())
@@ -99,7 +98,6 @@ func TestOpen_MissingDirectoryFails(t *testing.T) {
 func TestOpen_ReadersAreReadOnly(t *testing.T) {
 	t.Parallel()
 	s := openStore(t)
-	// The read pool backs every reader; a write through it must be refused.
 	err := s.ReaderExec(context.Background(), "CREATE TABLE x (y)")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "readonly")

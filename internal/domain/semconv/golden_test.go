@@ -21,9 +21,6 @@ import (
 
 var update = flag.Bool("update", false, "rewrite golden files")
 
-// fixtureEvent and fixture are the hand-written JSON encoding of a RawSpan used
-// until real OTLP recordings are added: attribute objects map keys to JSON
-// scalars, arrays and objects; integral JSON numbers are ints.
 type fixtureEvent struct {
 	Name       string         `json:"name"`
 	TimeNs     int64          `json:"time_ns"`

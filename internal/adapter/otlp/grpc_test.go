@@ -27,7 +27,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// dial serves f on an in-memory listener and returns a client connection.
 func dial(t *testing.T, f *fixture) *grpc.ClientConn {
 	t.Helper()
 	ln := bufconn.Listen(1 << 20)
@@ -130,7 +129,6 @@ func TestGRPC_Traces_TooManySpans(t *testing.T) {
 func TestGRPC_InflightAdmission(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, nil)
-	// Leave less room than the 1 MiB admission reservation.
 	require.True(t, f.lim.TryAcquire(64<<20-1000))
 	_, err := coltrace.NewTraceServiceClient(dial(t, f)).Export(t.Context(), nSpans(1))
 	require.Error(t, err)
@@ -145,7 +143,6 @@ func TestGRPC_InflightAdmission(t *testing.T) {
 
 func TestGRPC_InflightActualSizeExceedsLimit(t *testing.T) {
 	t.Parallel()
-	// Admission reserves 1 MiB; the request is 1.5 MiB and only 1000 spare bytes remain.
 	f := newFixture(t, func(c *otlp.Config) { c.MaxRequestBytes = 4 << 20 })
 	span := testSpan("big", 1)
 	span.Attributes = append(span.Attributes, strKV("blob", strings.Repeat("x", 3<<19)))
@@ -158,7 +155,6 @@ func TestGRPC_InflightActualSizeExceedsLimit(t *testing.T) {
 	assert.Equal(t, time.Second, retryDelay(t, err))
 	assert.EqualValues(t, held, f.lim.InUse(), "the reservation is returned on failure")
 	assert.Empty(t, f.ing.Spans())
-	// The request was decoded, so the rejection is counted in spans.
 	assert.Equal(t, []trace.IngestCount{{
 		Signal: trace.SignalTraces, Result: trace.ResultRejected, Reason: trace.ReasonInflight, N: 3,
 	}}, f.ing.Counts())

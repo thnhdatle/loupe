@@ -1,14 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""An app that calls Triage's OpenAI-compatible endpoint; the app and Triage both export to Loupe.
-
-The app's `chat` and `embeddings` spans come from opentelemetry-instrumentation-openai-v2, an
-HTTP client span wraps every request and carries the W3C trace context, so Triage's
-`route request` span joins the app's trace. Triage forwards to fakellm, scripted per model
-through fakellm's `PUT /_fake/script`.
-
-Providers use the SDK defaults: traces, metrics and logs all export OTLP/HTTP to
-OTEL_EXPORTER_OTLP_ENDPOINT.
-"""
+"""An app that calls the Triage OpenAI-compatible endpoint; the app and Triage both export to Loupe."""
 
 import os
 
@@ -58,7 +49,7 @@ def script(fake: str, rules: list[dict]) -> None:
 
 
 def main() -> None:
-    resource = Resource.create()  # service.name comes from OTEL_SERVICE_NAME
+    resource = Resource.create()
 
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
@@ -83,20 +74,17 @@ def main() -> None:
     )
     httpx.delete(f"{fake}/_fake/script")
 
-    # (a) one chat attempt
     r = client.chat.completions.create(
         model="triage-auto", messages=[{"role": "user", "content": "one attempt"}]
     )
     print("a:", r.choices[0].message.content)
 
-    # (b1) the first target fails with a 500 (no usage), the fallback target answers
     script(fake, [{"model": "fake-small", "scenario": "500", "count": 1}])
     r = client.chat.completions.create(
         model="triage-auto", messages=[{"role": "user", "content": "failed attempt then fallback"}]
     )
     print("b1:", r.choices[0].message.content)
 
-    # (b2) the first target cuts the stream, the fallback target continues it
     script(
         fake,
         [
@@ -118,13 +106,11 @@ def main() -> None:
     text = "".join(c.choices[0].delta.content or "" for c in stream if c.choices)
     print("b2 words:", len(text.split()))
 
-    # (c) embeddings
     r = client.embeddings.create(model="triage-embed", input="embed this text please")
     print("c dims:", len(r.data[0].embedding))
 
     httpx.delete(f"{fake}/_fake/script")
 
-    # Flush everything before exit: spans, log events and one final metrics export.
     tracer_provider.shutdown()
     logger_provider.shutdown()
     meter_provider.shutdown()

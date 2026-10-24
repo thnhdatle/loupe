@@ -72,7 +72,6 @@ func TestCalculator_Cost_Spans(t *testing.T) {
 			want: trace.Priced(35_850_000), model: "claude-sonnet-4",
 		},
 		{
-			// 1500·0.3e9 + 800·2.5e9 + 3200·3.5e9 = 13.65e12
 			name: "reasoning price",
 			in: cost.Input{
 				Provider: "google", ResponseModel: "gemini-2.5-flash", Start: at,

@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package openapispec loads api/openapi.yaml for route-vs-spec and contract
-// tests. It is test support only.
-//
-// Usage:
-//
-//	spec := openapispec.Load(t)
-//	for _, op := range spec.Operations() { _ = op.Route() }
+// Package openapispec loads api/openapi.yaml for tests.
 package openapispec
 
 import (
@@ -27,16 +21,15 @@ type Spec struct {
 	doc map[string]any
 }
 
-// Operation is one method on one path.
 type Operation struct {
-	Method string // upper case
-	Path   string // OpenAPI path template, identical to the Go 1.22 route pattern path
+	Method string
+	Path   string
 	ID     string
 	spec   *Spec
 	raw    map[string]any
 }
 
-// Load reads api/openapi.yaml from the repository root (found from the test's directory).
+// Load reads api/openapi.yaml from the repository root.
 func Load(tb testing.TB) *Spec {
 	tb.Helper()
 	dir, err := os.Getwd()
@@ -57,7 +50,6 @@ func Load(tb testing.TB) *Spec {
 	return &Spec{doc: doc}
 }
 
-// Operations returns every operation sorted by path then method.
 func (s *Spec) Operations() []Operation {
 	var out []Operation
 	paths, _ := s.doc["paths"].(map[string]any)
@@ -76,10 +68,8 @@ func (s *Spec) Operations() []Operation {
 	return out
 }
 
-// Route returns "METHOD /path", the format of the handlers' Routes().
 func (o Operation) Route() string { return o.Method + " " + o.Path }
 
-// resolve follows a local "$ref".
 func (s *Spec) resolve(v any) any {
 	for {
 		m, ok := v.(map[string]any)
@@ -99,8 +89,6 @@ func (s *Spec) resolve(v any) any {
 	}
 }
 
-// Target returns the request target: path parameters substituted and every
-// query parameter set to its example.
 func (o Operation) Target() string {
 	path := o.Path
 	q := url.Values{}
@@ -126,8 +114,6 @@ func (o Operation) Target() string {
 	return path + "?" + q.Encode()
 }
 
-// Response returns the media type and example of the response with the given
-// status ("" and nil when it has none).
 func (o Operation) Response(status string) (mediaType string, example any) {
 	resps, _ := o.raw["responses"].(map[string]any)
 	r, _ := o.spec.resolve(resps[status]).(map[string]any)
@@ -139,7 +125,6 @@ func (o Operation) Response(status string) (mediaType string, example any) {
 	return "", nil
 }
 
-// Statuses returns the documented response statuses, sorted.
 func (o Operation) Statuses() []string {
 	resps, _ := o.raw["responses"].(map[string]any)
 	out := make([]string, 0, len(resps))
@@ -150,7 +135,6 @@ func (o Operation) Statuses() []string {
 	return out
 }
 
-// RequestExample returns the example JSON request body, if the operation has one.
 func (o Operation) RequestExample() (any, bool) {
 	rb, _ := o.spec.resolve(o.raw["requestBody"]).(map[string]any)
 	content, _ := rb["content"].(map[string]any)
@@ -162,9 +146,6 @@ func (o Operation) RequestExample() (any, bool) {
 	return nil, false
 }
 
-// SameShape reports the first structural difference between an example and a
-// response body: object key sets must be equal, and array elements are compared
-// by their first element when both arrays are non-empty. Scalar values are not compared.
 func SameShape(path string, want, got any) string {
 	switch w := want.(type) {
 	case map[string]any:

@@ -11,10 +11,9 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// maxTokens keeps every generated cost below MaxInt64 for prices up to maxPrice.
 const (
 	maxTokens = int64(1) << 40
-	maxPrice  = int64(1) << 36 // ≈ 68.7 USD per Mtok
+	maxPrice  = int64(1) << 36
 )
 
 func genPrice(t *rapid.T) cost.Price {
@@ -32,8 +31,6 @@ func genPrice(t *rapid.T) cost.Price {
 	}
 }
 
-// genInclusiveUsage draws usage with inclusive semantics: cache tokens are
-// part of input and reasoning tokens part of output, so nothing clamps.
 func genInclusiveUsage(t *rapid.T) trace.Usage {
 	in := rapid.Int64Range(0, maxTokens).Draw(t, "input")
 	cr := rapid.Int64Range(0, in).Draw(t, "cache_read")
@@ -51,7 +48,6 @@ func mustCost(t *rapid.T, p *cost.Price, u trace.Usage) (int64, trace.Flags) {
 	return n, f
 }
 
-// Cost is never negative, for any usage including clamped usage.
 func TestPrice_Cost_NeverNegativeProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -67,11 +63,6 @@ func TestPrice_Cost_NeverNegativeProperty(t *testing.T) {
 	})
 }
 
-// Cost is monotonic in each token count over valid inclusive usage.
-// Input and output are raised with the other counts fixed. A detail count
-// (cache read, cache write, reasoning) is raised together with the total that
-// includes it, since an extra cached token is an extra input token; raising it
-// with input fixed would move tokens to a possibly cheaper price instead.
 func TestPrice_Cost_MonotonicProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -103,9 +94,6 @@ func TestPrice_Cost_MonotonicProperty(t *testing.T) {
 	})
 }
 
-// Raising input or output with every other count fixed never lowers the
-// cost, for arbitrary (possibly clamped) usage: each max(0, …) term is
-// non-decreasing in the total it subtracts from.
 func TestPrice_Cost_MonotonicInTotalsProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

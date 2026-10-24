@@ -72,14 +72,12 @@ type readCall struct {
 	R   rollup.Range
 }
 
-// fakeRollups serves rows like the storage adapter: only rows of the
-// requested resolution whose bucket lies in the range (and kind, if set).
 type fakeRollups struct {
 	mu        sync.Mutex
 	hour, day []rollup.Row
 	uHour     []rollup.UserRow
 	uDay      []rollup.UserRow
-	failOn    rollup.Resolution // 0: never fail
+	failOn    rollup.Resolution
 	err       error
 	calls     []readCall
 }
@@ -129,11 +127,10 @@ func (f *fakeRollups) ReadUserRollups(
 }
 
 type fakeStats struct {
-	err    error
-	top    []query.TopSpan
-	totals query.IngestStats
-	gotReq query.TopSpansRequest
-	// range read by IngestTotalsBetween
+	err            error
+	top            []query.TopSpan
+	totals         query.IngestStats
+	gotReq         query.TopSpansRequest
 	gotFrom, gotTo time.Time
 }
 

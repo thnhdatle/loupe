@@ -1,6 +1,5 @@
 bin/
 dist/
-acceptance/logs/
 *.local.yaml
 node_modules/
 *.db

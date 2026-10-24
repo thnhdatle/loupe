@@ -31,9 +31,7 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/metrics"
 )
 
-// server is the assembled Loupe process: the store, the single writer, the
-// use cases and the listeners. newServer builds and binds everything; run
-// serves until the context ends and then shuts down in order.
+// server is the assembled Loupe process: the store, the writer, the use cases and the listeners.
 type server struct {
 	cfg *config.Config
 	log *slog.Logger
@@ -55,7 +53,6 @@ type server struct {
 }
 
 // newServer opens the store, builds the use cases and binds the listeners.
-// On error nothing stays open.
 func newServer(ctx context.Context, cfg *config.Config, log *slog.Logger, bi metrics.BuildInfo) (*server, error) {
 	s := &server{cfg: cfg, log: log, clk: clock.System{}}
 	for _, w := range cfg.Warnings() {
@@ -108,15 +105,12 @@ func (s *server) loadTokens() (api, recv []string, err error) {
 	return api, recv, nil
 }
 
-// build wires writer, ingestor, queries, admin, retention, metrics and the
-// HTTP handlers. Nothing runs yet.
 func (s *server) build(calc *cost.Calculator, apiTokens, recvTokens []string, bi metrics.BuildInfo) error {
 	cfg := s.cfg
 	var err error
 	if s.limiter, err = ingest.NewInflightLimiter(cfg.Receiver.MaxInflightBytes.Bytes()); err != nil {
 		return fmt.Errorf("inflight limiter: %w", err)
 	}
-	// The sources are read at scrape time, after construction has finished.
 	s.metrics, err = metrics.New(metrics.Sources{
 		Writer:        func() writer.Stats { return s.writer.Stats() },
 		Retention:     func() retention.Stats { return s.planner.Stats() },
@@ -197,7 +191,6 @@ func (s *server) newOTLP(ing *ingest.Ingestor, tokens []string) (*otlp.Server, e
 	return srv, nil
 }
 
-// buildHTTP builds the UI/API listener and the admin listener servers.
 func (s *server) buildHTTP(apiTokens []string) error {
 	cfg := s.cfg
 	observe := func(endpoint string, _ int, d time.Duration) { s.metrics.ObserveQuery(endpoint, d) }
@@ -221,8 +214,6 @@ func (s *server) buildHTTP(apiTokens []string) error {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/v1/", api)
-	// The admin API mutates data, so without a token it is served only on a
-	// loopback listener.
 	if len(apiTokens) > 0 || isLoopback(cfg.UI.Listen) {
 		adm, aerr := adminhttp.NewHandler(s.admin, adminhttp.Options{
 			Tokens:               apiTokens,
@@ -248,7 +239,6 @@ func (s *server) buildHTTP(apiTokens []string) error {
 	return nil
 }
 
-// calculator rebuilds the cost calculator from the current price files.
 func (s *server) calculator() (*cost.Calculator, error) {
 	table, err := pricingfile.Load(s.cfg.Pricing.File)
 	if err != nil {
@@ -288,7 +278,6 @@ func (s *server) closeListeners() {
 	}
 }
 
-// close releases the store (and its lock) of a server that never ran.
 func (s *server) close() error {
 	s.closeListeners()
 	if err := s.store.Close(); err != nil {
@@ -297,7 +286,6 @@ func (s *server) close() error {
 	return nil
 }
 
-// gauges adapts the writer queue and the in-flight limiter to queries.Gauges.
 type gauges struct {
 	w *writer.Writer
 	l *ingest.InflightLimiter

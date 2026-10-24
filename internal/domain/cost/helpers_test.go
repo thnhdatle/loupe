@@ -12,7 +12,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/cost"
 )
 
-// usd parses a decimal USD-per-Mtok price, failing the test on error.
 func usd(t *testing.T, text string) int64 {
 	t.Helper()
 	n, err := cost.ParsePrice(text)
@@ -20,7 +19,6 @@ func usd(t *testing.T, text string) int64 {
 	return n
 }
 
-// opt returns a pointer to an optional price.
 func opt(t *testing.T, text string) *int64 {
 	t.Helper()
 	n := usd(t, text)
@@ -35,8 +33,6 @@ func day(s string) time.Time {
 	return ts
 }
 
-// entry builds a valid default-origin price entry effective from the given
-// day; key is "<match> <provider|-> <model>".
 func entry(t *testing.T, key, in, out, from string) cost.Price {
 	t.Helper()
 	f := strings.Fields(key)

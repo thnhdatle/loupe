@@ -27,7 +27,7 @@ First public release.
 - Distroless non-root container image, Docker Compose file, Kubernetes manifests (`deploy/k8s`), example configuration.
 - Examples for OpenTelemetry and OpenInference SDKs and Triage with recorded payloads; a quickstart test.
 - Guides: quickstart, configuration, operations, troubleshooting, errors, instrumentation, pricing, privacy, retention.
-- Benchmark tooling (`bench/cmd/loadgen`, `gentraces`) and a measured envelope in `bench/RESULTS.md`: 3,000 spans/s sustained with 0 lost, 15,000 spans/s single-writer capacity, query p95 0.058 s at 2M spans.
+- Measured envelope: 3,000 spans/s sustained with 0 lost, 15,000 spans/s single-writer capacity, query p95 0.058 s at 2M spans.
 
 [Unreleased]: https://github.com/thnhdatle/loupe/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/thnhdatle/loupe/releases/tag/v0.1.0

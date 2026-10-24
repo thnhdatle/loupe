@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""A two-step tool-using agent: manual agent and tool spans around openai-v2 llm spans.
-
-Providers use the SDK defaults: traces, metrics and logs all export OTLP/HTTP to
-OTEL_EXPORTER_OTLP_ENDPOINT. Loupe stores the spans and log events and discards metrics.
-"""
+"""A two-step tool-using agent with manual agent and tool spans around openai-v2 llm spans."""
 
 import os
 
@@ -23,7 +19,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 def main() -> None:
-    resource = Resource.create()  # service.name comes from OTEL_SERVICE_NAME
+    resource = Resource.create()
 
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
@@ -58,7 +54,6 @@ def main() -> None:
     ]
     messages = [{"role": "user", "content": "what is the weather in Paris"}]
 
-    # agent span -> llm span -> tool span -> llm span
     with tracer.start_as_current_span(
         "invoke_agent weather-agent",
         kind=trace.SpanKind.CLIENT,
@@ -69,7 +64,6 @@ def main() -> None:
             "gen_ai.conversation.id": os.environ["OTEL_SERVICE_NAME"],
         },
     ):
-        # fakellm's tool-call scenario answers with one call to the first tool.
         first = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
@@ -86,7 +80,6 @@ def main() -> None:
                 "gen_ai.tool.name": call.function.name,
                 "gen_ai.tool.call.id": call.id,
                 "gen_ai.tool.type": "function",
-                # Content: stored by Loupe only with content.capture on.
                 "gen_ai.tool.call.arguments": call.function.arguments,
             },
         ) as tool_span:
@@ -97,7 +90,6 @@ def main() -> None:
         final = client.chat.completions.create(model="gpt-4o-mini", messages=messages, tools=tools)
         print("answer:", final.choices[0].message.content)
 
-    # Flush everything before exit: spans, log events and one final metrics export.
     tracer_provider.shutdown()
     logger_provider.shutdown()
     meter_provider.shutdown()

@@ -19,14 +19,12 @@ func strVal(s string) *commonpb.AnyValue {
 	return &commonpb.AnyValue{Value: &commonpb.AnyValue_StringValue{StringValue: s}}
 }
 
-// panicIngestor panics on every call, to prove the transports recover.
 type panicIngestor struct{ trace.Ingestor }
 
 func (panicIngestor) IngestSpans(context.Context, []trace.RawSpan) (trace.IngestResult, error) {
 	panic("boom")
 }
 
-// rewriteIDsToHex turns protojson output (base64 ids) into OTLP/JSON (hex ids).
 func rewriteIDsToHex(t *testing.T, b []byte) []byte {
 	t.Helper()
 	var doc any
@@ -45,7 +43,6 @@ func rewriteIDsToHex(t *testing.T, b []byte) []byte {
 	return out
 }
 
-// hexToBase64 is the inverse of rewriteIDsToHex, giving protojson-readable input.
 func hexToBase64(t *testing.T, b []byte) []byte {
 	t.Helper()
 	var doc any

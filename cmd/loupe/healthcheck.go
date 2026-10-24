@@ -35,7 +35,6 @@ func newHealthcheckCmd() *cobra.Command {
 	}
 }
 
-// checkReady GETs url and returns nil only for status 200.
 func checkReady(ctx context.Context, url string) error {
 	ctx, cancel := context.WithTimeout(ctx, healthcheckTimeout)
 	defer cancel()

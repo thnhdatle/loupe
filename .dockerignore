@@ -4,7 +4,6 @@
 .*
 bin/
 dist/
-acceptance/logs/
 node_modules
 *.db
 coverage.out

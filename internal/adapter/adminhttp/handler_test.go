@@ -65,7 +65,6 @@ func newHandler(t *testing.T, f *fakeAdmin, o adminhttp.Options) *adminhttp.Hand
 	return h
 }
 
-// do sends an authenticated request with body.
 func do(t *testing.T, h http.Handler, method, target, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), method, target, strings.NewReader(body))
@@ -75,7 +74,6 @@ func do(t *testing.T, h http.Handler, method, target, body string) *httptest.Res
 	return rec
 }
 
-// doAnon sends a request without credentials.
 func doAnon(t *testing.T, h http.Handler, method, target string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), method, target, nil)
@@ -213,12 +211,10 @@ func TestHandler_RecomputeBodyTooLarge(t *testing.T) {
 	o := opts()
 	o.MaxBodyBytes = 16
 	h := newHandler(t, &fakeAdmin{}, o)
-	// Content-Length known: rejected before the handler.
 	rec := do(t, h, http.MethodPost, "/v1/admin/pricing/recompute", strings.Repeat(" ", 64))
 	assert.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
 	assert.Equal(t, "body_too_large", code(t, rec))
 
-	// Unknown length: caught by the body reader.
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/v1/admin/pricing/recompute",
 		strings.NewReader(`{"since":"`+strings.Repeat("a", 64)+`"}`))
 	req.ContentLength = -1

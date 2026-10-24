@@ -269,7 +269,6 @@ func TestHTTP_Traces_LimitRejectionsAreCounted(t *testing.T) {
 func TestHTTP_Traces_InflightLimit(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, nil)
-	// Hold nearly the whole budget, as concurrent requests would.
 	require.True(t, f.lim.TryAcquire(f.lim.InUse()+64<<20-5))
 	rec := do(t, f.srv.HTTPHandler(), protoReq(t, "/v1/traces", nSpans(2)))
 	require.Equal(t, http.StatusTooManyRequests, rec.Code)
@@ -472,7 +471,6 @@ func TestHTTP_Metrics_AreCountedAndDiscarded(t *testing.T) {
 	}}, f.ing.Counts())
 	assert.Empty(t, f.ing.Spans())
 
-	// An empty metrics request is accepted and records nothing.
 	f = newFixture(t, nil)
 	rec = do(t, f.srv.HTTPHandler(), protoReq(t, "/v1/metrics", &colmetrics.ExportMetricsServiceRequest{}))
 	assert.Equal(t, http.StatusOK, rec.Code)

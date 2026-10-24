@@ -15,7 +15,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// budgetLog is a GenAI log event part of span (1, span) at time n.
 func budgetLog(span int, n int64, body string) trace.ContentPart {
 	return trace.ContentPart{
 		TraceID: tid(1), SpanID: sid(span), Source: trace.SourceLog, Key: "gen_ai.user.message",
@@ -23,8 +22,6 @@ func budgetLog(span int, n int64, body string) trace.ContentPart {
 	}
 }
 
-// budgetBodies returns the stored bodies (decompressed) and truncated flags of
-// span (1, span) in insert order; a marker body is reported as "<nil>".
 func budgetBodies(t *testing.T, path string, span int) ([]string, []bool) {
 	t.Helper()
 	dec, err := zstd.NewReader(nil)
@@ -68,7 +65,7 @@ func TestStore_ContentBudget_SharedWithinBatch(t *testing.T) {
 		Spans: []trace.Span{sp},
 		Content: []trace.ContentPart{
 			budgetLog(2, 1, strings.Repeat("a", 30)),
-			budgetLog(3, 1, strings.Repeat("o", 100)), // another span: its own budget
+			budgetLog(3, 1, strings.Repeat("o", 100)),
 			budgetLog(2, 2, strings.Repeat("b", 30)),
 			budgetLog(2, 3, "c"),
 		},
@@ -83,9 +80,6 @@ func TestStore_ContentBudget_SharedWithinBatch(t *testing.T) {
 	assert.Equal(t, []bool{false}, truncs)
 }
 
-// TestStore_ContentBudget_PersistsAcrossReopen: the budget is derived from the
-// stored rows, so it survives a restart; a rune is never split and a
-// truncated span stays exhausted even when a small gap is left.
 func TestStore_ContentBudget_PersistsAcrossReopen(t *testing.T) {
 	t.Parallel()
 	path := dbPath(t)
@@ -96,7 +90,7 @@ func TestStore_ContentBudget_PersistsAcrossReopen(t *testing.T) {
 	require.NoError(t, s.Close())
 
 	s = openAt(t, path, sqlite.WithContentMaxBytes(100))
-	euro := strings.Repeat("€", 7) // 21 bytes; 10 remain, cut at a rune boundary to 9
+	euro := strings.Repeat("€", 7)
 	_, err = s.WriteBatch(ctx, &trace.Batch{Content: []trace.ContentPart{budgetLog(2, 2, euro)}})
 	require.NoError(t, err)
 	_, err = s.WriteBatch(ctx, &trace.Batch{Content: []trace.ContentPart{budgetLog(2, 3, "z")}})
@@ -107,8 +101,6 @@ func TestStore_ContentBudget_PersistsAcrossReopen(t *testing.T) {
 	assert.Equal(t, []bool{false, true, true}, truncs)
 }
 
-// TestStore_ContentBudget_MarkersAndNoLimit: markers (capture off,
-// metadata_only) are stored as given and use no budget; zero means no limit.
 func TestStore_ContentBudget_MarkersAndNoLimit(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

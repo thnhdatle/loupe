@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Installs the pinned CLI tools that `make bootstrap`, `make ci` and
-# `make release-dry` need on a Linux CI runner (amd64 or arm64).
+# Installs the pinned CLI tools needed on a Linux CI runner.
 set -euo pipefail
 
 GOLANGCI_LINT_VERSION=2.14.0

@@ -13,7 +13,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/httpmw"
 )
 
-// keyJobID is the JSON key of a started job.
 const keyJobID = "job_id"
 
 type jobView struct {
@@ -41,7 +40,6 @@ func newJobView(st admin.JobStatus) jobView {
 	}
 }
 
-// recomputeRequest is the optional body of the recompute endpoint.
 type recomputeRequest struct {
 	Since *time.Time `json:"since"`
 	Until *time.Time `json:"until"`

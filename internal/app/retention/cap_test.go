@@ -16,7 +16,6 @@ import (
 
 const mib = int64(1) << 20
 
-// capEnv returns an env with a 64 MiB cap and a batch of 3 rows.
 func capEnv(t *testing.T) *env {
 	t.Helper()
 	cfg := testConfig()
@@ -26,8 +25,6 @@ func capEnv(t *testing.T) *env {
 
 func spanID(i int) string { return fmt.Sprintf("s%02d", i) }
 
-// seedHourly adds n spans of 1 MiB, span i started (i+2) hours ago, and 1 MiB
-// of content for the first withContent of them.
 func seedHourly(s *fakeStore, n, withContent int) {
 	for i := range n {
 		at := ago(time.Duration(i+2) * time.Hour)
@@ -41,10 +38,9 @@ func seedHourly(s *fakeStore, n, withContent int) {
 func TestPlanner_Cap_DeletesOldestContentFirst(t *testing.T) {
 	t.Parallel()
 	e := capEnv(t)
-	seedHourly(e.store, 40, 40) // 80 MiB
+	seedHourly(e.store, 40, 40)
 	require.NoError(t, e.p.Pass(context.Background()))
 
-	// 80 → 62 MiB in six jobs of three content rows; spans are untouched.
 	assert.Len(t, e.store.spanIDs(), 40)
 	wantContent := make([]string, 0, 22)
 	for i := range 22 {
@@ -66,10 +62,9 @@ func TestPlanner_Cap_DeletesOldestContentFirst(t *testing.T) {
 func TestPlanner_Cap_DeletesOldestSpansWhenContentIsGone(t *testing.T) {
 	t.Parallel()
 	e := capEnv(t)
-	seedHourly(e.store, 70, 5) // 75 MiB
+	seedHourly(e.store, 70, 5)
 	require.NoError(t, e.p.Pass(context.Background()))
 
-	// Content 3 + 2 (75 → 70), then spans 3 + 3 (70 → 64).
 	assert.Empty(t, e.store.contentSpans())
 	wantSpans := make([]string, 0, 64)
 	for i := range 64 {
@@ -80,7 +75,7 @@ func TestPlanner_Cap_DeletesOldestSpansWhenContentIsGone(t *testing.T) {
 	assert.Equal(t, map[retention.Class]int64{retention.ClassContent: 5, retention.ClassSpans: 6}, st.CapDeleted)
 	assert.Equal(t, 64*mib, st.DBSizeBytes)
 
-	capCalls := e.store.purgeCalls()[len(retention.Classes()):] // after the retention classes
+	capCalls := e.store.purgeCalls()[len(retention.Classes()):]
 	want := []purgeCall{
 		{class: retention.ClassContent, cutoff: ago(time.Hour), limit: 3, n: 3},
 		{class: retention.ClassContent, cutoff: ago(time.Hour), limit: 3, n: 2},
@@ -98,7 +93,7 @@ func TestPlanner_Cap_NeverDeletesTheLastHour(t *testing.T) {
 		e.store.addSpan(fmt.Sprintf("old%d", i), "", ago(time.Duration(i+2)*time.Hour), mib)
 	}
 	for i := range 66 {
-		at := ago(time.Duration(i+1) * 50 * time.Second) // within the last 55 minutes
+		at := ago(time.Duration(i+1) * 50 * time.Second)
 		e.store.addSpan(fmt.Sprintf("new%02d", i), "", at, mib)
 		e.store.addContent(fmt.Sprintf("new%02d", i), at, 1)
 	}
@@ -157,7 +152,7 @@ func TestPlanner_Cap_Errors(t *testing.T) {
 	tests := []struct {
 		name   string
 		inject func(s *fakeStore)
-		seed   int // spans with content
+		seed   int
 	}{
 		{name: "size", inject: func(s *fakeStore) { s.sizeErr = errBoom }, seed: 40},
 		{

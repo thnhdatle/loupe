@@ -8,11 +8,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/content"
 )
 
-// FuzzRedactor checks that the presets never panic. Idempotence is deliberately
-// not asserted: replacing one match can remove the word-character context that
-// made a neighbouring match invalid (e.g. "AKIA...1 0101111111111111099": the
-// card digits are only delimited once the key is replaced), so a second pass
-// may legitimately find more.
 func FuzzRedactor(f *testing.F) {
 	for _, s := range []string{
 		"", "bob@example.com", "+1 415-555-0100", "4111 1111 1111 1111",

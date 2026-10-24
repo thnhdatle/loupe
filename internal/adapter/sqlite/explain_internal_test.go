@@ -21,16 +21,13 @@ import (
 )
 
 type planCase struct {
-	name string
-	sql  string
-	args []any
-	// want are substrings every one of which must appear in the plan; none
-	// of avoid may appear (e.g. a full scan of spans).
+	name  string
+	sql   string
+	args  []any
 	want  []string
 	avoid []string
 }
 
-// plan returns EXPLAIN QUERY PLAN output indented like the sqlite3 shell.
 func plan(t *testing.T, s *Store, q string, args ...any) string {
 	t.Helper()
 	rows, err := s.r.QueryContext(context.Background(), "EXPLAIN QUERY PLAN "+q, args...)
@@ -105,8 +102,6 @@ func planCases(t *testing.T) []planCase {
 			name: "q3: traces, 7 d, service and min duration", sql: q3, args: a3,
 			want: []string{"traces_start", spanIdx}, avoid: []string{"SCAN s"},
 		},
-		// A range covering most stored traces walks traces_cost in order
-		// (sortIndexPlan); a narrow one reads the range and sorts it.
 		{
 			name: "q4: traces, 30 d, by cost", sql: q4, args: a4,
 			want: []string{"traces_cost"}, avoid: []string{"TEMP B-TREE"},
@@ -205,8 +200,6 @@ func planCases(t *testing.T) []planCase {
 	}
 }
 
-// TestSchema_QueryPlans checks that every query of the store uses the index
-// listed for it in planCases. Run with -v to print the plans.
 func TestSchema_QueryPlans(t *testing.T) {
 	t.Parallel()
 	s, err := Open(context.Background(), filepath.Join(t.TempDir(), "plan.db"),

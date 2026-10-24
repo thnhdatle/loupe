@@ -8,8 +8,6 @@ SHELL := /usr/bin/env bash
 VERSION    ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT     ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-# Release shown in the acceptance report heading.
-RELEASE    ?= v0.1.0
 LDFLAGS    := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.buildDate=$(BUILD_DATE)
 IMAGE      ?= thnhdatle/loupe:dev
 COMPOSE    := docker compose -f deploy/docker-compose.yml
@@ -17,7 +15,7 @@ FUZZTIME   ?= 30s
 export CGO_ENABLED := 0
 SUMMARY    := ./scripts/summary.sh
 
-.PHONY: bootstrap generate fmt lint test test-integration coverage mutation acceptance bench fuzz \
+.PHONY: bootstrap generate fmt lint test test-integration coverage fuzz \
 	examples quickstart-test security build docker up down ci release-check release-dry
 
 bootstrap:
@@ -44,15 +42,6 @@ test-integration:
 coverage: export CGO_ENABLED := 1
 coverage:
 	@$(SUMMARY) coverage ./scripts/coverage.sh
-
-mutation:
-	@$(SUMMARY) mutation ./scripts/mutation.sh
-
-acceptance:
-	@CI="$(CI)" ONLY="$(ONLY)" $(SUMMARY) acceptance go run ./acceptance/cmd/runner -version "$(RELEASE)"
-
-bench:
-	@$(SUMMARY) bench ./scripts/bench.sh
 
 fuzz:
 	@FUZZTIME=$(FUZZTIME) $(SUMMARY) fuzz ./scripts/fuzz.sh

@@ -15,11 +15,9 @@ type spanKey struct {
 	span  trace.SpanID
 }
 
-// Store is an in-memory trace.SpanStore. Like the real store it commits a whole
-// batch or nothing and inserts spans idempotently on (trace_id, span_id). It
-// is safe for concurrent use.
+// Store is an in-memory trace.SpanStore with injectable errors.
 type Store struct {
-	mu        sync.Mutex // guards every field below
+	mu        sync.Mutex
 	calls     int
 	committed []trace.Batch
 	stored    map[spanKey]trace.Span
@@ -34,23 +32,18 @@ var _ trace.SpanStore = (*Store)(nil)
 // New returns an empty Store.
 func New() *Store { return &Store{stored: make(map[spanKey]trace.Span)} }
 
-// FailNext makes the next len(errs) WriteBatch calls fail, in order, with errs.
 func (s *Store) FailNext(errs ...error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.failNext = append(s.failNext, errs...)
 }
 
-// FailAlways makes every WriteBatch call fail with err until it is called with nil.
 func (s *Store) FailAlways(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.failAll = err
 }
 
-// Hold makes WriteBatch calls that start from now on block until release is
-// called or their context ends (then they fail with the context error).
-// release is idempotent.
 func (s *Store) Hold() (release func()) {
 	gate := make(chan struct{})
 	s.mu.Lock()
@@ -69,15 +62,12 @@ func (s *Store) Hold() (release func()) {
 	}
 }
 
-// OnWrite registers fn to run at the start of every WriteBatch call, before
-// any hold or error. fn must not call back into the Store.
 func (s *Store) OnWrite(fn func(b *trace.Batch)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.onWrite = fn
 }
 
-// WriteBatch records b unless an injected error or the context says otherwise.
 func (s *Store) WriteBatch(ctx context.Context, b *trace.Batch) (trace.BatchResult, error) {
 	s.mu.Lock()
 	s.calls++
@@ -120,14 +110,12 @@ func (s *Store) WriteBatch(ctx context.Context, b *trace.Batch) (trace.BatchResu
 	return res, nil
 }
 
-// Calls returns how many WriteBatch calls have started, including failed ones.
 func (s *Store) Calls() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.calls
 }
 
-// Batches returns copies of the committed batches in commit order.
 func (s *Store) Batches() []trace.Batch {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -138,14 +126,12 @@ func (s *Store) Batches() []trace.Batch {
 	return out
 }
 
-// SpanCount returns the number of distinct spans stored.
 func (s *Store) SpanCount() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return len(s.stored)
 }
 
-// Span returns the stored span with the given ids.
 func (s *Store) Span(tid trace.ID, sid trace.SpanID) (trace.Span, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -153,7 +139,6 @@ func (s *Store) Span(tid trace.ID, sid trace.SpanID) (trace.Span, bool) {
 	return sp, ok
 }
 
-// Content returns every committed batch-level content part (log events) in commit order.
 func (s *Store) Content() []trace.ContentPart {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -164,8 +149,6 @@ func (s *Store) Content() []trace.ContentPart {
 	return out
 }
 
-// Counts sums the committed ingest counters by signal, result and reason,
-// ignoring their time.
 func (s *Store) Counts() map[CountKey]int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -178,7 +161,6 @@ func (s *Store) Counts() map[CountKey]int64 {
 	return out
 }
 
-// CountKey identifies an ingest counter regardless of its hour.
 type CountKey struct {
 	Signal trace.Signal
 	Result trace.Result

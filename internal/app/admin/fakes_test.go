@@ -19,8 +19,6 @@ import (
 
 var epoch = time.Date(2026, 10, 1, 12, 30, 0, 0, time.UTC)
 
-// fakeRunner runs jobs inline and records their names. gate, when set, blocks
-// each Submit until it is closed or the context ends.
 type fakeRunner struct {
 	mu    sync.Mutex
 	names []string
@@ -52,10 +50,9 @@ func (r *fakeRunner) jobNames() []string {
 	return append([]string(nil), r.names...)
 }
 
-// fakeStore scripts the Store: remaining rows for recompute and deletion.
 type fakeStore struct {
 	mu         sync.Mutex
-	recompute  int // spans left to examine
+	recompute  int
 	deleteLeft int
 	freeLeft   int
 	afterKeys  []int64
@@ -146,7 +143,6 @@ func newEnv(t *testing.T, st *fakeStore, opts ...admin.Option) *env {
 	return e
 }
 
-// await waits for job id to leave pending/running and returns its status.
 func (e *env) await(t *testing.T, id string) admin.JobStatus {
 	t.Helper()
 	var st admin.JobStatus

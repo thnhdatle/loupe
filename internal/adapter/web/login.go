@@ -11,22 +11,17 @@ import (
 	"time"
 )
 
-// Login constants.
 const (
-	// LoginCodeTTL is how long a first-start login code stays valid.
 	LoginCodeTTL = 15 * time.Minute
-	// maxLoginBody bounds the POST /login form.
 	maxLoginBody = 4 << 10
 	secretBytes  = 32
 )
 
-// loginData is the data of the login page.
 type loginData struct {
 	base
 	Message string
 }
 
-// base is the data every page shares; page data types embed it.
 type base struct {
 	Title    string
 	Nav      string
@@ -38,7 +33,6 @@ func (h *Handler) base(r *http.Request, title, nav string) base {
 	return base{Title: title, Nav: nav, Nonce: nonceOf(r.Context()), LoggedIn: h.SessionAuth(r)}
 }
 
-// NewLoginCode returns a fresh single-use login code valid for LoginCodeTTL.
 func (h *Handler) NewLoginCode() (string, error) {
 	raw, err := h.rnd.read(secretBytes)
 	if err != nil {
@@ -49,8 +43,6 @@ func (h *Handler) NewLoginCode() (string, error) {
 	return code, nil
 }
 
-// LoginURL returns the URL that logs in with code. listen is the ui.listen
-// address; an empty or unspecified host becomes "localhost".
 func LoginURL(listen string, tls bool, code string) string {
 	host, port, err := net.SplitHostPort(listen)
 	if err != nil {
@@ -72,7 +64,6 @@ func LoginURL(listen string, tls bool, code string) string {
 	return scheme + "://" + hostport + "/login?code=" + code
 }
 
-// clientIP is the peer address; forwarding headers are never trusted.
 func clientIP(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
@@ -81,7 +72,6 @@ func clientIP(r *http.Request) string {
 	return host
 }
 
-// loginPage handles GET /login: the form, or a login by code.
 func (h *Handler) loginPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	if code := r.URL.Query().Get("code"); code != "" {
@@ -99,7 +89,6 @@ func (h *Handler) renderLogin(w http.ResponseWriter, r *http.Request, status int
 	h.render(w, r, status, view{"login.html", layoutTemplate}, loginData{base: h.base(r, "Sign in", ""), Message: msg})
 }
 
-// throttled answers 429 when ip used up its failed attempts and reports it.
 func (h *Handler) throttled(w http.ResponseWriter, r *http.Request) bool {
 	left, blocked := h.limiter.blocked(clientIP(r))
 	if !blocked {
@@ -123,7 +112,6 @@ func (h *Handler) codeLogin(w http.ResponseWriter, r *http.Request, code string)
 	h.startSession(w, r)
 }
 
-// loginSubmit handles POST /login: the API token in form field "token".
 func (h *Handler) loginSubmit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	if !sameOrigin(r) {
@@ -146,7 +134,6 @@ func (h *Handler) loginSubmit(w http.ResponseWriter, r *http.Request) {
 	h.startSession(w, r)
 }
 
-// startSession creates a session, sets the cookie and redirects to "/".
 func (h *Handler) startSession(w http.ResponseWriter, r *http.Request) {
 	raw, err := h.rnd.read(secretBytes)
 	if err != nil {
@@ -162,7 +149,6 @@ func (h *Handler) startSession(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// logout handles POST /logout: ends the session and clears the cookie.
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	if !sameOrigin(r) {
 		h.renderError(w, r, http.StatusForbidden, "Cross-origin request rejected.")

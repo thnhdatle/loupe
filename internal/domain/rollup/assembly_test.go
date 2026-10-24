@@ -109,7 +109,6 @@ func TestRange_ContainsAndPlanHasHour(t *testing.T) {
 	assert.False(t, p.HasHour(5))
 }
 
-// store simulates the writer: every span updates the row of its own hour and of its own day.
 type store struct {
 	hours, days         map[rollup.Key]*rollup.Aggregate
 	userHours, userDays map[rollup.UserKey]*rollup.Aggregate
@@ -184,8 +183,6 @@ func assertSameTotals[G comparable](t *rapid.T, want, got map[G]*rollup.Aggregat
 	}
 }
 
-// TestAssemble_DaysAndEdgeHoursEqualHourlyMergeProperty checks that
-// hour + day assembly equals a pure merge of all hourly rows, also for user rollups.
 func TestAssemble_DaysAndEdgeHoursEqualHourlyMergeProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

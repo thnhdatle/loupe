@@ -23,8 +23,6 @@ func aliasKeys(t *testing.T, f semconv.Field) []string {
 	return nil
 }
 
-// Rows of the alias table documented in docs/guides/instrumentation.md,
-// including the two OpenInference additions (llm.*.model_name).
 func TestAliases_Table_MatchesGuide(t *testing.T) {
 	t.Parallel()
 	want := map[semconv.Field][]string{

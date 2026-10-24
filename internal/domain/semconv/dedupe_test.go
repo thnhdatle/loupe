@@ -32,7 +32,6 @@ func span(id, parent byte, kind trace.Kind, u trace.Usage, cost *int64) us {
 
 func ptr(n int64) *int64 { return &n }
 
-// totals sums the contributions the way trace, session and rollup rows do.
 type totals struct {
 	calls, unpriced int
 	usage           trace.Usage
@@ -151,10 +150,10 @@ func TestDedupe_Rules(t *testing.T) {
 		{
 			name: "cost transfer through an unpriced intermediate",
 			spans: []us{
-				span(1, 0, llm, tok(100, 20), nil), // triage-auto alias
+				span(1, 0, llm, tok(100, 20), nil),
 				span(2, 1, http, tok(0, 0), nil),
-				span(3, 2, llm, tok(100, 20), nil), // route request
-				span(4, 3, llm, tok(0, 0), nil),    // failed attempt
+				span(3, 2, llm, tok(100, 20), nil),
+				span(4, 3, llm, tok(0, 0), nil),
 				span(5, 3, llm, tok(100, 20), ptr(1234)),
 			},
 			wantDup: []bool{false, false, true, true, true},
@@ -245,11 +244,9 @@ func TestDedupe_CyclicParentsTerminate(t *testing.T) {
 	got := semconv.Dedupe([]us{
 		span(1, 2, llm, tok(10, 1), ptr(1)),
 		span(2, 1, llm, tok(10, 1), ptr(1)),
-		span(3, 3, llm, tok(10, 1), ptr(1)), // its own parent
+		span(3, 3, llm, tok(10, 1), ptr(1)),
 	})
 	require.Len(t, got, 3)
-	// Span 1 has the lowest id in the cycle and loses its ancestor: it is kept,
-	// span 2 duplicates it.
 	assert.Equal(t, []bool{false, true, false}, dupFlags(got))
 }
 
@@ -280,7 +277,6 @@ func genTraceSpans(t *rapid.T) []us {
 	return spans
 }
 
-// Aggregates depend only on the set of stored spans, not on arrival order.
 func TestDedupe_OrderIndependenceProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -298,8 +294,6 @@ func TestDedupe_OrderIndependenceProperty(t *testing.T) {
 	})
 }
 
-// Each duplicated call is counted once: totals never exceed the plain sum, and
-// a kept span's input and output are its own.
 func TestDedupe_NeverInflatesProperty(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

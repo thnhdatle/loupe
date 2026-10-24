@@ -25,7 +25,7 @@ import (
 type fakeExporter struct {
 	req     query.ExportRequest
 	batches [][]query.TraceDetail
-	err     error // returned after the batches
+	err     error
 }
 
 func (e *fakeExporter) ExportTraces(

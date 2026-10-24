@@ -25,7 +25,6 @@ func (w *txWriter) writeTraces(ctx context.Context) error {
 	return nil
 }
 
-// sessionState is a session row loaded once per transaction.
 type sessionState struct {
 	row   sessionRow
 	dirty bool
@@ -51,8 +50,6 @@ func (w *txWriter) session(ctx context.Context, id string) (*sessionState, bool,
 	return ss, exists, nil
 }
 
-// writeSessions folds trace changes into their sessions: a trace joining a
-// session adds its totals and one trace; a trace already in it adds its delta.
 func (w *txWriter) writeSessions(ctx context.Context) error {
 	for _, id := range w.order {
 		st := w.traces[id]
@@ -120,8 +117,6 @@ func (w *txWriter) writeRollups(ctx context.Context) error {
 	return flushRollup(ctx, w.st.rollup[rtUserDay], d.userDay, userKeyArgs)
 }
 
-// flushRollup adds each accumulated delta to its row: measures are added in
-// SQL; a non-empty histogram is merged with the stored one in Go.
 func flushRollup[K comparable](
 	ctx context.Context, st rollupStmts, m map[K]*rollup.Aggregate, args func(K) []any,
 ) error {
@@ -170,14 +165,11 @@ func emptyHistogram() []byte {
 	var h rollup.Histogram
 	b, err := h.MarshalBinary()
 	if err != nil {
-		// Unreachable: an empty histogram always encodes.
 		return nil
 	}
 	return b
 }
 
-// touchTraces marks traces for re-evaluation of usage dedupe without new spans
-// (pricing recompute).
 func (w *txWriter) touchTraces(ctx context.Context, ids []trace.ID) error {
 	for _, id := range ids {
 		st, err := w.traceState(ctx, id)

@@ -10,18 +10,15 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-// jobRequest is one submitted job and its outcome.
 type jobRequest struct {
 	job  trace.Job
-	done chan error // capacity 1; receives the outcome exactly once
+	done chan error
 
-	mu        sync.Mutex // guards abandoned and cancel
+	mu        sync.Mutex
 	abandoned bool
-	cancel    context.CancelFunc // set while the job runs
+	cancel    context.CancelFunc
 }
 
-// abandon is called when the submitter stops waiting: a queued job will be
-// skipped and a running one sees its context cancelled.
 func (r *jobRequest) abandon() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -31,7 +28,6 @@ func (r *jobRequest) abandon() {
 	}
 }
 
-// begin marks the job as running unless it was abandoned.
 func (r *jobRequest) begin(cancel context.CancelFunc) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -49,9 +45,7 @@ func (r *jobRequest) finish(err error) {
 	r.done <- err
 }
 
-// Submit implements trace.JobRunner: it queues j for the writer goroutine,
-// which runs it between batches, and waits for its result. Jobs run one at a
-// time in submission order. Submit blocks while the job queue is full.
+// Submit runs j on the writer goroutine between batches and waits for the result.
 func (w *Writer) Submit(ctx context.Context, j trace.Job) error {
 	if j.Name == "" || j.Run == nil {
 		return fmt.Errorf("%w: name and Run are required", ErrInvalidJob)
@@ -76,7 +70,6 @@ func (w *Writer) Submit(ctx context.Context, j trace.Job) error {
 	case err := <-req.done:
 		return err
 	case <-ctx.Done():
-		// Abandon synchronously: a queued job is skipped, a running one is cancelled.
 		req.abandon()
 		return ctx.Err()
 	case <-w.stopped:
@@ -89,7 +82,6 @@ func (w *Writer) Submit(ctx context.Context, j trace.Job) error {
 	}
 }
 
-// runJob runs one job on the writer goroutine.
 func (w *Writer) runJob(wctx context.Context, req *jobRequest) {
 	jctx, cancel := context.WithCancel(wctx)
 	defer cancel()
@@ -103,14 +95,11 @@ func (w *Writer) runJob(wctx context.Context, req *jobRequest) {
 	if err != nil {
 		w.stats.jobErrors.Add(1)
 	}
-	// The error goes back to the submitter, which handles it; log only timing.
 	w.log.Debug("job finished", "operation", req.job.Name,
 		"duration_ms", w.clk.Now().Sub(start).Milliseconds(), "status", statusOf(err))
 	req.finish(err)
 }
 
-// runSafely runs j and turns a panic into an error, so that one faulty job
-// cannot take down the only writer.
 func runSafely(ctx context.Context, j trace.Job) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -130,7 +119,6 @@ func statusOf(err error) string {
 	return "ok"
 }
 
-// failQueuedJobs answers every queued job with ErrShuttingDown.
 func (w *Writer) failQueuedJobs() {
 	for {
 		select {

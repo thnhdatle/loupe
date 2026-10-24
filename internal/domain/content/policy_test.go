@@ -162,7 +162,7 @@ func TestBudget_Take(t *testing.T) {
 	got, cut := b.Take([]byte("abc"))
 	assert.Equal(t, "abc", string(got))
 	assert.False(t, cut)
-	got, cut = b.Take([]byte("€€")) // 3 bytes remain: one rune fits
+	got, cut = b.Take([]byte("€€"))
 	assert.Equal(t, "€", string(got))
 	assert.True(t, cut)
 	got, cut = b.Take([]byte(""))

@@ -7,25 +7,19 @@ import (
 	"slices"
 )
 
-// DefaultTopUsers is the number of users group_by=user lists before "other".
 const DefaultTopUsers = 50
 
-// UserTotal is one user's aggregate over a range.
 type UserTotal struct {
 	UserID    string
 	Aggregate Aggregate
 }
 
-// TopUsersResult is the top-N split of user totals.
 type TopUsersResult struct {
-	Top        []UserTotal // ranked, at most n
-	Other      Aggregate   // merge of every user not in Top
-	OtherUsers int         // number of users merged into Other
+	Top        []UserTotal
+	Other      Aggregate
+	OtherUsers int
 }
 
-// TopUsers ranks users by cost descending, then span count descending, then
-// user id ascending, keeps the first n (n < 0 counts as 0) and merges the rest
-// into Other. The result never shares storage with totals.
 func TopUsers(totals map[string]*Aggregate, n int) TopUsersResult {
 	ids := make([]string, 0, len(totals))
 	for id := range totals {

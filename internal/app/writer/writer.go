@@ -15,35 +15,24 @@ import (
 	"github.com/thnhdatle/loupe/internal/platform/clock"
 )
 
-// Defaults.
 const (
 	DefaultBatchSpans      = 2000
 	DefaultBatchInterval   = 200 * time.Millisecond
 	DefaultQueueSpans      = 100_000
 	DefaultQueueBytes      = 256 << 20
 	DefaultShutdownTimeout = 30 * time.Second
-	// DefaultWriteTimeout bounds one WriteBatch call.
-	DefaultWriteTimeout = 30 * time.Second
-	// DefaultRetryAttempts is the number of WriteBatch attempts per batch before
-	// it is dropped; with the default backoff the waits between attempts total at most 1.5 s.
-	DefaultRetryAttempts = 5
-	DefaultRetryBase     = 100 * time.Millisecond
-	DefaultRetryMax      = 2 * time.Second
-	// DefaultJobQueue is how many submitted jobs may wait for the writer.
-	DefaultJobQueue = 16
+	DefaultWriteTimeout    = 30 * time.Second
+	DefaultRetryAttempts   = 5
+	DefaultRetryBase       = 100 * time.Millisecond
+	DefaultRetryMax        = 2 * time.Second
+	DefaultJobQueue        = 16
 )
 
 var (
-	// ErrInvalidConfig reports an invalid option value.
-	ErrInvalidConfig = errors.New("writer: invalid configuration")
-	// ErrInvalidItem reports an Enqueue call without a batch or with no slots.
-	ErrInvalidItem = errors.New("writer: invalid queue item")
-	// ErrInvalidJob reports a job without a name or a Run function.
-	ErrInvalidJob = errors.New("writer: invalid job")
-	// ErrAlreadyRunning reports a second call to Run.
-	ErrAlreadyRunning = errors.New("writer: already running")
-	// ErrDrainIncomplete reports that the shutdown timeout passed before every
-	// queued item was written; the abandoned spans are counted in Stats.
+	ErrInvalidConfig   = errors.New("writer: invalid configuration")
+	ErrInvalidItem     = errors.New("writer: invalid queue item")
+	ErrInvalidJob      = errors.New("writer: invalid job")
+	ErrAlreadyRunning  = errors.New("writer: already running")
 	ErrDrainIncomplete = errors.New("writer: shutdown drain incomplete")
 )
 
@@ -62,45 +51,28 @@ type config struct {
 	rnd             *rand.Rand
 }
 
-// Option configures a Writer.
 type Option func(*config)
 
-// WithBatchSpans sets writer.batch_spans: a batch is flushed once this many
-// slots are queued. Items are never split, so one item larger than n forms a
-// batch of its own.
 func WithBatchSpans(n int) Option { return func(c *config) { c.batchSpans = n } }
 
-// WithBatchInterval sets writer.batch_interval: whatever is queued is flushed
-// at this period.
 func WithBatchInterval(d time.Duration) Option { return func(c *config) { c.batchInterval = d } }
 
-// WithQueueLimits sets ingest.queue_spans and ingest.queue_bytes, the bounds on
-// slots and estimated bytes held by queued and in-flight items.
 func WithQueueLimits(spans int, bytes int64) Option {
 	return func(c *config) { c.queueSpans, c.queueBytes = spans, bytes }
 }
 
-// WithShutdownTimeout bounds the drain after Run's context ends (shutdown_timeout).
 func WithShutdownTimeout(d time.Duration) Option { return func(c *config) { c.shutdownTimeout = d } }
 
-// WithWriteTimeout bounds each WriteBatch call.
 func WithWriteTimeout(d time.Duration) Option { return func(c *config) { c.writeTimeout = d } }
 
-// WithRetry sets the number of WriteBatch attempts per batch and the backoff
-// between them: base doubled per retry, capped at maxDelay, with equal jitter
-// (a uniform delay in [d/2, d]).
 func WithRetry(attempts int, base, maxDelay time.Duration) Option {
 	return func(c *config) { c.retryAttempts, c.retryBase, c.retryMax = attempts, base, maxDelay }
 }
 
-// WithJobQueue sets how many submitted jobs may wait; Submit blocks beyond that.
 func WithJobQueue(n int) Option { return func(c *config) { c.jobQueue = n } }
 
-// WithLogger sets the logger; the default discards.
 func WithLogger(l *slog.Logger) Option { return func(c *config) { c.logger = l } }
 
-// WithRand sets the source of backoff jitter; it is used only by the writer
-// goroutine. The default is a fixed-seed PCG, which is fine for jitter.
 func WithRand(r *rand.Rand) Option { return func(c *config) { c.rnd = r } }
 
 func (c *config) validate() error {
@@ -124,24 +96,23 @@ func (c *config) validate() error {
 	return errors.Join(errs...)
 }
 
-// Writer is the single store writer. Enqueue, AddCount, Submit and Stats are
-// safe for concurrent use; Run must be called once.
+// Writer is the single store writer.
 type Writer struct {
 	store trace.SpanStore
 	clk   clock.Clock
 	cfg   config
 	log   *slog.Logger
 
-	wake    chan struct{}    // capacity 1: a full batch is queued
-	jobs    chan *jobRequest // bounded by cfg.jobQueue
-	closing chan struct{}    // closed when shutdown starts
-	stopped chan struct{}    // closed when Run returns
+	wake    chan struct{}
+	jobs    chan *jobRequest
+	closing chan struct{}
+	stopped chan struct{}
 	started atomic.Bool
 
-	mu           sync.Mutex // guards the fields below
-	pending      []*entry   // FIFO of items not yet taken into a batch
+	mu           sync.Mutex
+	pending      []*entry
 	pendingSlots int
-	usedSlots    int // slots held by pending items and the batch being written
+	usedSlots    int
 	usedBytes    int64
 	counts       map[countKey]int64
 	closed       bool
@@ -149,7 +120,7 @@ type Writer struct {
 	stats counters
 }
 
-// New returns a Writer over store. It does not start goroutines; call Run.
+// New returns a Writer over store.
 func New(store trace.SpanStore, clk clock.Clock, opts ...Option) (*Writer, error) {
 	if store == nil || clk == nil {
 		return nil, fmt.Errorf("%w: store and clock are required", ErrInvalidConfig)

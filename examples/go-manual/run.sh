@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Runs the example against already running Loupe and fakellm, then prints the trace
-# Loupe stored, fetched from its REST API. See README.md for the environment.
-#   LOUPE_OTLP_ENDPOINT  OTLP/HTTP base URL   (default http://127.0.0.1:4318)
-#   LOUPE_API            REST API base URL    (default http://127.0.0.1:3000)
-#   FAKELLM_URL          OpenAI-compatible API (default http://127.0.0.1:8090/v1)
-#   EXAMPLE_NO_SUMMARY=1 skip the summary (used when recording payloads)
+# Runs the example against a running Loupe and fakellm and prints the stored trace.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 root=../..
@@ -21,4 +16,4 @@ go run .
 
 [[ -z "${EXAMPLE_NO_SUMMARY:-}" ]] || exit 0
 cd "$root"
-exec go run ./bench/cmd/exsummary -min-spans 2 -content "$OTEL_SERVICE_NAME"
+exec go run ./scripts/exsummary -min-spans 2 -content "$OTEL_SERVICE_NAME"
