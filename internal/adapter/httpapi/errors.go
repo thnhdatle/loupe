@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/thnhdatle/loupe/internal/app/admin"
+	"github.com/thnhdatle/loupe/internal/app/analyze"
 	"github.com/thnhdatle/loupe/internal/domain/query"
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
@@ -26,6 +27,8 @@ const (
 	CodeBodyTooLarge     = "body_too_large"
 	CodeTooManyJobs      = "too_many_jobs"
 	CodeShuttingDown     = "shutting_down"
+	CodeAnalyzeDisabled  = "analyze_disabled"
+	CodeAnalyzeBusy      = "analyze_busy"
 	CodeInternal         = "internal"
 )
 
@@ -46,6 +49,7 @@ func classify(err error) (status int, code string, expose bool) {
 		{admin.ErrEmptyUserID, http.StatusBadRequest, CodeInvalidParameter},
 		{admin.ErrTooManyJobs, http.StatusTooManyRequests, CodeTooManyJobs},
 		{admin.ErrClosed, http.StatusServiceUnavailable, CodeShuttingDown},
+		{analyze.ErrBusy, http.StatusConflict, CodeAnalyzeBusy},
 	}
 	for _, e := range table {
 		if errors.Is(err, e.target) {

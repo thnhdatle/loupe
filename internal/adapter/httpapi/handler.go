@@ -9,7 +9,9 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime"
+	"time"
 
+	"github.com/thnhdatle/loupe/internal/app/analyze"
 	"github.com/thnhdatle/loupe/internal/app/queries"
 	"github.com/thnhdatle/loupe/internal/domain/query"
 	"github.com/thnhdatle/loupe/internal/platform/clock"
@@ -33,6 +35,11 @@ type Queries interface {
 	IngestStats(ctx context.Context) (query.IngestStats, error)
 }
 
+type Analyzer interface {
+	Analyze(ctx context.Context, traceID string) (analyze.Report, error)
+	Timeout() time.Duration
+}
+
 type UserDeleter interface {
 	DeleteUser(userID string) (jobID string, err error)
 }
@@ -49,6 +56,7 @@ type Options struct {
 	AllowUnauthenticated bool
 	SessionAuth          func(r *http.Request) bool
 	Exporter             query.TraceExporter
+	Analyzer             Analyzer
 	Version              VersionInfo
 	MaxQueryBytes        int
 	MaxBodyBytes         int64
@@ -118,6 +126,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) { h.root.Ser
 func (h *Handler) routes() {
 	h.mux.Handle(http.MethodGet, "/v1/traces", h.listTraces)
 	h.mux.Handle(http.MethodGet, "/v1/traces/{trace_id}", h.getTrace)
+	h.mux.Handle(http.MethodPost, "/v1/traces/{trace_id}/analyze", h.analyzeTrace)
 	h.mux.Handle(http.MethodGet, "/v1/sessions", h.listSessions)
 	h.mux.Handle(http.MethodGet, "/v1/sessions/{id}", h.getSession)
 	h.mux.Handle(http.MethodGet, "/v1/stats/overview", h.overview)

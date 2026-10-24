@@ -180,6 +180,62 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '404': {$ref: '#/components/responses/NotFound'}
         '500': {$ref: '#/components/responses/Internal'}
+  /v1/traces/{trace_id}/analyze:
+    post:
+      operationId: analyzeTrace
+      tags: [traces]
+      summary: Explain a failing or slow trace
+      description: |
+        Computes findings from the stored spans (errors, rate limits, retries, latency
+        outliers, token-heavy calls, cost share), then sends them with a compact span
+        table to the model configured under `analyze`. Causes and fixes cite span ids of
+        the trace. When the model fails or its answer is not valid JSON, `causes` and
+        `fixes` are empty and `notice` says why. One analysis runs at a time per trace.
+        Bearer token only, never the cookie.
+      security:
+        - bearer: []
+      parameters:
+        - $ref: '#/components/parameters/TraceId'
+      responses:
+        '200':
+          description: Findings, and the model's causes and fixes.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AnalyzeReport'}
+              example:
+                trace_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                findings:
+                  - kind: rate_limit
+                    text: '3 calls were rate limited: RateLimitError, HTTP 429'
+                    span_ids: [53995c3f42cd8ad8, 6e0c63257de34c92, 7a3f2b1c9d8e4f60]
+                  - kind: retry
+                    text: 4 calls to gpt-4o under one parent, 3 failed (likely retries, 1.2s spent on failed calls); the last call succeeded
+                    span_ids: [53995c3f42cd8ad8, 6e0c63257de34c92, 7a3f2b1c9d8e4f60, 8b4e3c2d1a0f5e71]
+                causes:
+                  - text: The provider refused the call 3 times (rate limit).
+                    span_ids: [53995c3f42cd8ad8]
+                fixes:
+                  - text: Send fewer calls at once and retry with backoff.
+                    span_ids: [53995c3f42cd8ad8, 6e0c63257de34c92, 7a3f2b1c9d8e4f60]
+                spans_omitted: 0
+                notice: ""
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404':
+          description: Unknown trace (`not_found`), or analyze is off because `analyze.base_url` is empty (`analyze_disabled`).
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+              example:
+                error: {code: analyze_disabled, message: 'analyze is off: set analyze.base_url', request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+        '409':
+          description: An analysis of this trace is already running.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+              example:
+                error: {code: analyze_busy, message: 'analyze: an analysis of this trace is already running', request_id: 01J9Z3K4M5N6P7Q8R9S0T1V2W3}
+        '500': {$ref: '#/components/responses/Internal'}
   /v1/sessions:
     get:
       operationId: listSessions
@@ -789,6 +845,35 @@ components:
         attributes: {type: object, description: Non-content span attributes.}
         content: {type: array, items: {$ref: '#/components/schemas/ContentPart'}}
         content_stripped: {type: boolean}
+    AnalyzePoint:
+      type: object
+      required: [text, span_ids]
+      additionalProperties: false
+      properties:
+        text: {type: string}
+        span_ids: {type: array, items: {type: string}, description: Spans of this trace the point refers to.}
+    Finding:
+      type: object
+      required: [kind, text, span_ids]
+      additionalProperties: false
+      properties:
+        kind: {type: string, enum: [rate_limit, tool_error, error, retry, slow, token_heavy, cost_share]}
+        text: {type: string}
+        span_ids: {type: array, items: {type: string}}
+    AnalyzeReport:
+      type: object
+      required: [trace_id, findings, causes, fixes, spans_omitted, notice]
+      additionalProperties: false
+      properties:
+        trace_id: {type: string}
+        findings:
+          type: array
+          description: Computed from the spans without a model, most severe first.
+          items: {$ref: '#/components/schemas/Finding'}
+        causes: {type: array, items: {$ref: '#/components/schemas/AnalyzePoint'}}
+        fixes: {type: array, items: {$ref: '#/components/schemas/AnalyzePoint'}}
+        spans_omitted: {type: integer, description: Spans left out of the table sent to the model (`analyze.max_spans`).}
+        notice: {type: string, description: Why causes and fixes are missing; empty otherwise.}
     TraceDetail:
       type: object
       required: [summary, spans]

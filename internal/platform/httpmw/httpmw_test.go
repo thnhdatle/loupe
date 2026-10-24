@@ -5,6 +5,7 @@ package httpmw_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -223,6 +224,41 @@ func TestNewServer_SetsTimeouts(t *testing.T) {
 	assert.Equal(t, httpmw.WriteTimeout, s.WriteTimeout)
 	assert.Equal(t, httpmw.IdleTimeout, s.IdleTimeout)
 	assert.Equal(t, httpmw.MaxHeaderBytes, s.MaxHeaderBytes)
+}
+
+func TestExtendWriteDeadline(t *testing.T) {
+	t.Parallel()
+	for name, extend := range map[string]bool{"extended": true, "default": false} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				rec := &httpmw.StatusRecorder{ResponseWriter: w}
+				if extend {
+					httpmw.ExtendWriteDeadline(rec, time.Second)
+				}
+				time.Sleep(300 * time.Millisecond)
+				_, _ = rec.Write([]byte("ok"))
+			}))
+			srv.Config.WriteTimeout = 100 * time.Millisecond
+			srv.Start()
+			defer srv.Close()
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
+			require.NoError(t, err)
+			resp, err := srv.Client().Do(req)
+			if !extend {
+				if err == nil {
+					_ = resp.Body.Close()
+				}
+				require.Error(t, err, "the server write timeout cuts the response")
+				return
+			}
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+			assert.Equal(t, "ok", string(body))
+		})
+	}
 }
 
 func TestStatusRecorder_ImplicitAndUnwrap(t *testing.T) {

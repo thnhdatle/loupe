@@ -17,6 +17,7 @@ import (
 	"github.com/thnhdatle/loupe/internal/adapter/adminhttp"
 	"github.com/thnhdatle/loupe/internal/adapter/httpapi"
 	"github.com/thnhdatle/loupe/internal/app/admin"
+	"github.com/thnhdatle/loupe/internal/app/analyze"
 	"github.com/thnhdatle/loupe/internal/app/queries"
 	"github.com/thnhdatle/loupe/internal/domain/cost"
 	"github.com/thnhdatle/loupe/internal/domain/query"
@@ -114,6 +115,10 @@ func contractCases() map[string]contractCase {
 		"getTrace": {setup: func(t *testing.T, ex any, f *fakeQueries, _ *fakeDeleter, _ *httpapi.Options) {
 			t.Helper()
 			f.detail = decodeExample[query.TraceDetail](t, ex)
+		}},
+		"analyzeTrace": {setup: func(t *testing.T, ex any, _ *fakeQueries, _ *fakeDeleter, o *httpapi.Options) {
+			t.Helper()
+			o.Analyzer = &fakeAnalyzer{report: decodeExample[analyze.Report](t, ex)}
 		}},
 		"listSessions": {setup: func(t *testing.T, ex any, f *fakeQueries, _ *fakeDeleter, _ *httpapi.Options) {
 			t.Helper()
@@ -224,6 +229,11 @@ func TestOpenAPI_ErrorExamples(t *testing.T) {
 			http.StatusBadRequest, "invalid_parameter",
 		},
 		{
+			"analyze off", "/v1/traces/4bf92f3577b34da6a3ce929d0e0e4736/analyze",
+			map[string]string{"Authorization": "Bearer " + testToken},
+			http.StatusNotFound, "analyze_disabled",
+		},
+		{
 			"unknown endpoint", "/v1/nope",
 			map[string]string{"Authorization": "Bearer " + testToken},
 			http.StatusNotFound, "not_found",
@@ -232,7 +242,11 @@ func TestOpenAPI_ErrorExamples(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			rec := do(t, h, http.MethodGet, tc.target, tc.hdr)
+			method := http.MethodGet
+			if strings.HasSuffix(tc.target, "/analyze") {
+				method = http.MethodPost
+			}
+			rec := do(t, h, method, tc.target, tc.hdr)
 			assert.Equal(t, tc.status, rec.Code)
 			assert.Equal(t, tc.code, errorCode(t, rec))
 		})

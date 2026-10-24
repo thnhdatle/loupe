@@ -18,4 +18,6 @@ Look up the error codes returned by the Loupe API and CLI. Codes are never reuse
 | `body_too_large` | 413 | Request body over 4 KiB. |
 | `too_many_jobs` | 429 | Admin job registry full. |
 | `shutting_down` | 503 | Server shutting down; no new jobs. |
+| `analyze_disabled` | 404 | Analyze is off; set `analyze.base_url`. |
+| `analyze_busy` | 409 | An analysis of this trace is already running. |
 | `internal` | 500 | Server error; see the log entry with the same `request_id`. |

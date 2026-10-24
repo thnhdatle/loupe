@@ -30,6 +30,11 @@ func NewServer(addr string, h http.Handler, tlsCfg *tls.Config) *http.Server {
 	}
 }
 
+// ExtendWriteDeadline gives a handler that waits up to d on a slow dependency the usual write budget on top.
+func ExtendWriteDeadline(w http.ResponseWriter, d time.Duration) {
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(WriteTimeout + d))
+}
+
 type StatusRecorder struct {
 	http.ResponseWriter
 	Status int
