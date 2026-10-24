@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loupe — LLM Observability</title>
+<script>
+  // Edit these.
+  const SITE = "https://your-site.example";
+  const PROJECT = "loupe";
+  const REPO = "https://github.com/thnhdatle/loupe";
+</script>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0e1117; --panel: #161b24; --line: #2a313c; --text: #e6edf3; --muted: #8b96a5;
+    --b: #2dd4bf; --a: #818cf8; --stall: #ef4444; --track: #0b0e14;
+    --big: 1.75rem; --body: 1rem; --small: .8125rem;
+    --jb: color-mix(in srgb, var(--b) 20%, transparent);
+    --jr: color-mix(in srgb, var(--stall) 16%, transparent);
+    --ja: color-mix(in srgb, var(--a) 16%, transparent); --la: color-mix(in srgb, var(--a) 60%, transparent);
+    --sk: color-mix(in srgb, var(--text) 12%, transparent);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body { font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 2.2rem 16px 3rem; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.7rem; }
+  .btn { display: inline-flex; align-items: center; color: var(--text); text-decoration: none;
+    font: 600 var(--small)/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: .68rem 1rem;
+    border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--text) 4%, transparent);
+    cursor: pointer; transition: transform .16s ease, border-color .16s ease; }
+  .btn:hover { border-color: currentColor; }
+  .back:hover { transform: translateX(-2px); }
+  h1 { margin: 0 0 .25rem; font-size: var(--big); line-height: 1.2; letter-spacing: -.01em; }
+  h1 span { color: var(--b); }
+  .sub { margin: 0 0 1.8rem; color: var(--muted); font-size: var(--body); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.5rem 1.4rem; margin-bottom: 1.4rem; }
+  h2 { margin: 0 0 1.3rem; font-size: var(--small); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; }
+  .lbl { font-size: var(--small); font-weight: 700; margin-bottom: .5rem; }
+  .box { border: 1.5px solid var(--line); border-radius: 10px; padding: .7rem .75rem; font-size: var(--small); }
+  .mid { display: flex; align-items: center; gap: .5rem; color: var(--muted); }
+  .hub { border: 1.5px solid var(--b); color: var(--b); border-radius: 10px; padding: .6rem .8rem; font-weight: 700; font-size: var(--body); }
+  .step { position: relative; height: 1.6em; margin-top: 1.2rem; font-size: var(--body); }
+  .step p { position: absolute; inset: 0; margin: 0; opacity: 0; }
+  .step p b { color: var(--b); }
+  .step p span { color: var(--muted); margin-right: .4rem; }
+  .scene { display: grid; grid-template-columns: .8fr auto 1.6fr; gap: 1rem; align-items: center; }
+
+  .calls { display: grid; gap: .4rem; }
+  .call { border: 1.5px solid var(--la); background: var(--ja); border-radius: 6px; padding: .12rem .45rem; opacity: 0; justify-self: start; white-space: nowrap; }
+  .call.bad { border-color: var(--stall); background: var(--jr); color: var(--stall); }
+  .dash { display: grid; gap: .35rem; }
+  .tr { display: grid; grid-template-columns: 1.2fr 1fr .8fr 1fr auto; gap: .5rem; align-items: center; opacity: 0; }
+  .tr.h { opacity: 1; color: var(--muted); }
+  .tr i { height: 9px; border-radius: 3px; background: var(--sk); }
+  .tr .st { width: 8px; height: 8px; border-radius: 50%; background: var(--b); }
+  .tr.bad i { background: var(--jr); } .tr.bad .st { background: var(--stall); }
+  .an { justify-self: end; margin-top: .3rem; border: 1.5px solid var(--b); color: var(--b); border-radius: 999px;
+    padding: .15rem .7rem; font-weight: 700; opacity: 0; }
+  .ai { margin-top: .5rem; border: 1.5px solid var(--b); background: var(--jb); border-radius: 8px; padding: .5rem .6rem;
+    display: grid; gap: .25rem; opacity: 0; }
+  .ai div { display: flex; justify-content: space-between; gap: .8rem; }
+  .ai b { color: var(--b); font-weight: 700; margin-right: .3rem; }
+  .ai em { font-style: normal; color: var(--muted); white-space: nowrap; }
+
+  .live .c1 { animation: c1 10s linear infinite; } .live .c2 { animation: c2 10s linear infinite; }
+  .live .c3 { animation: c3 10s linear infinite; }
+  .live .r1 { animation: c1r 10s linear infinite; } .live .r2 { animation: c2r 10s linear infinite; }
+  .live .r3 { animation: c3r 10s linear infinite; }
+  .live .an { animation: an 10s linear infinite; }
+  .live .ai { animation: ai 10s linear infinite; }
+  .live .hub { animation: hub 10s linear infinite; }
+  .live .t1 { animation: t1 10s linear infinite; } .live .t2 { animation: t2 10s linear infinite; }
+  .live .t3 { animation: t3 10s linear infinite; } .live .t4 { animation: t4 10s linear infinite; }
+  @keyframes c1 { 0%, 3% { opacity: 0; transform: translateY(-6px); } 6%, 97% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes c2 { 0%, 9% { opacity: 0; transform: translateY(-6px); } 12%, 97% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes c3 { 0%, 26% { opacity: 0; transform: translateY(-6px); } 29%, 97% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes c1r { 0%, 8% { opacity: 0; } 11%, 97% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes c2r { 0%, 14% { opacity: 0; } 17%, 97% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes c3r { 0%, 31% { opacity: 0; } 34%, 97% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes an { 0%, 50% { opacity: 0; } 52%, 97% { opacity: 1; } 100% { opacity: 0; }
+    56%, 60% { background: var(--b); color: var(--bg); } }
+  @keyframes ai { 0%, 76% { opacity: 0; transform: translateY(6px); } 79%, 97% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes hub { 0%, 8%, 14%, 30%, 36%, 61%, 74%, 100% { box-shadow: none; } 10%, 12%, 32%, 34%, 63%, 72% { box-shadow: 0 0 0 4px var(--jb); } }
+  @keyframes t1 { 0%, 23% { opacity: 1; } 25%, 100% { opacity: 0; } }
+  @keyframes t2 { 0%, 25% { opacity: 0; } 27%, 48% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  @keyframes t3 { 0%, 50% { opacity: 0; } 52%, 73% { opacity: 1; } 75%, 100% { opacity: 0; } }
+  @keyframes t4 { 0%, 75% { opacity: 0; } 77%, 98% { opacity: 1; } 100% { opacity: 0; } }
+
+  .q { font-size: var(--body); font-weight: 600; margin: 0 0 1rem; }
+  .fact { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .9rem 0; border-top: 1px solid var(--line); }
+  .fact .name { font-size: var(--small); color: var(--muted); }
+  .fact .name b { display: block; color: var(--text); font-size: var(--body); }
+  .val { font-size: var(--big); font-weight: 700; line-height: 1; color: var(--b); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .live .val { animation: pop 6s ease-out infinite; }
+  @keyframes pop { 0% { opacity: 0; transform: translateY(6px); } 12%, 100% { opacity: 1; transform: none; } }
+  .note { font-size: var(--small); color: var(--muted); margin: .6rem 0 0; }
+  .ctl { display: flex; justify-content: flex-end; }
+
+  .paused * { animation-play-state: paused !important; }
+  .still * { animation-delay: -9.5s !important; animation-play-state: paused !important; }
+  .still .res * { animation-delay: -5.9s !important; }
+
+  @media (max-width: 560px) {
+    :root { --big: 1.4rem; }
+    .scene { grid-template-columns: 1fr; gap: .8rem; }
+    .mid { justify-content: center; }
+    .mid .ar { transform: rotate(90deg); }
+    .ai div { flex-direction: column; gap: 0; }
+    .step { height: 3em; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="demo">
+  <div class="top">
+    <a class="btn back" id="back" href="#">← back to project</a>
+    <a class="btn" id="code" href="#">code</a>
+  </div>
+
+  <h1><span>Loupe</span> — see every LLM call your app makes</h1>
+  <p class="sub">One binary, one file. Click Analyze and an AI explains why a call failed and how to fix it.</p>
+
+  <section class="card idea">
+    <h2>How it works</h2>
+    <div class="scene">
+      <div>
+        <div class="lbl">Your app</div>
+        <div class="box calls">
+          <span class="call c1">LLM call</span>
+          <span class="call c2">LLM call</span>
+          <span class="call bad c3">LLM call · failed</span>
+        </div>
+      </div>
+      <div class="mid"><span class="ar">→</span><div class="hub">Loupe</div><span class="ar">→</span></div>
+      <div>
+        <div class="lbl">Dashboard · one SQLite file</div>
+        <div class="box dash">
+          <div class="tr h"><span>model</span><span>tokens</span><span>cost</span><span>latency</span><span></span></div>
+          <div class="tr r1"><i></i><i></i><i></i><i></i><span class="st"></span></div>
+          <div class="tr r2"><i></i><i></i><i></i><i></i><span class="st"></span></div>
+          <div class="tr bad r3"><i></i><i></i><i></i><i></i><span class="st"></span></div>
+          <span class="an">Analyze</span>
+          <div class="ai">
+            <div><span><b>Cause</b>the provider refused the call 3 times (rate limit)</span><em>→ span 4</em></div>
+            <div><span><b>Fix</b>send fewer calls at once, retry with backoff</span><em>→ span 4–6</em></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <p class="t1"><span>1</span>Your app's LLM calls arrive as traces and are saved in one SQLite file.</p>
+      <p class="t2"><span>2</span>One call failed. The dashboard marks it.</p>
+      <p class="t3"><span>3</span>Click Analyze. Loupe gathers the evidence: errors, retries, latency, tokens.</p>
+      <p class="t4"><span>4</span>A local or API LLM <b>explains the cause and suggests a fix</b>, linked to the spans.</p>
+    </div>
+  </section>
+
+  <section class="card res">
+    <h2>The result</h2>
+    <p class="q">How much can one binary and one file handle?</p>
+    <div class="fact">
+      <div class="name"><b>Steady traffic, three 10-minute runs</b>nothing lost, peak memory 213 MiB</div>
+      <div class="val">3,001 spans/s</div>
+    </div>
+    <div class="fact">
+      <div class="name"><b>Search 2 million spans</b>slowest of 8 dashboard queries</div>
+      <div class="val">58 ms</div>
+    </div>
+    <p class="note">A span is one recorded step, such as one LLM call. Search time covers 95% of queries.</p>
+  </section>
+
+  <div class="ctl"><button class="btn" id="play" type="button">❚❚ pause</button></div>
+</div>
+<script>
+  document.getElementById("back").href = SITE.replace(/\/$/, "") + "/projects/" + PROJECT + "/";
+  document.getElementById("code").href = REPO;
+
+  const demo = document.getElementById("demo");
+  const btn = document.getElementById("play");
+  let running = false;
+
+  function start() {
+    demo.classList.remove("still", "paused");
+    demo.classList.add("live");
+    running = true;
+    btn.textContent = "❚❚ pause";
+  }
+  function pause() {
+    running = false;
+    demo.classList.add("paused");
+    btn.textContent = "▶ play";
+  }
+  btn.addEventListener("click", function () { running ? pause() : start(); });
+
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    demo.classList.add("live", "still");
+    btn.textContent = "▶ play";
+  } else {
+    start();
+  }
+</script>
+</body>
+</html>
