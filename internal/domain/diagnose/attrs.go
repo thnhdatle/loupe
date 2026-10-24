@@ -26,7 +26,6 @@ func attributes(s *query.SpanView) map[string]any {
 	return m
 }
 
-// errorText joins the error type, message and HTTP status stored on a span.
 func errorText(s *query.SpanView) string {
 	attrs := attributes(s)
 	var parts []string

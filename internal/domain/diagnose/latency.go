@@ -18,7 +18,6 @@ const (
 	minOutlierPeer = 3
 )
 
-// latency reports leaf spans that take most of the trace or are far slower than their peers of the same kind.
 func latency(spans []query.SpanView) []Finding {
 	leaves := leafSpans(spans)
 	total := traceDuration(spans)

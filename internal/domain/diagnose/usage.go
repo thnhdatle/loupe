@@ -17,7 +17,6 @@ const (
 	nanosPerUSD      = 1e9
 )
 
-// tokenHeavy reports LLM calls with a large prompt, in absolute terms or against the trace's other calls.
 func tokenHeavy(spans []query.SpanView) []Finding {
 	var calls []int
 	for i := range spans {
@@ -46,7 +45,6 @@ func tokenHeavy(spans []query.SpanView) []Finding {
 	return out
 }
 
-// costShare reports a span that accounts for most of the trace's cost.
 func costShare(spans []query.SpanView) []Finding {
 	var total int64
 	var priced int

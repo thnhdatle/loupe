@@ -10,7 +10,6 @@ import (
 	"github.com/thnhdatle/loupe/internal/app/analyze"
 )
 
-// newAnalyzer returns nil when analyze.base_url is empty.
 func (s *server) newAnalyzer() (httpapi.Analyzer, error) {
 	cfg := s.cfg
 	if !cfg.Analyze.Enabled() {
