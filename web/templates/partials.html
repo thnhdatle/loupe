@@ -14,3 +14,19 @@
 {{define "bar"}}<svg class="bar" viewBox="0 0 1000 12" preserveAspectRatio="none" role="presentation" focusable="false"><rect class="{{.Class}}" x="{{.X}}" y="0" width="{{.W}}" height="12"/></svg>{{end}}
 
 {{define "status"}}{{if .}}<span class="status status-error">error</span>{{else}}<span class="status status-ok">ok</span>{{end}}{{end}}
+
+{{define "analysis"}}
+<section class="analysis" aria-label="Analysis">
+  {{if .Error}}<p class="notice">{{.Error}}</p>{{else}}
+  {{if .Notice}}<p class="notice">{{.Notice}}</p>{{end}}
+  {{if .Causes}}<h3>Cause</h3><ul class="points">{{range .Causes}}{{template "point" .}}{{end}}</ul>{{end}}
+  {{if .Fixes}}<h3>Fix</h3><ul class="points">{{range .Fixes}}{{template "point" .}}{{end}}</ul>{{end}}
+  <h3>Findings</h3>
+  {{if .Findings}}<ul class="points">{{range .Findings}}{{template "point" .}}{{end}}</ul>
+  {{else}}<p class="muted">No errors, retries or outliers in the stored spans.</p>{{end}}
+  {{if .Omitted}}<p class="muted">{{.Omitted}} spans were not sent to the model (analyze.max_spans).</p>{{end}}
+  {{end}}
+</section>
+{{end}}
+
+{{define "point"}}<li>{{.Text}}{{if .Refs}} <span class="refs">&rarr; span {{range $i, $r := .Refs}}{{if $i}}, {{end}}<a href="{{$r.Href}}" hx-get="{{$r.Href}}" hx-target="#detail" hx-swap="outerHTML" hx-push-url="true" title="{{$r.Name}}">{{$r.Number}}</a>{{end}}{{if .More}} and {{.More}} more{{end}}</span>{{end}}</li>{{end}}

@@ -303,6 +303,14 @@ pre.body {
   font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.analyze { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+.analyze .busy, .analyze.htmx-request .idle { display: none; }
+.analyze.htmx-request .busy { display: inline; }
+.analysis { border: 1px solid var(--border); border-radius: 8px; padding: 4px 16px 12px; margin: 0 0 16px; }
+.points { margin: 0; padding-left: 20px; }
+.points li { margin: 4px 0; }
+.refs { color: var(--muted); }
+
 .pager { margin: 12px 0; }
 .login { display: grid; gap: 12px; max-width: 360px; margin-top: 12px; }
 

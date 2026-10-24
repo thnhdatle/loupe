@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/thnhdatle/loupe/internal/app/analyze"
 	"github.com/thnhdatle/loupe/internal/app/queries"
 	"github.com/thnhdatle/loupe/internal/domain/query"
 	"github.com/thnhdatle/loupe/internal/platform/clock"
@@ -45,6 +46,11 @@ type Queries interface {
 	IngestInRange(ctx context.Context, from, to time.Time) (query.IngestStats, error)
 }
 
+type Analyzer interface {
+	Analyze(ctx context.Context, traceID string) (analyze.Report, error)
+	Timeout() time.Duration
+}
+
 type Options struct {
 	Tokens       []string
 	RequireLogin bool
@@ -53,6 +59,7 @@ type Options struct {
 	Clock        clock.Clock
 	Logger       *slog.Logger
 	Rand         io.Reader
+	Analyzer     Analyzer
 }
 
 // Handler serves the dashboard pages and the login flow.
@@ -120,6 +127,7 @@ func (h *Handler) routes() http.Handler {
 	mux.HandleFunc("GET /{$}", h.page(h.overview))
 	mux.HandleFunc("GET /traces", h.page(h.traces))
 	mux.HandleFunc("GET /traces/{id}", h.page(h.traceDetail))
+	mux.HandleFunc("POST /traces/{id}/analyze", h.page(h.analyzeTrace))
 	mux.HandleFunc("GET /sessions", h.page(h.sessionList))
 	mux.HandleFunc("GET /sessions/{id}", h.page(h.sessionDetail))
 	mux.HandleFunc("GET /models", h.page(h.models))

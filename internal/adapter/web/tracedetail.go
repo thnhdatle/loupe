@@ -15,6 +15,8 @@ import (
 
 const ContentStrippedMessage = "content not stored: set content.capture=on"
 
+const tracePage = "trace.html"
+
 const (
 	waterScale    = 1000
 	minBarWidth   = 3
@@ -65,17 +67,30 @@ type spanPanel struct {
 
 type traceDetailData struct {
 	base
-	Summary query.TraceSummary
-	Rows    []waterRow
-	Panel   spanPanel
+	Summary  query.TraceSummary
+	Rows     []waterRow
+	Panel    spanPanel
+	Analyze  bool
+	Analysis *analysisData
 }
 
 func (h *Handler) traceDetail(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	d, err := h.q.GetTrace(r.Context(), id, false)
+	data, err := h.traceData(r, r.PathValue("id"))
 	if err != nil {
 		h.fail(w, r, err)
 		return
+	}
+	if isHTMX(r) {
+		h.render(w, r, http.StatusOK, view{tracePage, "trace_body"}, data)
+		return
+	}
+	h.renderPage(w, r, tracePage, data)
+}
+
+func (h *Handler) traceData(r *http.Request, id string) (traceDetailData, error) {
+	d, err := h.q.GetTrace(r.Context(), id, false)
+	if err != nil {
+		return traceDetailData{}, fmt.Errorf("web: get trace: %w", err)
 	}
 	if hasStoredContent(d) {
 		if full, err := h.q.GetTrace(r.Context(), id, true); err == nil {
@@ -86,8 +101,7 @@ func (h *Handler) traceDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	order := orderSpans(d.Spans)
 	if len(order) == 0 {
-		h.fail(w, r, fmt.Errorf("trace %s has no spans: %w", id, trace.ErrNotFound))
-		return
+		return traceDetailData{}, fmt.Errorf("trace %s has no spans: %w", id, trace.ErrNotFound)
 	}
 	sel := order[0]
 	for _, i := range order {
@@ -95,15 +109,10 @@ func (h *Handler) traceDetail(w http.ResponseWriter, r *http.Request) {
 			sel = i
 		}
 	}
-	data := traceDetailData{
+	return traceDetailData{
 		base: h.base(r, "Trace "+shortID(id), "traces"), Summary: d.Summary,
-		Rows: waterfall(d, order, sel), Panel: newPanel(d, sel),
-	}
-	if isHTMX(r) {
-		h.render(w, r, http.StatusOK, view{"trace.html", "trace_body"}, data)
-		return
-	}
-	h.renderPage(w, r, "trace.html", data)
+		Rows: waterfall(d, order, sel), Panel: newPanel(d, sel), Analyze: h.opts.Analyzer != nil,
+	}, nil
 }
 
 func shortID(id string) string {

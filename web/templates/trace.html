@@ -10,6 +10,14 @@
   {{if .Summary.SessionID}}<div><dt>Session</dt><dd><a href="/sessions/{{.Summary.SessionID}}">{{.Summary.SessionID}}</a></dd></div>{{end}}
   {{if .Summary.UserID}}<div><dt>User</dt><dd>{{.Summary.UserID}}</dd></div>{{end}}
 </dl>
+{{if .Analyze}}
+<form class="analyze" method="post" action="/traces/{{.Summary.TraceID}}/analyze" hx-post="/traces/{{.Summary.TraceID}}/analyze" hx-target="#analysis" hx-swap="innerHTML" hx-disabled-elt="find button">
+  <button type="submit">Analyze</button>
+  <span class="muted busy" role="status">Analyzing…</span>
+  <span class="muted idle">Sends a summary of this trace to the configured model.</span>
+</form>
+<div id="analysis">{{with .Analysis}}{{template "analysis" .}}{{end}}</div>
+{{end}}
 {{template "trace_body" .}}
 {{end}}
 
