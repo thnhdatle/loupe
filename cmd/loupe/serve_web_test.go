@@ -63,7 +63,7 @@ func TestDashboard_SessionCookieScope(t *testing.T) {
 	var logs bytes.Buffer
 	s := &server{cfg: &cfg, clk: clock.System{}, log: slog.New(slog.NewTextHandler(&logs, nil))}
 	q := queries.New(queries.Readers{}, s.clk)
-	dash, err := s.newDashboard(q, []string{dashToken})
+	dash, err := s.newDashboard(q, []string{dashToken}, nil)
 	require.NoError(t, err)
 	api, err := httpapi.NewHandler(q, failingDeleter{t}, httpapi.Options{
 		Tokens: []string{dashToken}, SessionAuth: dash.SessionAuth,
@@ -102,6 +102,8 @@ func TestDashboard_SessionCookieScope(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, do(http.MethodGet, "/v1/version", nil, ""), "no credentials")
 	assert.Equal(t, http.StatusOK, do(http.MethodGet, "/v1/version", c, ""), "cookie reads GET /v1/*")
 	assert.Equal(t, http.StatusUnauthorized, do(http.MethodDelete, "/v1/users/u1/data", c, ""), "cookie cannot delete")
+	assert.Equal(t, http.StatusUnauthorized, do(http.MethodPost, "/v1/traces/"+strings.Repeat("ab", 16)+"/analyze", c, ""),
+		"cookie cannot analyze through the API")
 	for _, route := range []struct{ method, path string }{
 		{http.MethodPost, "/v1/admin/vacuum"},
 		{http.MethodPost, "/v1/admin/backups"},
@@ -138,7 +140,7 @@ func TestDashboard_LoginURLLog(t *testing.T) {
 			}
 			var logs bytes.Buffer
 			s := &server{cfg: &cfg, clk: clock.System{}, log: slog.New(slog.NewTextHandler(&logs, nil))}
-			dash, err := s.newDashboard(queries.New(queries.Readers{}, s.clk), []string{dashToken})
+			dash, err := s.newDashboard(queries.New(queries.Readers{}, s.clk), []string{dashToken}, nil)
 			require.NoError(t, err)
 			out := logs.String()
 			assert.NotContains(t, out, dashToken, "the API token is never logged")

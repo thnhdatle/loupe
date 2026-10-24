@@ -197,13 +197,18 @@ func (s *server) buildHTTP(apiTokens []string) error {
 	q := queries.New(queries.Readers{
 		Traces: s.store, Sessions: s.store, Rollups: s.store, Stats: s.store,
 	}, s.clk, queries.WithGauges(gauges{w: s.writer, l: s.limiter}))
-	dash, err := s.newDashboard(q, apiTokens)
+	analyzer, err := s.newAnalyzer()
+	if err != nil {
+		return err
+	}
+	dash, err := s.newDashboard(q, apiTokens, analyzer)
 	if err != nil {
 		return err
 	}
 	api, err := httpapi.NewHandler(q, s.admin, httpapi.Options{
 		Tokens:               apiTokens,
 		Exporter:             s.store,
+		Analyzer:             analyzer,
 		AllowUnauthenticated: len(apiTokens) == 0,
 		SessionAuth:          dash.SessionAuth,
 		Version:              httpapi.VersionInfo{Version: version, Commit: commit, BuildDate: buildDate},

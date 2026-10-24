@@ -9,7 +9,7 @@ import (
 	"github.com/thnhdatle/loupe/internal/app/queries"
 )
 
-func (s *server) newDashboard(q *queries.Service, apiTokens []string) (*web.Handler, error) {
+func (s *server) newDashboard(q *queries.Service, apiTokens []string, analyzer web.Analyzer) (*web.Handler, error) {
 	cfg := s.cfg
 	dash, err := web.NewHandler(q, web.Options{
 		Tokens:       apiTokens,
@@ -18,6 +18,7 @@ func (s *server) newDashboard(q *queries.Service, apiTokens []string) (*web.Hand
 		SecureCookie: cfg.SecureCookieEnabled(),
 		Clock:        s.clk,
 		Logger:       s.log,
+		Analyzer:     analyzer,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("dashboard handler: %w", err)

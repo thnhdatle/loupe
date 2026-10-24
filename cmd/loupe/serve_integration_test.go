@@ -12,6 +12,8 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -59,9 +61,48 @@ func get(t *testing.T, url string) (int, []byte) {
 	return resp.StatusCode, body
 }
 
+func stubModel(t *testing.T) *httptest.Server {
+	t.Helper()
+	answer := `{"causes":[{"text":"stub cause","span_ids":["0101010101010101","ffffffffffffffff"]}],"fixes":[]}`
+	reply, err := json.Marshal(map[string]any{"choices": []any{map[string]any{
+		"message": map[string]string{"role": "assistant", "content": answer},
+	}}})
+	require.NoError(t, err)
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/chat/completions" || r.Header.Get("Authorization") != "Bearer sk-stub" {
+			http.Error(w, "unexpected request", http.StatusBadRequest)
+			return
+		}
+		_, _ = w.Write(reply)
+	}))
+}
+
+func post(t *testing.T, url string, hdr map[string]string) (int, []byte) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, http.NoBody)
+	require.NoError(t, err)
+	for k, v := range hdr {
+		req.Header.Set(k, v)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	return resp.StatusCode, body
+}
+
 func TestServe_EndToEnd(t *testing.T) {
 	t.Parallel()
+	model := stubModel(t)
+	defer model.Close()
+	keyFile := filepath.Join(t.TempDir(), "llm_key")
+	require.NoError(t, os.WriteFile(keyFile, []byte("sk-stub\n"), 0o600))
 	cfg := config.Default()
+	cfg.Analyze = config.Analyze{
+		BaseURL: model.URL + "/v1", Model: "stub", APIKeyFile: keyFile,
+		Timeout: config.Duration(10 * time.Second), MaxSpans: 200,
+	}
 	cfg.Storage.Path = filepath.Join(t.TempDir(), "loupe.db")
 	cfg.Receiver.GRPC.Listen = freeAddr(t)
 	cfg.Receiver.HTTP.Listen = freeAddr(t)
@@ -124,6 +165,13 @@ func TestServe_EndToEnd(t *testing.T) {
 	}, 10*time.Second)
 	code, _ = get(t, ui+"/v1/traces/"+id)
 	require.Equal(t, http.StatusOK, code)
+
+	code, analysis := post(t, ui+"/v1/traces/"+id+"/analyze", nil)
+	require.Equal(t, http.StatusOK, code, string(analysis))
+	require.Contains(t, string(analysis), `"causes":[{"text":"stub cause","span_ids":["0101010101010101"]}]`)
+	code, analysis = post(t, ui+"/traces/"+id+"/analyze", map[string]string{"HX-Request": "true"})
+	require.Equal(t, http.StatusOK, code)
+	require.Contains(t, string(analysis), "stub cause")
 
 	code, exported := get(t, ui+"/v1/export/traces")
 	require.Equal(t, http.StatusOK, code)
