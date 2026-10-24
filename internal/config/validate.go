@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -45,6 +46,7 @@ func (c *Config) Validate() error {
 	v.limits(c)
 	v.enums(c)
 	v.redact(c)
+	v.analyze(c)
 	if err := c.RetentionConfig().Validate(); err != nil {
 		if multi, ok := err.(interface{ Unwrap() []error }); ok {
 			v.errs = append(v.errs, multi.Unwrap()...)
@@ -137,6 +139,8 @@ func (v *validator) limits(c *Config) {
 		{"writer.batch_spans", int64(c.Writer.BatchSpans)},
 		{"writer.batch_interval", int64(c.Writer.BatchInterval)},
 		{"content.max_bytes", c.Content.MaxBytes.Bytes()},
+		{"analyze.timeout", int64(c.Analyze.Timeout)},
+		{"analyze.max_spans", int64(c.Analyze.MaxSpans)},
 		{"shutdown_timeout", int64(c.ShutdownTimeout)},
 	} {
 		if p.val <= 0 {
@@ -186,6 +190,21 @@ func (v *validator) redact(c *Config) {
 	}
 }
 
+func (v *validator) analyze(c *Config) {
+	a := c.Analyze
+	if !a.Enabled() {
+		return
+	}
+	if u, err := url.Parse(a.BaseURL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		v.bad("analyze.base_url %q must be an http or https URL", a.BaseURL)
+	} else if u.User != nil {
+		v.bad("analyze.base_url must not contain credentials; use analyze.api_key_file")
+	}
+	if a.Model == "" {
+		v.bad("analyze.model is required when analyze.base_url is set")
+	}
+}
+
 func (c *Config) Warnings() []string {
 	var out []string
 	for _, l := range []struct {
@@ -201,6 +220,9 @@ func (c *Config) Warnings() []string {
 			out = append(out, fmt.Sprintf("%s.listen %q is not loopback and has no TLS; use a TLS-terminating reverse proxy",
 				l.name, l.addr))
 		}
+	}
+	if c.Analyze.Enabled() && c.Analyze.IncludeContent && !c.AnalyzeContent() {
+		out = append(out, "analyze.include_content needs content.capture: on; no content is sent")
 	}
 	if c.SelfTracing.Endpoint != "" {
 		out = append(out, "self_tracing.endpoint is set but self-tracing is not implemented yet; the value is ignored")

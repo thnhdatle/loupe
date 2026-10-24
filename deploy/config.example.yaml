@@ -60,6 +60,13 @@ retention:
   batch: 5000
 pricing:
   file: ""                       # user price table merged over the embedded default
+analyze:                         # off while base_url is empty
+  base_url: ""                   # OpenAI-compatible, e.g. http://127.0.0.1:11434/v1
+  model: ""                      # required with base_url
+  api_key_file: ""
+  timeout: 60s
+  max_spans: 200                 # spans sent to the model per trace
+  include_content: false         # also needs content.capture: on
 self_tracing:
   endpoint: ""                   # not implemented in v0.1; the value is ignored
 log:

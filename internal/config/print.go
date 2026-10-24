@@ -25,7 +25,9 @@ func (c *Config) Redact() Config {
 	mask(&out.Receiver.GRPC.TLS.KeyFile)
 	mask(&out.Receiver.HTTP.TLS.KeyFile)
 	mask(&out.UI.TLS.KeyFile)
+	mask(&out.Analyze.APIKeyFile)
 	out.SelfTracing.Endpoint = redactEndpoint(c.SelfTracing.Endpoint)
+	out.Analyze.BaseURL = redactEndpoint(c.Analyze.BaseURL)
 	return out
 }
 

@@ -86,6 +86,19 @@ loupe config print --redact       # show the merged result
 | `retention.interval` | `10m` | `LOUPE_RETENTION_INTERVAL` | Time between passes. |
 | `retention.batch` | `5000` | `LOUPE_RETENTION_BATCH` | Rows per delete job. |
 
+## Analyze
+
+| Key | Default | Env var | Meaning |
+|---|---|---|---|
+| `analyze.base_url` | empty | `LOUPE_ANALYZE_BASE_URL` | OpenAI-compatible endpoint, e.g. `http://127.0.0.1:11434/v1`; empty = off. |
+| `analyze.model` | empty | `LOUPE_ANALYZE_MODEL` | Model name; required with `base_url`. |
+| `analyze.api_key_file` | empty | `LOUPE_ANALYZE_API_KEY_FILE` | File holding the API key, if the endpoint needs one. |
+| `analyze.timeout` | `60s` | `LOUPE_ANALYZE_TIMEOUT` | Limit for one model call. |
+| `analyze.max_spans` | `200` | `LOUPE_ANALYZE_MAX_SPANS` | Spans sent to the model per trace. |
+| `analyze.include_content` | `false` | `LOUPE_ANALYZE_INCLUDE_CONTENT` | Send stored prompts and completions; needs `content.capture: on`. |
+
+Point `analyze.base_url` at Triage to mask personal data before it reaches the model.
+
 ## Other
 
 | Key | Default | Env var | Meaning |

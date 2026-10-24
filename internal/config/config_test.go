@@ -40,6 +40,9 @@ func TestDefaultIsValid(t *testing.T) {
 	assert.Equal(t, 14*24*time.Hour, cfg.RetentionConfig().Spans)
 	assert.Equal(t, []string{"email", "api_key"}, cfg.Content.RedactPresets())
 	assert.Empty(t, cfg.Warnings())
+	assert.False(t, cfg.Analyze.Enabled(), "analyze is off by default")
+	assert.Equal(t, 60*time.Second, cfg.Analyze.Timeout.Std())
+	assert.Equal(t, 200, cfg.Analyze.MaxSpans)
 }
 
 func TestExampleFileMatchesDefaults(t *testing.T) {
@@ -324,6 +327,33 @@ func TestValidate(t *testing.T) {
 			want: []string{"content.redact", "content.redact"},
 		},
 		{
+			name: "analyze base_url without model",
+			mod:  func(c *config.Config) { c.Analyze.BaseURL = "http://127.0.0.1:11434/v1" },
+			want: []string{"analyze.model"},
+		},
+		{
+			name: "analyze enabled ok",
+			mod: func(c *config.Config) {
+				c.Analyze.BaseURL, c.Analyze.Model = "https://triage.internal/v1", "gpt-4o-mini"
+			},
+		},
+		{
+			name: "analyze base_url not http",
+			mod:  func(c *config.Config) { c.Analyze.BaseURL, c.Analyze.Model = "localhost:11434", "m" },
+			want: []string{"analyze.base_url"},
+		},
+		{
+			name: "analyze base_url with credentials",
+			mod:  func(c *config.Config) { c.Analyze.BaseURL, c.Analyze.Model = "https://u:p@llm.example/v1", "m" },
+			want: []string{"analyze.api_key_file"},
+		},
+		{name: "analyze model alone ok", mod: func(c *config.Config) { c.Analyze.Model = "m" }},
+		{
+			name: "analyze limits",
+			mod:  func(c *config.Config) { c.Analyze.Timeout = 0; c.Analyze.MaxSpans = 0 },
+			want: []string{"analyze.timeout", "analyze.max_spans"},
+		},
+		{
 			name: "duplicate rule name",
 			mod: func(c *config.Config) {
 				c.Content.Redact = []config.RedactRule{{Name: "a", Pattern: "x"}, {Name: "a", Pattern: "y"}}
@@ -375,6 +405,22 @@ func TestWarnings(t *testing.T) {
 	assert.Contains(t, w[0], "receiver.http")
 }
 
+func TestAnalyzeContent(t *testing.T) {
+	t.Parallel()
+	c := config.Default()
+	c.Analyze.BaseURL, c.Analyze.Model, c.Analyze.IncludeContent = "http://127.0.0.1:8080/v1", "m", true
+	assert.False(t, c.AnalyzeContent(), "content.capture is off")
+	require.Len(t, c.Warnings(), 1)
+	assert.Contains(t, c.Warnings()[0], "analyze.include_content")
+
+	c.Content.Capture = "on"
+	assert.True(t, c.AnalyzeContent())
+	assert.Empty(t, c.Warnings())
+
+	c.Analyze.IncludeContent = false
+	assert.False(t, c.AnalyzeContent())
+}
+
 func TestSecureCookieForcedByTLS(t *testing.T) {
 	t.Parallel()
 	c := config.Default()
@@ -390,6 +436,10 @@ func TestPrintRoundTripAndRedact(t *testing.T) {
 	c.API.TokenFile = "/secrets/api"
 	c.UI.TLS = config.TLS{CertFile: "/c.pem", KeyFile: "/k.pem"}
 	c.SelfTracing.Endpoint = "https://user:pw@otel.example:4318/v1/traces?key=abc"
+	c.Analyze = config.Analyze{
+		BaseURL: "https://llm.example/v1?token=xyz", Model: "m", APIKeyFile: "/secrets/llm",
+		Timeout: config.Duration(time.Minute), MaxSpans: 50,
+	}
 	c.Content.Redact = append(c.Content.Redact, config.RedactRule{Name: "t", Pattern: "T+", Replacement: "[T]"})
 
 	var plain bytes.Buffer
@@ -401,7 +451,7 @@ func TestPrintRoundTripAndRedact(t *testing.T) {
 	r := c.Redact()
 	var out bytes.Buffer
 	require.NoError(t, r.WriteYAML(&out))
-	for _, secret := range []string{"/secrets/tokens", "/secrets/api", "/k.pem", "pw", "key=abc"} {
+	for _, secret := range []string{"/secrets/tokens", "/secrets/api", "/k.pem", "pw", "key=abc", "/secrets/llm", "xyz"} {
 		assert.NotContains(t, out.String(), secret)
 	}
 	assert.Contains(t, out.String(), config.Redacted)
@@ -409,6 +459,7 @@ func TestPrintRoundTripAndRedact(t *testing.T) {
 	assert.Equal(t, "/secrets/api", c.API.TokenFile, "Redact does not modify the receiver")
 	assert.Len(t, r.Content.Redact, len(c.Content.Redact))
 	assert.Contains(t, out.String(), "spans: 14d")
+	assert.Contains(t, out.String(), "https://llm.example/v1")
 }
 
 func TestRedactEmptyAndOpaqueEndpoint(t *testing.T) {

@@ -27,6 +27,7 @@ type Config struct {
 	Content         Content     `yaml:"content"`
 	Retention       Retention   `yaml:"retention"`
 	Pricing         Pricing     `yaml:"pricing"`
+	Analyze         Analyze     `yaml:"analyze"`
 	SelfTracing     SelfTracing `yaml:"self_tracing"`
 	Log             Log         `yaml:"log"`
 	ShutdownTimeout Duration    `yaml:"shutdown_timeout"`
@@ -118,6 +119,23 @@ type Pricing struct {
 	File string `yaml:"file"`
 }
 
+// Analyze configures the OpenAI-compatible endpoint behind the trace Analyze action.
+type Analyze struct {
+	BaseURL        string   `yaml:"base_url"`
+	Model          string   `yaml:"model"`
+	APIKeyFile     string   `yaml:"api_key_file"`
+	Timeout        Duration `yaml:"timeout"`
+	MaxSpans       int      `yaml:"max_spans"`
+	IncludeContent bool     `yaml:"include_content"`
+}
+
+func (a Analyze) Enabled() bool { return a.BaseURL != "" }
+
+// AnalyzeContent reports whether Analyze may send prompt and completion text to the model.
+func (c *Config) AnalyzeContent() bool {
+	return c.Analyze.Enabled() && c.Analyze.IncludeContent && c.Content.Capture == string(content.ModeOn)
+}
+
 type SelfTracing struct {
 	Endpoint string `yaml:"endpoint"`
 }
@@ -161,6 +179,7 @@ func Default() Config {
 			Interval:      Duration(r.Interval),
 			Batch:         r.Batch,
 		},
+		Analyze:         Analyze{Timeout: Duration(60 * time.Second), MaxSpans: 200},
 		Log:             Log{Level: "info", Format: "json"},
 		ShutdownTimeout: Duration(30 * time.Second),
 	}
