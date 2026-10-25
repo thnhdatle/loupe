@@ -121,3 +121,13 @@ func TestFind_UsageDuplicateIgnored(t *testing.T) {
 	dup.UsageDuplicate = true
 	assert.Empty(t, diagnose.Find([]query.SpanView{span("a", "", "agent", trace.KindAgent, at(0, 1000)), dup}))
 }
+
+func TestFind_PrefersStatusMessage(t *testing.T) {
+	t.Parallel()
+	lookup := span("b", "a", "lookup", trace.KindTool, at(10, 10))
+	lookup = failed(lookup, "KeyError", `{"error.message":"from attribute"}`)
+	lookup.StatusMessage = "no such user 42"
+	fs := diagnose.Find([]query.SpanView{span("a", "", "agent", trace.KindAgent, at(0, 100)), lookup})
+	require.Len(t, fs, 1)
+	assert.Equal(t, `tool "lookup" failed: KeyError, no such user 42`, fs[0].Text)
+}

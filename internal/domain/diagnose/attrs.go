@@ -32,16 +32,25 @@ func errorText(s *query.SpanView) string {
 	if s.ErrorType != "" {
 		parts = append(parts, s.ErrorType)
 	}
-	for _, k := range messageKeys {
-		if v, ok := attrs[k].(string); ok && v != "" {
-			parts = append(parts, v)
-			break
-		}
+	if msg := message(s, attrs); msg != "" {
+		parts = append(parts, msg)
 	}
 	if code := statusCode(attrs); code >= 400 {
 		parts = append(parts, "HTTP "+strconv.Itoa(code))
 	}
 	return truncate(strings.Join(parts, ", "), maxTextRunes)
+}
+
+func message(s *query.SpanView, attrs map[string]any) string {
+	if s.StatusMessage != "" {
+		return s.StatusMessage
+	}
+	for _, k := range messageKeys {
+		if v, ok := attrs[k].(string); ok && v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 func statusCode(attrs map[string]any) int {
