@@ -25,6 +25,7 @@ const (
 )
 
 type waterRow struct {
+	Number   int
 	SpanID   string
 	Name     string
 	Kind     trace.Kind
@@ -201,6 +202,7 @@ func waterfall(d query.TraceDetail, order []int, sel int) []waterRow {
 		wd := max(int(float64(s.DurationNs)/total*waterScale), minBarWidth)
 		x := min(int(float64(s.StartNs-lo)/total*waterScale), waterScale-wd)
 		rows = append(rows, waterRow{
+			Number: len(rows) + 1,
 			SpanID: s.SpanID, Name: s.Name, Kind: s.Kind, Status: s.Status, Service: s.Service, Model: s.Model,
 			Duration: s.DurationNs, Depth: min(depthOf(spans, byID, i), maxDepthClass), X: max(x, 0), W: wd,
 			Selected: i == sel, Href: "/traces/" + d.Summary.TraceID + "?span=" + s.SpanID,

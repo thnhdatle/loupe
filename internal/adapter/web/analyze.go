@@ -85,8 +85,8 @@ func (h *Handler) analysisFailed(w http.ResponseWriter, r *http.Request, err err
 
 func newAnalysis(rep analyze.Report, rows []waterRow) *analysisData {
 	refs := make(map[string]spanRef, len(rows))
-	for i := range rows {
-		refs[rows[i].SpanID] = spanRef{Number: strconv.Itoa(i + 1), Name: rows[i].Name, Href: rows[i].Href}
+	for _, r := range rows {
+		refs[r.SpanID] = spanRef{Number: strconv.Itoa(r.Number), Name: r.Name, Href: r.Href}
 	}
 	points := func(ps []analyze.Point) []pointView {
 		out := make([]pointView, 0, len(ps))

@@ -28,7 +28,7 @@
     {{range .Rows}}
       <li class="depth-{{.Depth}}">
         <a class="wrow" href="{{.Href}}" hx-get="{{.Href}}" hx-target="#detail" hx-swap="outerHTML" hx-push-url="true"{{if .Selected}} aria-current="true"{{end}}>
-          <span class="wname"><span class="kind kind-{{.Kind}}" title="{{.Kind}}">{{badge .Kind}}</span> <span class="wtext">{{if .Name}}{{.Name}}{{else}}(unnamed){{end}}</span>{{if .Error}} <span class="status status-error">error</span>{{end}}</span>
+          <span class="wname"><span class="wnum">{{.Number}}</span><span class="kind kind-{{.Kind}}" title="{{.Kind}}">{{badge .Kind}}</span> <span class="wtext">{{if .Name}}{{.Name}}{{else}}(unnamed){{end}}</span>{{if .Error}} <span class="status status-error">error</span>{{end}}</span>
           <span class="wbar">{{template "bar" bar .X .W (printf "bar-%s" .Kind)}}</span>
           <span class="wdur">{{dur .Duration}}</span>
         </a>
@@ -42,6 +42,7 @@
     <dl class="meta">
       <div><dt>Kind</dt><dd>{{.Span.Kind}}</dd></div>
       <div><dt>Status</dt><dd>{{template "status" (eq (printf "%s" .Span.Status) "error")}}{{if .Span.ErrorType}} <span class="mono">{{.Span.ErrorType}}</span>{{end}}</dd></div>
+      {{if .Span.StatusMessage}}<div class="meta-wide"><dt>Error message</dt><dd class="wrap">{{.Span.StatusMessage}}</dd></div>{{end}}
       <div><dt>Service</dt><dd>{{.Span.Service}}</dd></div>
       <div><dt>Started at</dt><dd>+{{dur .Offset}}</dd></div>
       <div><dt>Duration</dt><dd>{{dur .Span.DurationNs}}</dd></div>

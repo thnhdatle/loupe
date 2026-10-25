@@ -155,7 +155,7 @@ func TestHandler_TraceDetail(t *testing.T) {
 		"<h1>chat-request</h1>", traceID, `class="wrow"`, "llm.call", "llm.retry", "search", `kind kind-llm`,
 		">LLM<", ">TOOL<",
 		">AGT<", `<rect class="bar-llm"`, "1.40 s", "100 ms", `depth-2`, `href="/sessions/sess-1"`,
-		`id="span-panel"`, "chat-request", "http.route", "/chat",
+		`id="span-panel"`, "chat-request", "http.route", "/chat", `class="wnum">1<`, `class="wnum">3<`,
 	} {
 		assert.Contains(t, b, want)
 	}
@@ -168,7 +168,7 @@ func TestHandler_TraceDetail(t *testing.T) {
 	for _, want := range []string{
 		"RateLimit", "gpt-4o", "openai", "Input", "1,200", "Cache read", "unpriced", `class="role">user<`,
 		`class="role">assistant<`, secretMsg, "&lt;b&gt;x&lt;/b&gt;", "18 bytes", "5 bytes, truncated",
-		"gen_ai.request.model", `aria-current="true"`,
+		"gen_ai.request.model", `aria-current="true"`, "Error message", "429 Too Many Requests",
 	} {
 		assert.Contains(t, b, want)
 	}

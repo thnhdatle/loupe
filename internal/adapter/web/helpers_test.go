@@ -121,7 +121,8 @@ func fixtures() *fakeQueries {
 		},
 		{
 			SpanID: "a000000000000002", ParentSpanID: "a000000000000001", Name: "llm.call", Kind: trace.KindLLM,
-			Status: trace.StatusError, ErrorType: "RateLimit", Service: "api", Model: "gpt-4o", Provider: "openai",
+			Status: trace.StatusError, ErrorType: "RateLimit", StatusMessage: "429 Too Many Requests",
+			Service: "api", Model: "gpt-4o", Provider: "openai",
 			StartNs: epoch.Add(100 * time.Millisecond).UnixNano(), EndNs: epoch.Add(1500 * time.Millisecond).UnixNano(),
 			DurationNs: int64(1400 * time.Millisecond), HasUsage: true, Usage: trace.Usage{Input: 1200, Output: 300},
 			Attributes: json.RawMessage(`{"gen_ai.request.model":"gpt-4o"}`),
