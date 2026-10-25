@@ -14,7 +14,7 @@ import (
 const spanViewCols = `s.trace_id, s.span_id, s.parent_span_id, s.resource_id, s.service, s.name, s.kind, s.status,
   s.start_ns, s.end_ns, s.model, s.provider,
   s.input_tokens, s.output_tokens, s.cache_read_tokens, s.cache_write_tokens, s.reasoning_tokens,
-  s.has_usage, s.cost_nanos, s.eff_cost_nanos, s.session_id, s.user_id, s.error_type, s.flags,
+  s.has_usage, s.cost_nanos, s.eff_cost_nanos, s.session_id, s.user_id, s.error_type, s.status_message, s.flags,
   s.content_stripped, s.attributes`
 
 type storedSpan struct {
@@ -32,7 +32,7 @@ func scanStoredSpan(sc scanner) (storedSpan, error) {
 	err := sc.Scan(&tid, &sid, &pid, &resource, &sp.Service, &sp.Name, &kind, &status,
 		&sp.StartNs, &sp.EndNs, &sp.Model, &sp.Provider,
 		&sp.Usage.Input, &sp.Usage.Output, &sp.Usage.CacheRead, &sp.Usage.CacheWrite, &sp.Usage.Reasoning,
-		&sp.HasUsage, &cost, &effCost, &sp.SessionID, &sp.UserID, &sp.ErrorType, &flags,
+		&sp.HasUsage, &cost, &effCost, &sp.SessionID, &sp.UserID, &sp.ErrorType, &sp.StatusMessage, &flags,
 		&sp.ContentStripped, &attrs)
 	if err != nil {
 		return storedSpan{}, wrapScan("span", err)

@@ -59,7 +59,8 @@ content:
 
 The default is `[email, api_key]`. An empty list turns redaction off.
 
-Redaction covers stored content and the string values of other span attributes.
+Redaction covers stored content, the string values of other span attributes and the status message of
+failed spans.
 It does not cover span names, resource attributes or other typed fields. Do not put secrets there.
 
 ### Presets

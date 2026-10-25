@@ -167,7 +167,7 @@ func snapshotDB(tb testing.TB, db *sql.DB) map[string][]string {
 	return map[string][]string{
 		"spans": dump(tb, db, `SELECT trace_id, span_id, parent_span_id, resource_id, service, name, kind, status,
 			start_ns, end_ns, duration_ns, model, provider, input_tokens, output_tokens, cache_read_tokens,
-			cache_write_tokens, reasoning_tokens, has_usage, cost_nanos, session_id, user_id, error_type, flags,
+			cache_write_tokens, reasoning_tokens, has_usage, cost_nanos, session_id, user_id, error_type, status_message, flags,
 			content_stripped, rollup_user, eff_cache_read, eff_cache_write, eff_reasoning, eff_cost_nanos, attributes
 			FROM spans ORDER BY trace_id, span_id`),
 		"content": dump(tb, db, `SELECT trace_id, span_id, source, time_ns, key, part, role, bytes, body, truncated,

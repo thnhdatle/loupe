@@ -13,7 +13,7 @@ const (
 func EstimateSpanBytes(s *trace.Span) int64 {
 	n := int64(SpanOverheadBytes + cap(s.Attributes) +
 		len(s.Service) + len(s.Name) + len(s.Model) + len(s.Provider) +
-		len(s.SessionID) + len(s.UserID) + len(s.ErrorType))
+		len(s.SessionID) + len(s.UserID) + len(s.ErrorType) + len(s.StatusMessage))
 	for i := range s.Content {
 		n += EstimatePartBytes(&s.Content[i])
 	}

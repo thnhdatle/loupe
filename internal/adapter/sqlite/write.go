@@ -199,7 +199,7 @@ func (w *txWriter) insertSpan(ctx context.Context, sp *trace.Span, rollupUser st
 		sp.Service, sp.Name, string(sp.Kind), string(sp.Status),
 		sp.StartNs, sp.EndNs, sp.DurationNs(), sp.Model, sp.Provider,
 		u.Input, u.Output, u.CacheRead, u.CacheWrite, u.Reasoning, boolInt(sp.HasUsage), costArg(sp.Cost),
-		sp.SessionID, sp.UserID, sp.ErrorType, int64(sp.Flags&^trace.FlagUsageDuplicate),
+		sp.SessionID, sp.UserID, sp.ErrorType, sp.StatusMessage, int64(sp.Flags&^trace.FlagUsageDuplicate),
 		boolInt(sp.ContentStripped), rollupUser,
 		u.CacheRead, u.CacheWrite, u.Reasoning, costArg(sp.Cost), string(sp.Attributes))
 	if err != nil {

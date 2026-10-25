@@ -32,7 +32,7 @@ func TestDBStats(t *testing.T) {
 	out, err := runCmd(t, "--config", cfg, "db", "stats")
 	require.NoError(t, err)
 	assert.Contains(t, out, "rows.spans: 0")
-	assert.Contains(t, out, "schema_version: 1")
+	assert.Contains(t, out, "schema_version: 2")
 	assert.Contains(t, out, "oldest_span: -")
 
 	out, err = runCmd(t, "--config", cfg, "db", "stats", "--json")

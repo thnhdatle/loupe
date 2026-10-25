@@ -4,6 +4,8 @@ package sqlite_test
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"io/fs"
 	"os"
 	"testing"
@@ -16,15 +18,34 @@ import (
 	"github.com/thnhdatle/loupe/internal/domain/trace"
 )
 
-func v2Migrations(t *testing.T) fs.FS {
+func latestVersion(t *testing.T) int64 {
 	t.Helper()
-	initial, err := fs.ReadFile(sqlite.EmbeddedMigrations(), "00001_initial.sql")
+	files, err := fs.Glob(sqlite.EmbeddedMigrations(), "*.sql")
 	require.NoError(t, err)
-	return fstest.MapFS{
-		"00001_initial.sql": {Data: initial},
-		"00002_extra.sql": {Data: []byte("-- +goose Up\nCREATE TABLE extra (x INTEGER);\n" +
-			"-- +goose Down\nDROP TABLE extra;\n")},
+	return int64(len(files))
+}
+
+func nextMigrations(t *testing.T) fs.FS {
+	t.Helper()
+	files, err := fs.Glob(sqlite.EmbeddedMigrations(), "*.sql")
+	require.NoError(t, err)
+	out := fstest.MapFS{}
+	for _, name := range files {
+		data, err := fs.ReadFile(sqlite.EmbeddedMigrations(), name)
+		require.NoError(t, err)
+		out[name] = &fstest.MapFile{Data: data}
 	}
+	out[fmt.Sprintf("%05d_extra.sql", len(files)+1)] = &fstest.MapFile{Data: []byte(
+		"-- +goose Up\nCREATE TABLE extra (x INTEGER);\n-- +goose Down\nDROP TABLE extra;\n")}
+	return out
+}
+
+func allVersions(n int64) []int64 {
+	out := make([]int64, n)
+	for i := range out {
+		out[i] = int64(i) + 1
+	}
+	return out
 }
 
 func TestMigrations_StatusOfFreshAndMigratedDatabase(t *testing.T) {
@@ -33,18 +54,19 @@ func TestMigrations_StatusOfFreshAndMigratedDatabase(t *testing.T) {
 	path := dbPath(t)
 	st, err := sqlite.Migrations(ctx, path)
 	require.NoError(t, err)
-	assert.Equal(t, sqlite.MigrationStatus{Current: 0, Target: 1, Pending: []int64{1}}, st)
+	latest := latestVersion(t)
+	assert.Equal(t, sqlite.MigrationStatus{Current: 0, Target: latest, Pending: allVersions(latest)}, st)
 
 	s := openAt(t, path)
 	st, err = sqlite.Migrations(ctx, path)
 	require.NoError(t, err)
-	assert.Equal(t, sqlite.MigrationStatus{Current: 1, Target: 1}, st, "dry-run works while the store is open")
+	assert.Equal(t, sqlite.MigrationStatus{Current: latest, Target: latest}, st, "dry-run works while the store is open")
 
-	st, err = sqlite.MigrationStatusOf(ctx, path, v2Migrations(t))
+	st, err = sqlite.MigrationStatusOf(ctx, path, nextMigrations(t))
 	require.NoError(t, err)
-	assert.Equal(t, []int64{2}, st.Pending)
+	assert.Equal(t, []int64{latest + 1}, st.Pending)
 	require.NoError(t, s.Close())
-	_, err = os.Stat(sqlite.BackupPath(path, 1))
+	_, err = os.Stat(sqlite.BackupPath(path, latest))
 	assert.ErrorIs(t, err, os.ErrNotExist, "no backup for a fresh database")
 }
 
@@ -56,10 +78,10 @@ func TestMigrations_BackupBeforeMigrate(t *testing.T) {
 	writeSpans(t, s, mkSpan(1, 1, 0, trace.KindLLM))
 	require.NoError(t, s.Close())
 
-	s = openAt(t, path, sqlite.WithMigrationsFS(v2Migrations(t)))
+	s = openAt(t, path, sqlite.WithMigrationsFS(nextMigrations(t)))
 	db := rawDB(t, path)
 	assert.Equal(t, int64(1), queryInt(t, db, "SELECT count(*) FROM sqlite_master WHERE name = 'extra'"))
-	backup := rawDB(t, sqlite.BackupPath(path, 2))
+	backup := rawDB(t, sqlite.BackupPath(path, latestVersion(t)+1))
 	assert.Equal(t, int64(1), queryInt(t, backup, "SELECT count(*) FROM spans"))
 	assert.Equal(t, int64(0), queryInt(t, backup, "SELECT count(*) FROM sqlite_master WHERE name = 'extra'"),
 		"the backup holds the schema before the migration")
@@ -86,20 +108,20 @@ func TestMigrations_BackupDisabledOrBlocked(t *testing.T) {
 			s := openAt(t, path)
 			require.NoError(t, s.Close())
 			if tc.occupy {
-				require.NoError(t, os.WriteFile(sqlite.BackupPath(path, 2), []byte("x"), 0o600))
+				require.NoError(t, os.WriteFile(sqlite.BackupPath(path, latestVersion(t)+1), []byte("x"), 0o600))
 			}
-			s, err := sqlite.Open(context.Background(), path, sqlite.WithMigrationsFS(v2Migrations(t)),
+			s, err := sqlite.Open(context.Background(), path, sqlite.WithMigrationsFS(nextMigrations(t)),
 				sqlite.WithBackupBeforeMigrate(tc.backup))
 			if tc.wantErr != nil {
 				require.ErrorIs(t, err, tc.wantErr)
-				st, serr := sqlite.MigrationStatusOf(context.Background(), path, v2Migrations(t))
+				st, serr := sqlite.MigrationStatusOf(context.Background(), path, nextMigrations(t))
 				require.NoError(t, serr)
-				assert.Equal(t, int64(1), st.Current, "nothing was migrated")
+				assert.Equal(t, latestVersion(t), st.Current, "nothing was migrated")
 				return
 			}
 			require.NoError(t, err)
 			require.NoError(t, s.Close())
-			_, err = os.Stat(sqlite.BackupPath(path, 2))
+			_, err = os.Stat(sqlite.BackupPath(path, latestVersion(t)+1))
 			assert.ErrorIs(t, err, os.ErrNotExist)
 		})
 	}
@@ -113,4 +135,31 @@ func TestMigrations_BadSource(t *testing.T) {
 		"00001_broken.sql": {Data: []byte("-- +goose Up\nCREATE TABLE (;\n")},
 	}))
 	require.Error(t, err)
+}
+
+func TestMigrations_AddStatusMessageToExistingDatabase(t *testing.T) {
+	t.Parallel()
+	path := dbPath(t)
+	initial, err := fs.ReadFile(sqlite.EmbeddedMigrations(), "00001_initial.sql")
+	require.NoError(t, err)
+	v1, err := sql.Open("sqlite", path)
+	require.NoError(t, err)
+	ctx := context.Background()
+	_, err = v1.ExecContext(ctx, "PRAGMA auto_vacuum = INCREMENTAL")
+	require.NoError(t, err)
+	_, err = v1.ExecContext(ctx, "PRAGMA journal_mode = WAL")
+	require.NoError(t, err)
+	require.NoError(t, sqlite.ApplyMigrations(ctx, v1,
+		fstest.MapFS{"00001_initial.sql": {Data: initial}}))
+	require.NoError(t, v1.Close())
+
+	s := openAt(t, path)
+	require.NoError(t, s.Close())
+	db := rawDB(t, path)
+	var def string
+	require.NoError(t, db.QueryRowContext(ctx,
+		"SELECT dflt_value FROM pragma_table_info('spans') WHERE name = 'status_message'").Scan(&def))
+	assert.Equal(t, "''", def)
+	_, err = os.Stat(sqlite.BackupPath(path, latestVersion(t)))
+	assert.NoError(t, err, "the v1 database is backed up before the migration")
 }

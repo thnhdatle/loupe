@@ -36,6 +36,9 @@ func Translate(raw *trace.RawSpan, opts Options) trace.Span {
 	s.SessionID = enc.limit(s.SessionID, false)
 	s.UserID = enc.limit(s.UserID, false)
 	s.ErrorType = enc.limit(s.ErrorType, false)
+	if s.Status == trace.StatusError {
+		s.StatusMessage = enc.limit(raw.StatusMessage, true)
+	}
 	s.Service = enc.limit(s.Service, false)
 	enc.object(raw.Attributes, func(k string) bool { return !IsContentKey(k) })
 	s.Attributes = enc.buf

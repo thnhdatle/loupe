@@ -125,6 +125,7 @@ type Span struct {
 	SessionID       string
 	UserID          string
 	ErrorType       string
+	StatusMessage   string
 	Flags           Flags
 	Attributes      []byte
 	Content         []ContentPart

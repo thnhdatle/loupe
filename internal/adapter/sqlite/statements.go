@@ -31,7 +31,7 @@ const (
 const spanInsertCols = `trace_id, span_id, parent_span_id, resource_id, service, name, kind, status,
   start_ns, end_ns, duration_ns, model, provider,
   input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, reasoning_tokens, has_usage, cost_nanos,
-  session_id, user_id, error_type, flags, content_stripped, rollup_user,
+  session_id, user_id, error_type, status_message, flags, content_stripped, rollup_user,
   eff_cache_read, eff_cache_write, eff_reasoning, eff_cost_nanos, attributes`
 
 const traceCols = `root_name, root_service, start_ns, end_ns, duration_ns, span_count,
@@ -53,7 +53,7 @@ func writeSQL() [numStmts]string {
 	return [numStmts]string{
 		stInsResource: `INSERT OR IGNORE INTO resources (id, attributes) VALUES (?, ?)`,
 		stInsSpan: `INSERT OR IGNORE INTO spans (` + spanInsertCols + `) VALUES (` +
-			placeholders(31) + `)`,
+			placeholders(32) + `)`,
 		stMarkContent: `UPDATE span_content SET has_span = 1 WHERE trace_id = ? AND span_id = ? AND has_span = 0`,
 		stInsContent: `INSERT OR IGNORE INTO span_content
   (trace_id, span_id, source, time_ns, key, part, role, bytes, body, truncated, has_span, inserted_ns)

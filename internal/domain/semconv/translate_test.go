@@ -259,3 +259,15 @@ func TestTranslate_Content_NeverTruncatedOrInAttributes(t *testing.T) {
 	assert.False(t, s.Content[0].Truncated)
 	assert.NotContains(t, attrsJSON(t, s.Attributes), "input.value")
 }
+
+func TestTranslate_StatusMessage(t *testing.T) {
+	t.Parallel()
+	redact := func(s string) string { return strings.ReplaceAll(s, "ana@example.com", "[EMAIL]") }
+	opts := semconv.Options{RedactValue: redact}
+	raw := rawSpan()
+	raw.StatusCode, raw.StatusMessage = trace.StatusCodeError, "rate limit reached for ana@example.com"
+	assert.Equal(t, "rate limit reached for [EMAIL]", semconv.Translate(raw, opts).StatusMessage)
+
+	raw.StatusCode = trace.StatusCodeOK
+	assert.Empty(t, semconv.Translate(raw, opts).StatusMessage)
+}

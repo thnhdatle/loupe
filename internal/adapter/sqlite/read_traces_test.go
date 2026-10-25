@@ -263,3 +263,15 @@ func TestStore_TraceModels_CappedAndSorted(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"}, d.Summary.Models)
 }
+
+func TestStore_GetTrace_StatusMessage(t *testing.T) {
+	t.Parallel()
+	s := openStore(t)
+	sp := mkSpan(1, 1, 0, trace.KindLLM, failed())
+	sp.StatusMessage = "429 Too Many Requests"
+	writeSpans(t, s, sp)
+	d, err := s.GetTrace(context.Background(), tid(1), false)
+	require.NoError(t, err)
+	require.Len(t, d.Spans, 1)
+	assert.Equal(t, "429 Too Many Requests", d.Spans[0].StatusMessage)
+}

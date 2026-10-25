@@ -77,6 +77,7 @@ type SpanView struct {
 	SessionID       string            `json:"session_id"`
 	UserID          string            `json:"user_id"`
 	ErrorType       string            `json:"error_type"`
+	StatusMessage   string            `json:"status_message"`
 	AttrTruncated   bool              `json:"attr_truncated"`
 	UsageDuplicate  bool              `json:"usage_duplicate"`
 	UsageClamped    bool              `json:"usage_clamped"`
@@ -114,7 +115,7 @@ func NewSpanView(s *trace.Span, includeContent bool) SpanView {
 		SpanID: s.SpanID.String(), Service: s.Service, Name: s.Name, Kind: s.Kind, Status: s.Status,
 		StartNs: s.StartNs, EndNs: s.EndNs, DurationNs: s.DurationNs(), Model: s.Model,
 		Provider: s.Provider, Usage: s.Usage, HasUsage: s.HasUsage, SessionID: s.SessionID,
-		UserID: s.UserID, ErrorType: s.ErrorType,
+		UserID: s.UserID, ErrorType: s.ErrorType, StatusMessage: s.StatusMessage,
 		AttrTruncated:   s.Flags.Has(trace.FlagAttrTruncated),
 		UsageDuplicate:  s.Flags.Has(trace.FlagUsageDuplicate),
 		UsageClamped:    s.Flags.Has(trace.FlagUsageClamped),

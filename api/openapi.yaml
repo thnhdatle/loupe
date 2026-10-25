@@ -149,6 +149,7 @@ paths:
                     session_id: sess-42
                     user_id: alice
                     error_type: ""
+                    status_message: ""
                     attr_truncated: false
                     usage_duplicate: false
                     usage_clamped: false
@@ -171,6 +172,7 @@ paths:
                     session_id: sess-42
                     user_id: alice
                     error_type: ""
+                    status_message: ""
                     attr_truncated: false
                     usage_duplicate: false
                     usage_clamped: false
@@ -419,6 +421,7 @@ paths:
                       session_id: sess-42
                       user_id: alice
                       error_type: ""
+                      status_message: ""
                       attr_truncated: false
                       usage_duplicate: false
                       usage_clamped: false
@@ -513,6 +516,7 @@ paths:
                     session_id: ""
                     user_id: ""
                     error_type: ""
+                    status_message: ""
                     attr_truncated: false
                     usage_duplicate: false
                     usage_clamped: false
@@ -819,7 +823,7 @@ components:
         source: {type: string, enum: [attribute, event, log]}
     Span:
       type: object
-      required: [span_id, parent_span_id, service, name, kind, status, start_ns, end_ns, duration_ns, model, provider, usage, has_usage, cost_nanos, session_id, user_id, error_type, attr_truncated, usage_duplicate, usage_clamped, attributes, content_stripped]
+      required: [span_id, parent_span_id, service, name, kind, status, start_ns, end_ns, duration_ns, model, provider, usage, has_usage, cost_nanos, session_id, user_id, error_type, status_message, attr_truncated, usage_duplicate, usage_clamped, attributes, content_stripped]
       additionalProperties: false
       properties:
         span_id: {type: string}
@@ -839,6 +843,7 @@ components:
         session_id: {type: string}
         user_id: {type: string}
         error_type: {type: string}
+        status_message: {type: string}
         attr_truncated: {type: boolean}
         usage_duplicate: {type: boolean}
         usage_clamped: {type: boolean}

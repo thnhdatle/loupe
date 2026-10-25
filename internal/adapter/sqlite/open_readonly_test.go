@@ -53,7 +53,7 @@ func TestOpenReadOnly_RejectsPendingMigrations(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, s.Close())
 
-	_, err = sqlite.OpenReadOnly(context.Background(), path, sqlite.WithMigrationsFS(v2Migrations(t)))
+	_, err = sqlite.OpenReadOnly(context.Background(), path, sqlite.WithMigrationsFS(nextMigrations(t)))
 	require.ErrorIs(t, err, sqlite.ErrPendingMigrations)
 }
 
