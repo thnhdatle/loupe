@@ -1,5 +1,7 @@
 bin/
 dist/
+/loupe
+/cmd/loupe/loupe
 *.local.yaml
 node_modules/
 *.db
