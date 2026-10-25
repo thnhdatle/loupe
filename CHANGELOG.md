@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-25
+
+### Added
+
+- Analyze: a button on the trace page and `POST /v1/traces/{trace_id}/analyze` list findings
+  from the spans (errors, rate limits, retries, slow spans, large prompts, cost share) and ask
+  an OpenAI-compatible model for causes and fixes, each linked to spans. Off until
+  `analyze.base_url` is set.
+- The status message of failed spans is stored and shown; waterfall rows are numbered.
+- Interactive demo page in `docs/demo`.
+
+### Removed
+
+- Acceptance, benchmark and mutation-testing code and their Makefile targets; benchmark
+  results stay in the README.
+
 ## [0.1.0] - 2026-10-21
 
 First public release.
@@ -29,5 +45,6 @@ First public release.
 - Guides: quickstart, configuration, operations, troubleshooting, errors, instrumentation, pricing, privacy, retention.
 - Measured envelope: 3,000 spans/s sustained with 0 lost, 15,000 spans/s single-writer capacity, query p95 0.058 s at 2M spans.
 
-[Unreleased]: https://github.com/thnhdatle/loupe/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/thnhdatle/loupe/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/thnhdatle/loupe/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/thnhdatle/loupe/releases/tag/v0.1.0

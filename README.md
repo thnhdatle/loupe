@@ -74,8 +74,8 @@ one binary and one SQLite file, with retention and a disk cap.
 ## Install
 
 ```sh
-go install github.com/thnhdatle/loupe/cmd/loupe@v0.1.0    # binary
-docker pull ghcr.io/thnhdatle/loupe:v0.1.0                # container image
+go install github.com/thnhdatle/loupe/cmd/loupe@v0.1.1    # binary
+docker pull ghcr.io/thnhdatle/loupe:v0.1.1                # container image
 ```
 
 Prebuilt binaries for Linux and macOS are on the [releases page](https://github.com/thnhdatle/loupe/releases).
@@ -89,8 +89,8 @@ git clone https://github.com/thnhdatle/loupe && cd loupe
 ```
 
 ```bash
-export RAYLD_LOUPE_IMAGE="${RAYLD_LOUPE_IMAGE:-ghcr.io/thnhdatle/loupe:v0.1.0}"
-export RAYLD_FAKELLM_IMAGE="${RAYLD_FAKELLM_IMAGE:-ghcr.io/thnhdatle/fakellm:v0.1.0}"
+export RAYLD_LOUPE_IMAGE="${RAYLD_LOUPE_IMAGE:-ghcr.io/thnhdatle/loupe:v0.1.1}"
+export RAYLD_FAKELLM_IMAGE="${RAYLD_FAKELLM_IMAGE:-ghcr.io/thnhdatle/fakellm:v0.1.1}"
 docker compose -f deploy/docker-compose.yml up -d --wait
 docker compose -f deploy/docker-compose.yml logs loupe | grep 'dashboard login'
 LOUPE_API_TOKEN="$(docker cp "$(docker compose -f deploy/docker-compose.yml ps -q loupe)":/data/api_token - | tar -xO)" ./examples/python-openai/run.sh
