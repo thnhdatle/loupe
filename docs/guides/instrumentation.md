@@ -25,6 +25,13 @@ Example: `examples/python-openai`. Tested with `opentelemetry-instrumentation-op
 `opentelemetry-util-genai` 1.1b0. Version 1.2b0 does not work with 2.4b0.
 
 ```sh
+pip install openai httpx opentelemetry-sdk opentelemetry-exporter-otlp-proto-http \
+  opentelemetry-instrumentation-openai-v2==2.4b0 opentelemetry-util-genai==1.1b0
+```
+
+The instrumentation imports `httpx` but does not declare it, so install it yourself.
+
+```sh
 OTEL_SERVICE_NAME=my-app                            # service name in Loupe
 OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf

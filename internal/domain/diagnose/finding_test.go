@@ -131,3 +131,16 @@ func TestFind_PrefersStatusMessage(t *testing.T) {
 	require.Len(t, fs, 1)
 	assert.Equal(t, `tool "lookup" failed: KeyError, no such user 42`, fs[0].Text)
 }
+
+func TestFind_RateLimitPassedUpIsCountedOnce(t *testing.T) {
+	t.Parallel()
+	limit := `{"error.message":"Error code: 429 - rate_limit_exceeded"}`
+	spans := []query.SpanView{
+		failed(span("a", "", "handle request", trace.KindOther, at(0, 300)), "RateLimitError", limit),
+		failed(llm(span("b", "a", "chat gpt-4o", trace.KindLLM, at(10, 280)), "gpt-4o", 3, 0), "RateLimitError", limit),
+	}
+	fs := diagnose.Find(spans)
+	require.Equal(t, []diagnose.Kind{diagnose.KindRateLimit}, kinds(fs))
+	assert.Equal(t, []string{"b"}, fs[0].SpanIDs)
+	assert.Equal(t, "1 call was rate limited: RateLimitError, Error code: 429 - rate_limit_exceeded", fs[0].Text)
+}

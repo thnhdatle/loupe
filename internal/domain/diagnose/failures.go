@@ -21,8 +21,7 @@ type failureKey struct {
 }
 
 func failures(spans []query.SpanView) []Finding {
-	var limited []string
-	var limitedText string
+	var limited []int
 	var keys []failureKey
 	ids := map[failureKey][]string{}
 	for i := range spans {
@@ -30,10 +29,7 @@ func failures(spans []query.SpanView) []Finding {
 		text := errorText(s)
 		switch {
 		case rateLimited(s, text):
-			if limited == nil {
-				limitedText = text
-			}
-			limited = append(limited, s.SpanID)
+			limited = append(limited, i)
 		case s.Status == trace.StatusError:
 			k := failureKey{kind: KindError, name: s.Name, text: text}
 			if s.Kind == trace.KindTool {
@@ -46,14 +42,40 @@ func failures(spans []query.SpanView) []Finding {
 		}
 	}
 	var out []Finding
-	if len(limited) > 0 {
-		out = append(out, Finding{Kind: KindRateLimit, Text: rateLimitText(len(limited), limitedText), SpanIDs: limited})
+	if limited = innermost(spans, limited); len(limited) > 0 {
+		limitedIDs := make([]string, len(limited))
+		for j, i := range limited {
+			limitedIDs[j] = spans[i].SpanID
+		}
+		text := rateLimitText(len(limited), errorText(&spans[limited[0]]))
+		out = append(out, Finding{Kind: KindRateLimit, Text: text, SpanIDs: limitedIDs})
 	}
 	for _, kind := range []Kind{KindToolError, KindError} {
 		for _, k := range keys {
 			if k.kind == kind {
 				out = append(out, Finding{Kind: kind, Text: k.describe(len(ids[k])), SpanIDs: ids[k]})
 			}
+		}
+	}
+	return out
+}
+
+// innermost drops spans whose rate limit only repeats the one of a descendant.
+func innermost(spans []query.SpanView, limited []int) []int {
+	parent := make(map[string]string, len(spans))
+	for i := range spans {
+		parent[spans[i].SpanID] = spans[i].ParentSpanID
+	}
+	covered := map[string]bool{}
+	for _, i := range limited {
+		for p := parent[spans[i].SpanID]; p != "" && !covered[p]; p = parent[p] {
+			covered[p] = true
+		}
+	}
+	var out []int
+	for _, i := range limited {
+		if !covered[spans[i].SpanID] {
+			out = append(out, i)
 		}
 	}
 	return out

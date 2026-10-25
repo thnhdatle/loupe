@@ -110,7 +110,15 @@ curl -H "Authorization: Bearer $LOUPE_API_TOKEN" \
   'http://127.0.0.1:3000/v1/traces?sort=cost&limit=5'
 ```
 
+To explain a failing or slow trace, point Analyze at any OpenAI-compatible model and press
+Analyze on the trace page, or call `POST /v1/traces/{trace_id}/analyze`. It is off until set:
+
+```sh
+LOUPE_ANALYZE_BASE_URL=http://127.0.0.1:1234/v1 LOUPE_ANALYZE_MODEL=qwen/qwen3-vl-4b loupe serve
+```
+
 SDK setup, pricing, privacy, retention and operations are covered in the [guides](docs/guides).
+What Analyze sends to the model is in [privacy](docs/guides/privacy.md#analyze).
 
 ## Performance
 
@@ -126,6 +134,7 @@ Load is OTLP/HTTP protobuf at a constant arrival rate.
 ## Documentation
 
 - [Guides](docs/guides)
+- [REST API reference](api/openapi.yaml)
 - [Roadmap](ROADMAP.md)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
